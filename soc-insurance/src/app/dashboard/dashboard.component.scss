@@ -1,0 +1,24 @@
+.dashboard {
+  padding: 2rem;
+}
+.tasks ul {
+  padding-left: 1.5rem;
+}
+.shortcuts {
+  margin-top: 2rem;
+}
+.shortcut-list {
+  display: flex;
+  gap: 1rem;
+}
+.shortcut-btn {
+  background: #1976d2;
+  color: #fff;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.shortcut-btn:hover {
+  background: #1565c0;
+} 
