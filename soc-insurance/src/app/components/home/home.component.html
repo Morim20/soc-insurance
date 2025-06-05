@@ -1,0 +1,57 @@
+<div class="home-container">
+  <mat-card class="home-card">
+    <mat-card-header>
+      <mat-card-title>ホーム</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="welcome-message">
+        <h2>ようこそ</h2>
+        <p>{{ currentUser?.employeeBasicInfo?.lastNameKanji }}{{ currentUser?.employeeBasicInfo?.firstNameKanji }}さん</p>
+      </div>
+
+      <div class="info-section">
+        <h3>基本情報</h3>
+        <p>雇用形態: {{ currentUser?.employmentInfo?.employmentType }}</p>
+        <p>勤務開始日: 
+          <ng-container *ngIf="isDate(currentUser?.employmentInfo?.startDate)">
+            {{ currentUser?.employmentInfo?.startDate | date:'yyyy/MM/dd' }}
+          </ng-container>
+          <ng-container *ngIf="!isDate(currentUser?.employmentInfo?.startDate)">
+            -
+          </ng-container>
+        </p>
+      </div>
+
+      <div class="info-section">
+        <h3>保険情報</h3>
+        <p>健康保険: {{ currentUser?.insuranceStatus?.healthInsurance ? '加入' : '未加入' }}</p>
+        <p>厚生年金: {{ currentUser?.insuranceStatus?.pensionInsurance ? '加入' : '未加入' }}</p>
+      </div>
+
+      <div class="admin-section" *ngIf="!isAdmin">
+        <p>管理者機能にアクセスするには、追加の認証が必要です。</p>
+        <button mat-raised-button
+                color="primary"
+                (click)="navigateToAdminVerification()"
+                class="admin-button">
+          管理者認証を行う
+        </button>
+      </div>
+
+      <div class="admin-section" *ngIf="isAdmin">
+        <p>管理者として認証済みです。</p>
+        <button mat-raised-button
+                color="primary"
+                (click)="navigateToAdmin()"
+                class="admin-button">
+          管理者ダッシュボードへ
+        </button>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-raised-button color="warn" (click)="logout()">ログアウト</button>
+    </mat-card-actions>
+  </mat-card>
+</div> 

@@ -1,0 +1,468 @@
+<div class="employee-detail-container">
+  <mat-card *ngIf="employee">
+    <mat-card-header>
+      <mat-card-title>{{ employee.employeeBasicInfo.lastNameKanji }}{{ employee.employeeBasicInfo.firstNameKanji }} さんの詳細</mat-card-title>
+      <span style="flex:1 1 auto;"></span>
+      <button mat-raised-button color="warn" (click)="onDelete()">削除</button>
+    </mat-card-header>
+    <mat-card-content>
+      <!-- 基本情報セクション -->
+      <h3>
+        基本情報
+        <button mat-icon-button *ngIf="!editingSection['basicInfo']" (click)="editSection('basicInfo')">
+          <mat-icon>edit</mat-icon>
+        </button>
+      </h3>
+      <div *ngIf="!editingSection['basicInfo']">
+        <p>社員番号: {{ employee.employeeBasicInfo.employeeId }}</p>
+        <p>氏名（漢字）: {{ employee.employeeBasicInfo.lastNameKanji }} {{ employee.employeeBasicInfo.firstNameKanji }}</p>
+        <p>氏名（カナ）: {{ employee.employeeBasicInfo.lastNameKana }} {{ employee.employeeBasicInfo.firstNameKana }}</p>
+        <p>生年月日: {{ employee.employeeBasicInfo.birthDate | date:'yyyy/MM/dd' }}</p>
+        <p>性別: {{ employee.employeeBasicInfo.gender }}</p>
+        <p>住所: {{ employee.employeeBasicInfo.address }}</p>
+        <p>マイナンバー: {{ employee.employeeBasicInfo.myNumber }}</p>
+        <p>メールアドレス: {{ employee.employeeBasicInfo.email }}</p>
+        <p>電話番号: {{ employee.employeeBasicInfo.phoneNumber }}</p>
+        <p>マイナンバー: {{ employee.employeeBasicInfo.myNumber }}</p>
+        <p>権限: {{ employee.employeeBasicInfo.role }}</p>
+      </div>
+      <form *ngIf="editingSection['basicInfo']" [formGroup]="basicInfoForm" class="basic-info-form">
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>社員番号</mat-label>
+          <input matInput formControlName="employeeId">
+        </mat-form-field>
+        <div style="display: flex; gap: 16px;">
+          <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
+            <mat-label>姓（漢字）</mat-label>
+            <input matInput formControlName="lastNameKanji">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
+            <mat-label>名（漢字）</mat-label>
+            <input matInput formControlName="firstNameKanji">
+          </mat-form-field>
+        </div>
+        <div style="display: flex; gap: 16px;">
+          <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
+            <mat-label>姓（カナ）</mat-label>
+            <input matInput formControlName="lastNameKana">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
+            <mat-label>名（カナ）</mat-label>
+            <input matInput formControlName="firstNameKana">
+          </mat-form-field>
+        </div>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>生年月日</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="birthDate">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>性別</mat-label>
+          <mat-select formControlName="gender">
+            <mat-option value="男性">男性</mat-option>
+            <mat-option value="女性">女性</mat-option>
+            <mat-option value="その他">その他</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>住所</mat-label>
+          <input matInput formControlName="address">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>メールアドレス</mat-label>
+          <input matInput formControlName="email">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>電話番号</mat-label>
+          <input matInput formControlName="phoneNumber">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>マイナンバー</mat-label>
+          <input matInput formControlName="myNumber">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>権限</mat-label>
+          <mat-select formControlName="role">
+            <mat-option value="user">user</mat-option>
+            <mat-option value="admin">admin</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <div style="margin-top: 16px;">
+          <button mat-raised-button color="primary" (click)="saveSection('basicInfo')" type="button">保存</button>
+          <button mat-button (click)="cancelEdit('basicInfo')" type="button">キャンセル</button>
+        </div>
+      </form>
+
+      <!-- 雇用情報 -->
+      <h3>
+        雇用情報
+        <button mat-icon-button *ngIf="!editingSection['employmentInfo']" (click)="editSection('employmentInfo')">
+          <mat-icon>edit</mat-icon>
+        </button>
+      </h3>
+      <div *ngIf="!editingSection['employmentInfo']">
+        <p>雇用形態: {{ employee.employmentInfo.employmentType }}</p>
+        <p>部署: {{ employee.employmentInfo.department }}</p>
+        <p>勤務開始日: {{ employee.employmentInfo.startDate | date:'yyyy/MM/dd' }}</p>
+        <p>週の所定労働時間: {{ employee.employmentInfo.weeklyHours }}</p>
+        <p>月の所定労働日数: {{ employee.employmentInfo.monthlyWorkDays }}</p>
+        <p>雇用見込み期間: {{ employee.employmentInfo.expectedEmploymentMonths ? employee.employmentInfo.expectedEmploymentMonths + 'ヶ月' : '未設定' }}</p>
+        <p>基本給／所定内賃金: {{ employee.employmentInfo.baseSalary }}</p>
+        <p>各種手当: {{ employee.employmentInfo.allowances }}</p>
+        <p>通勤手当: {{ employee.employmentInfo.commutingAllowance }}</p>
+        <p>通勤経路: {{ employee.employmentInfo.commuteRoute }}</p>
+        <p>片道運賃: {{ employee.employmentInfo.oneWayFare }}円</p>
+        <p>学生区分: {{ employee.employmentInfo.studentType || '一般（学生でない）' }}</p>
+        <p>報酬月額（通貨）: {{
+          (employee.employmentInfo.baseSalary || 0) +
+          (employee.employmentInfo.allowances || 0) +
+          (employee.employmentInfo.commutingAllowance || 0)
+        }}</p>
+      </div>
+      <form *ngIf="editingSection['employmentInfo']" [formGroup]="employmentInfoForm" class="basic-info-form">
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>雇用形態</mat-label>
+          <mat-select formControlName="employmentType">
+            <mat-option value="正社員">正社員</mat-option>
+            <mat-option value="契約社員">契約社員</mat-option>
+            <mat-option value="パート">パート</mat-option>
+            <mat-option value="アルバイト">アルバイト</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>部署</mat-label>
+          <mat-select formControlName="department">
+            <mat-option *ngFor="let dept of departments" [value]="dept">
+              {{dept}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>勤務開始日</mat-label>
+          <input matInput [matDatepicker]="empStartPicker" formControlName="startDate">
+          <mat-datepicker-toggle matSuffix [for]="empStartPicker"></mat-datepicker-toggle>
+          <mat-datepicker #empStartPicker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>週の所定労働時間</mat-label>
+          <input matInput type="number" formControlName="weeklyHours">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>月の所定労働日数</mat-label>
+          <input matInput type="number" formControlName="monthlyWorkDays" min="1" max="31">
+          <mat-error *ngIf="employmentInfoForm.get('monthlyWorkDays')?.hasError('min') || employmentInfoForm.get('monthlyWorkDays')?.hasError('max')">
+            1から31の間で入力してください
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>雇用見込み期間（月）</mat-label>
+          <input matInput type="number" formControlName="expectedEmploymentMonths" min="1">
+          <mat-error *ngIf="employmentInfoForm.get('expectedEmploymentMonths')?.hasError('min')">
+            1以上の月数を入力してください
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>基本給／所定内賃金</mat-label>
+          <input matInput type="number" formControlName="baseSalary">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>各種手当</mat-label>
+          <input matInput type="number" formControlName="allowances">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>通勤手当</mat-label>
+          <input matInput type="number" formControlName="commutingAllowance">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>通勤経路</mat-label>
+          <input matInput formControlName="commuteRoute">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>片道運賃</mat-label>
+          <input matInput type="number" formControlName="oneWayFare">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>学生区分</mat-label>
+          <mat-select formControlName="studentType">
+            <mat-option value="">一般（学生でない）</mat-option>
+            <mat-option value="夜間学校">夜間学校</mat-option>
+            <mat-option value="大学">大学</mat-option>
+            <mat-option value="高校">高校</mat-option>
+            <mat-option value="専門学校">専門学校</mat-option>
+            <mat-option value="その他学校">その他学校</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <div style="margin-top: 16px;">
+          <button mat-raised-button color="primary" (click)="saveSection('employmentInfo')" type="button">保存</button>
+          <button mat-button (click)="cancelEdit('employmentInfo')" type="button">キャンセル</button>
+        </div>
+      </form>
+
+      <!-- 社会保険情報 -->
+      <h3>
+        社会保険情報
+        <button mat-icon-button *ngIf="!editingSection['insuranceStatus']" (click)="editSection('insuranceStatus')">
+          <mat-icon>edit</mat-icon>
+        </button>
+      </h3>
+      <div *ngIf="!editingSection['insuranceStatus']">
+        <p>加入判定: {{ (insuranceEligibility$ | async)?.reason }}</p>
+        <p>健康保険: {{ (insuranceEligibility$ | async)?.healthInsurance ? '加入' : '未加入' }}</p>
+        <p>介護保険: {{ (insuranceEligibility$ | async)?.nursingInsurance ? '加入' : '未加入' }}</p>
+        <p>厚生年金: {{ (insuranceEligibility$ | async)?.pensionInsurance ? '加入' : '未加入' }}</p>
+        <p>資格取得日: {{ employee.insuranceStatus.qualificationAcquisitionDate | date:'yyyy/MM/dd' }}</p>
+        <p>保険種別: {{ employee.insuranceStatus.insuranceType }}</p>
+        <p>等級: {{ employee.insuranceStatus.grade !== null && employee.insuranceStatus.grade !== undefined ? employee.insuranceStatus.grade + '級' : 'なし' }}</p>
+        <p>標準報酬月額: {{ employee.insuranceStatus.grade && aichiGrades[employee.insuranceStatus.grade] ? aichiGrades[employee.insuranceStatus.grade].standardMonthlyWage : '未設定' }}</p>
+        <p>報酬月額（通貨）: {{
+          (employee.employmentInfo.baseSalary || 0) +
+          (employee.employmentInfo.allowances || 0) +
+          (employee.employmentInfo.commutingAllowance || 0)
+        }}</p>
+        <p>うち通勤手当: {{ employee.employmentInfo.commutingAllowance || 0 }}</p>
+        <p>標準報酬月額の改定年月日: {{ employee.employmentInfo.standardMonthlyRevisionDate | date:'yyyy/MM/dd' }}</p>
+      </div>
+      <form *ngIf="editingSection['insuranceStatus']" [formGroup]="insuranceStatusForm" class="basic-info-form">
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="large-form-field">
+            <mat-label>資格取得日</mat-label>
+            <input matInput [matDatepicker]="acqPicker" formControlName="qualificationAcquisitionDate">
+            <mat-datepicker-toggle matSuffix [for]="acqPicker"></mat-datepicker-toggle>
+            <mat-datepicker #acqPicker></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="large-form-field">
+            <mat-label>保険種別</mat-label>
+            <mat-select formControlName="insuranceType">
+              <mat-option value="協会けんぽ">協会けんぽ</mat-option>
+              <mat-option value="なし">なし</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="large-form-field">
+            <mat-label>等級</mat-label>
+            <mat-select formControlName="grade">
+              <mat-option [value]="null">未設定</mat-option>
+              <mat-option *ngFor="let g of [].constructor(50); let i = index" [value]="i+1">{{i+1}}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="large-form-field">
+            <mat-label>標準報酬月額</mat-label>
+            <input matInput [value]="standardMonthlyWage ? standardMonthlyWage : ''" readonly>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="large-form-field">
+            <mat-label>報酬月額（通貨）</mat-label>
+            <input matInput [value]="
+              (employmentInfoForm.get('baseSalary')?.value || 0) +
+              (employmentInfoForm.get('allowances')?.value || 0) +
+              (employmentInfoForm.get('commutingAllowance')?.value || 0)
+            " readonly>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="large-form-field">
+            <mat-label>うち通勤手当</mat-label>
+            <input matInput [value]="employmentInfoForm.get('commutingAllowance')?.value || 0" readonly>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="large-form-field">
+            <mat-label>標準報酬月額の改定年月日</mat-label>
+            <input matInput [matDatepicker]="revisionDatePicker" formControlName="standardMonthlyRevisionDate">
+            <mat-datepicker-toggle matSuffix [for]="revisionDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #revisionDatePicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <div style="margin-top: 16px;">
+          <button mat-raised-button color="primary" (click)="saveSection('insuranceStatus')" type="button">保存</button>
+          <button mat-button (click)="cancelEdit('insuranceStatus')" type="button">キャンセル</button>
+        </div>
+      </form>
+
+      <!-- 扶養者情報 -->
+      <h3>
+        扶養者情報
+        <button mat-icon-button *ngIf="!editingSection['dependents']" (click)="editSection('dependents')">
+          <mat-icon>edit</mat-icon>
+        </button>
+      </h3>
+      <div *ngIf="!editingSection['dependents']">
+        <div *ngIf="employee.dependents.length > 0; else noDep">
+          <div *ngFor="let dep of employee.dependents; let i = index">
+            <div class="info-row">
+              <span class="label">【扶養者{{i+1}}】</span>
+            </div>
+            <div class="info-row">
+              <span class="label">氏名：</span>
+              <span class="value">{{ (dep.lastName || '') + ' ' + (dep.firstName || '') }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">フリガナ：</span>
+              <span class="value">{{ (dep.lastNameKana || '') + ' ' + (dep.firstNameKana || '') }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">続柄：</span>
+              <span class="value">{{ dep.relationship }}</span>
+            </div>
+            <div *ngIf="dep.relationship === 'その他' && dep.relationshipOther">
+              <div class="info-row">
+                <span class="label">その他（具体的に）：</span>
+                <span class="value">{{ dep.relationshipOther }}</span>
+              </div>
+            </div>
+            <div class="info-row">
+              <span class="label">生年月日：</span>
+              <span class="value">{{ dep.birthDate | date:'yyyy年MM月dd日' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">年収：</span>
+              <span class="value">{{ dep.income }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">居住地：</span>
+              <span class="value">{{ dep.residency }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">同居・別居：</span>
+              <span class="value">{{ dep.cohabitation }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">職業：</span>
+              <span class="value">{{ dep.occupation }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">マイナンバー：</span>
+              <span class="value">{{ dep.myNumber || '未登録' }}</span>
+            </div>
+            <button mat-button color="warn" (click)="removeDependent(i)" type="button">削除</button>
+            <hr>
+          </div>
+        </div>
+        <ng-template #noDep>
+          <p>扶養者情報なし</p>
+        </ng-template>
+      </div>
+      <form *ngIf="editingSection['dependents']" [formGroup]="dependentsForm" class="basic-info-form">
+        <div formArrayName="dependents">
+          <div *ngFor="let depGroup of dependentsArray.controls; let i = index" [formGroupName]="i">
+            <div style="display: flex; gap: 16px;">
+              <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
+                <mat-label>姓</mat-label>
+                <input matInput formControlName="lastName">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
+                <mat-label>名</mat-label>
+                <input matInput formControlName="firstName">
+              </mat-form-field>
+            </div>
+            <div style="display: flex; gap: 16px;">
+              <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
+                <mat-label>姓カナ</mat-label>
+                <input matInput formControlName="lastNameKana">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
+                <mat-label>名カナ</mat-label>
+                <input matInput formControlName="firstNameKana">
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="large-form-field">
+              <mat-label>続柄</mat-label>
+              <mat-select formControlName="relationship">
+                <mat-option value="配偶者">配偶者</mat-option>
+                <mat-option value="実子・養子">実子・養子</mat-option>
+                <mat-option value="1以外の子">1以外の子</mat-option>
+                <mat-option value="父母・養父母">父母・養父母</mat-option>
+                <mat-option value="義父母">義父母</mat-option>
+                <mat-option value="弟妹">弟妹</mat-option>
+                <mat-option value="兄姉">兄姉</mat-option>
+                <mat-option value="祖父母">祖父母</mat-option>
+                <mat-option value="曽祖父母">曽祖父母</mat-option>
+                <mat-option value="孫">孫</mat-option>
+                <mat-option value="その他">その他</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <div *ngIf="depGroup.get('relationship')?.value === 'その他'">
+              <mat-form-field appearance="outline" class="large-form-field">
+                <mat-label>その他（具体的に）</mat-label>
+                <input matInput formControlName="relationshipOther">
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="large-form-field">
+              <mat-label>生年月日</mat-label>
+              <input matInput [matDatepicker]="depBirthPicker" formControlName="birthDate">
+              <mat-datepicker-toggle matSuffix [for]="depBirthPicker"></mat-datepicker-toggle>
+              <mat-datepicker #depBirthPicker></mat-datepicker>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="large-form-field">
+              <mat-label>年収</mat-label>
+              <input matInput type="number" formControlName="income">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="large-form-field">
+              <mat-label>居住地</mat-label>
+              <input matInput formControlName="residency">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="large-form-field">
+              <mat-label>マイナンバー</mat-label>
+              <input matInput formControlName="myNumber">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="large-form-field">
+              <mat-label>同居・別居</mat-label>
+              <mat-select formControlName="cohabitation">
+                <mat-option value="同居">同居</mat-option>
+                <mat-option value="別居">別居</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="large-form-field">
+              <mat-label>職業</mat-label>
+              <input matInput formControlName="occupation">
+            </mat-form-field>
+            <button mat-button color="warn" (click)="removeDependent(i)" type="button">削除</button>
+            <hr>
+          </div>
+        </div>
+        <button mat-button (click)="addDependent()" type="button">扶養者を追加</button>
+        <div style="margin-top: 16px;">
+          <button mat-raised-button color="primary" (click)="saveSection('dependents')" type="button">保存</button>
+          <button mat-button (click)="cancelEdit('dependents')" type="button">キャンセル</button>
+        </div>
+      </form>
+
+      <!-- 特別属性 -->
+      <h3>
+        休暇情報
+        <button mat-icon-button *ngIf="!editingSection['specialAttributes']" (click)="editSection('specialAttributes')">
+          <mat-icon>edit</mat-icon>
+        </button>
+      </h3>
+      <div *ngIf="!editingSection['specialAttributes']">
+        <p>休暇種別: {{ employee.specialAttributes.leaveType || 'なし' }}</p>
+        <p *ngIf="employee.specialAttributes.leaveStartDate">開始日: {{ employee.specialAttributes.leaveStartDate | date:'yyyy/MM/dd' }}</p>
+        <p *ngIf="employee.specialAttributes.leaveEndDate">終了日: {{ employee.specialAttributes.leaveEndDate | date:'yyyy/MM/dd' }}</p>
+      </div>
+      <form *ngIf="editingSection['specialAttributes']" [formGroup]="specialAttributesForm" class="basic-info-form">
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>休暇種別</mat-label>
+          <mat-select formControlName="leaveType">
+            <mat-option value="">なし</mat-option>
+            <mat-option value="育児休業">育児休業</mat-option>
+            <mat-option value="産前産後休業">産前産後休業</mat-option>
+            <mat-option value="介護休業">介護休業</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>開始日</mat-label>
+          <input matInput [matDatepicker]="leaveStartPicker" formControlName="leaveStartDate">
+          <mat-datepicker-toggle matSuffix [for]="leaveStartPicker"></mat-datepicker-toggle>
+          <mat-datepicker #leaveStartPicker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>終了日</mat-label>
+          <input matInput [matDatepicker]="leaveEndPicker" formControlName="leaveEndDate">
+          <mat-datepicker-toggle matSuffix [for]="leaveEndPicker"></mat-datepicker-toggle>
+          <mat-datepicker #leaveEndPicker></mat-datepicker>
+        </mat-form-field>
+        <div style="margin-top: 16px;">
+          <button mat-raised-button color="primary" (click)="saveSection('specialAttributes')" type="button">保存</button>
+          <button mat-button (click)="cancelEdit('specialAttributes')" type="button">キャンセル</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+  <div *ngIf="isLoading">読み込み中...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+</div> 

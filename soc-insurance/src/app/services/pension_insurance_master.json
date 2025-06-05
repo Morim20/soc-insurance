@@ -1,0 +1,254 @@
+{
+  "厚生年金保険": {
+    "1": {
+      "standardMonthlyWage": 58000,
+      "pensionInsurance": 16104.0,
+      "pensionInsuranceEmployee": 8052.0
+    },
+    "2": {
+      "standardMonthlyWage": 68000,
+      "pensionInsurance": 16104.0,
+      "pensionInsuranceEmployee": 8052.0
+    },
+    "3": {
+      "standardMonthlyWage": 78000,
+      "pensionInsurance": 16104.0,
+      "pensionInsuranceEmployee": 8052.0
+    },
+    "4": {
+      "standardMonthlyWage": 88000,
+      "pensionInsurance": 16104.0,
+      "pensionInsuranceEmployee": 8052.0
+    },
+    "5": {
+      "standardMonthlyWage": 98000,
+      "pensionInsurance": 17934.0,
+      "pensionInsuranceEmployee": 8967.0
+    },
+    "6": {
+      "standardMonthlyWage": 104000,
+      "pensionInsurance": 19032.0,
+      "pensionInsuranceEmployee": 9516.0
+    },
+    "7": {
+      "standardMonthlyWage": 110000,
+      "pensionInsurance": 20130.0,
+      "pensionInsuranceEmployee": 10065.0
+    },
+    "8": {
+      "standardMonthlyWage": 118000,
+      "pensionInsurance": 21594.0,
+      "pensionInsuranceEmployee": 10797.0
+    },
+    "9": {
+      "standardMonthlyWage": 126000,
+      "pensionInsurance": 23058.0,
+      "pensionInsuranceEmployee": 11529.0
+    },
+    "10": {
+      "standardMonthlyWage": 134000,
+      "pensionInsurance": 24522.0,
+      "pensionInsuranceEmployee": 12261.0
+    },
+    "11": {
+      "standardMonthlyWage": 142000,
+      "pensionInsurance": 25986.0,
+      "pensionInsuranceEmployee": 12993.0
+    },
+    "12": {
+      "standardMonthlyWage": 150000,
+      "pensionInsurance": 27450.0,
+      "pensionInsuranceEmployee": 13725.0
+    },
+    "13": {
+      "standardMonthlyWage": 160000,
+      "pensionInsurance": 29280.0,
+      "pensionInsuranceEmployee": 14640.0
+    },
+    "14": {
+      "standardMonthlyWage": 170000,
+      "pensionInsurance": 31110.0,
+      "pensionInsuranceEmployee": 15555.0
+    },
+    "15": {
+      "standardMonthlyWage": 180000,
+      "pensionInsurance": 32940.0,
+      "pensionInsuranceEmployee": 16470.0
+    },
+    "16": {
+      "standardMonthlyWage": 190000,
+      "pensionInsurance": 34770.0,
+      "pensionInsuranceEmployee": 17385.0
+    },
+    "17": {
+      "standardMonthlyWage": 200000,
+      "pensionInsurance": 36600.0,
+      "pensionInsuranceEmployee": 18300.0
+    },
+    "18": {
+      "standardMonthlyWage": 220000,
+      "pensionInsurance": 40260.0,
+      "pensionInsuranceEmployee": 20130.0
+    },
+    "19": {
+      "standardMonthlyWage": 240000,
+      "pensionInsurance": 43920.0,
+      "pensionInsuranceEmployee": 21960.0
+    },
+    "20": {
+      "standardMonthlyWage": 260000,
+      "pensionInsurance": 47580.0,
+      "pensionInsuranceEmployee": 23790.0
+    },
+    "21": {
+      "standardMonthlyWage": 280000,
+      "pensionInsurance": 51240.0,
+      "pensionInsuranceEmployee": 25620.0
+    },
+    "22": {
+      "standardMonthlyWage": 300000,
+      "pensionInsurance": 54900.0,
+      "pensionInsuranceEmployee": 27450.0
+    },
+    "23": {
+      "standardMonthlyWage": 320000,
+      "pensionInsurance": 58560.0,
+      "pensionInsuranceEmployee": 29280.0
+    },
+    "24": {
+      "standardMonthlyWage": 340000,
+      "pensionInsurance": 62220.0,
+      "pensionInsuranceEmployee": 31110.0
+    },
+    "25": {
+      "standardMonthlyWage": 360000,
+      "pensionInsurance": 65880.0,
+      "pensionInsuranceEmployee": 32940.0
+    },
+    "26": {
+      "standardMonthlyWage": 380000,
+      "pensionInsurance": 69540.0,
+      "pensionInsuranceEmployee": 34770.0
+    },
+    "27": {
+      "standardMonthlyWage": 410000,
+      "pensionInsurance": 75030.0,
+      "pensionInsuranceEmployee": 37515.0
+    },
+    "28": {
+      "standardMonthlyWage": 440000,
+      "pensionInsurance": 80520.0,
+      "pensionInsuranceEmployee": 40260.0
+    },
+    "29": {
+      "standardMonthlyWage": 470000,
+      "pensionInsurance": 86010.0,
+      "pensionInsuranceEmployee": 43005.0
+    },
+    "30": {
+      "standardMonthlyWage": 500000,
+      "pensionInsurance": 91500.0,
+      "pensionInsuranceEmployee": 45750.0
+    },
+    "31": {
+      "standardMonthlyWage": 530000,
+      "pensionInsurance": 96990.0,
+      "pensionInsuranceEmployee": 48495.0
+    },
+    "32": {
+      "standardMonthlyWage": 560000,
+      "pensionInsurance": 102480.0,
+      "pensionInsuranceEmployee": 51240.0
+    },
+    "33": {
+      "standardMonthlyWage": 590000,
+      "pensionInsurance": 107970.0,
+      "pensionInsuranceEmployee": 53985.0
+    },
+    "34": {
+      "standardMonthlyWage": 620000,
+      "pensionInsurance": 113460.0,
+      "pensionInsuranceEmployee": 56730.0
+    },
+    "35": {
+      "standardMonthlyWage": 650000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "36": {
+      "standardMonthlyWage": 680000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "37": {
+      "standardMonthlyWage": 710000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "38": {
+      "standardMonthlyWage": 750000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "39": {
+      "standardMonthlyWage": 790000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "40": {
+      "standardMonthlyWage": 830000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "41": {
+      "standardMonthlyWage": 880000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "42": {
+      "standardMonthlyWage": 930000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "43": {
+      "standardMonthlyWage": 980000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "44": {
+      "standardMonthlyWage": 1030000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "45": {
+      "standardMonthlyWage": 1090000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "46": {
+      "standardMonthlyWage": 1150000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "47": {
+      "standardMonthlyWage": 1210000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "48": {
+      "standardMonthlyWage": 1270000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "49": {
+      "standardMonthlyWage": 1330000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    },
+    "50": {
+      "standardMonthlyWage": 1390000,
+      "pensionInsurance": 118950.0,
+      "pensionInsuranceEmployee": 59475.0
+    }
+  }
+}

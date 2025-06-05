@@ -1,0 +1,40 @@
+<div class="verification-container">
+  <mat-card class="verification-card">
+    <mat-card-header>
+      <mat-card-title>管理者認証</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <p class="verification-message">
+        管理者アクセスを確認するために、認証コードを入力してください。
+      </p>
+
+      <form [formGroup]="verificationForm" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>認証コード</mat-label>
+          <input matInput
+                 formControlName="code"
+                 placeholder="6桁の認証コードを入力"
+                 type="text"
+                 maxlength="6"
+                 pattern="[A-Z0-9]*">
+          <mat-error *ngIf="verificationForm.get('code')?.hasError('required')">
+            認証コードを入力してください
+          </mat-error>
+          <mat-error *ngIf="verificationForm.get('code')?.hasError('minlength')">
+            6桁の認証コードを入力してください
+          </mat-error>
+        </mat-form-field>
+
+        <button mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="verificationForm.invalid || isLoading"
+                class="full-width">
+          <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+          <span *ngIf="!isLoading">認証</span>
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div> 

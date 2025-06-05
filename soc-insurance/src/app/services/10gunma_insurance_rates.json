@@ -1,0 +1,352 @@
+{
+  "1": {
+    "standardMonthlyWage": 58000,
+    "healthInsurance": 5666.6,
+    "healthInsuranceEmployee": 2833.3,
+    "nursingInsurance": 6588.8,
+    "nursingInsuranceEmployee": 3294.4
+  },
+  "2": {
+    "standardMonthlyWage": 68000,
+    "healthInsurance": 6643.6,
+    "healthInsuranceEmployee": 3321.8,
+    "nursingInsurance": 7724.8,
+    "nursingInsuranceEmployee": 3862.4
+  },
+  "3": {
+    "standardMonthlyWage": 78000,
+    "healthInsurance": 7620.6,
+    "healthInsuranceEmployee": 3810.3,
+    "nursingInsurance": 8860.8,
+    "nursingInsuranceEmployee": 4430.4
+  },
+  "4": {
+    "standardMonthlyWage": 88000,
+    "healthInsurance": 8597.6,
+    "healthInsuranceEmployee": 4298.8,
+    "nursingInsurance": 9996.8,
+    "nursingInsuranceEmployee": 4998.4
+  },
+  "5": {
+    "standardMonthlyWage": 98000,
+    "healthInsurance": 9574.6,
+    "healthInsuranceEmployee": 4787.3,
+    "nursingInsurance": 11132.8,
+    "nursingInsuranceEmployee": 5566.4
+  },
+  "6": {
+    "standardMonthlyWage": 104000,
+    "healthInsurance": 10160.8,
+    "healthInsuranceEmployee": 5080.4,
+    "nursingInsurance": 11814.4,
+    "nursingInsuranceEmployee": 5907.2
+  },
+  "7": {
+    "standardMonthlyWage": 110000,
+    "healthInsurance": 10747.0,
+    "healthInsuranceEmployee": 5373.5,
+    "nursingInsurance": 12496.0,
+    "nursingInsuranceEmployee": 6248.0
+  },
+  "8": {
+    "standardMonthlyWage": 118000,
+    "healthInsurance": 11528.6,
+    "healthInsuranceEmployee": 5764.3,
+    "nursingInsurance": 13404.8,
+    "nursingInsuranceEmployee": 6702.4
+  },
+  "9": {
+    "standardMonthlyWage": 126000,
+    "healthInsurance": 12310.2,
+    "healthInsuranceEmployee": 6155.1,
+    "nursingInsurance": 14313.6,
+    "nursingInsuranceEmployee": 7156.8
+  },
+  "10": {
+    "standardMonthlyWage": 134000,
+    "healthInsurance": 13091.8,
+    "healthInsuranceEmployee": 6545.9,
+    "nursingInsurance": 15222.4,
+    "nursingInsuranceEmployee": 7611.2
+  },
+  "11": {
+    "standardMonthlyWage": 142000,
+    "healthInsurance": 13873.4,
+    "healthInsuranceEmployee": 6936.7,
+    "nursingInsurance": 16131.2,
+    "nursingInsuranceEmployee": 8065.6
+  },
+  "12": {
+    "standardMonthlyWage": 150000,
+    "healthInsurance": 14655.0,
+    "healthInsuranceEmployee": 7327.5,
+    "nursingInsurance": 17040.0,
+    "nursingInsuranceEmployee": 8520.0
+  },
+  "13": {
+    "standardMonthlyWage": 160000,
+    "healthInsurance": 15632.0,
+    "healthInsuranceEmployee": 7816.0,
+    "nursingInsurance": 18176.0,
+    "nursingInsuranceEmployee": 9088.0
+  },
+  "14": {
+    "standardMonthlyWage": 170000,
+    "healthInsurance": 16609.0,
+    "healthInsuranceEmployee": 8304.5,
+    "nursingInsurance": 19312.0,
+    "nursingInsuranceEmployee": 9656.0
+  },
+  "15": {
+    "standardMonthlyWage": 180000,
+    "healthInsurance": 17586.0,
+    "healthInsuranceEmployee": 8793.0,
+    "nursingInsurance": 20448.0,
+    "nursingInsuranceEmployee": 10224.0
+  },
+  "16": {
+    "standardMonthlyWage": 190000,
+    "healthInsurance": 18563.0,
+    "healthInsuranceEmployee": 9281.5,
+    "nursingInsurance": 21584.0,
+    "nursingInsuranceEmployee": 10792.0
+  },
+  "17": {
+    "standardMonthlyWage": 200000,
+    "healthInsurance": 19540.0,
+    "healthInsuranceEmployee": 9770.0,
+    "nursingInsurance": 22720.0,
+    "nursingInsuranceEmployee": 11360.0
+  },
+  "18": {
+    "standardMonthlyWage": 220000,
+    "healthInsurance": 21494.0,
+    "healthInsuranceEmployee": 10747.0,
+    "nursingInsurance": 24992.0,
+    "nursingInsuranceEmployee": 12496.0
+  },
+  "19": {
+    "standardMonthlyWage": 240000,
+    "healthInsurance": 23448.0,
+    "healthInsuranceEmployee": 11724.0,
+    "nursingInsurance": 27264.0,
+    "nursingInsuranceEmployee": 13632.0
+  },
+  "20": {
+    "standardMonthlyWage": 260000,
+    "healthInsurance": 25402.0,
+    "healthInsuranceEmployee": 12701.0,
+    "nursingInsurance": 29536.0,
+    "nursingInsuranceEmployee": 14768.0
+  },
+  "21": {
+    "standardMonthlyWage": 280000,
+    "healthInsurance": 27356.0,
+    "healthInsuranceEmployee": 13678.0,
+    "nursingInsurance": 31808.0,
+    "nursingInsuranceEmployee": 15904.0
+  },
+  "22": {
+    "standardMonthlyWage": 300000,
+    "healthInsurance": 29310.0,
+    "healthInsuranceEmployee": 14655.0,
+    "nursingInsurance": 34080.0,
+    "nursingInsuranceEmployee": 17040.0
+  },
+  "23": {
+    "standardMonthlyWage": 320000,
+    "healthInsurance": 31264.0,
+    "healthInsuranceEmployee": 15632.0,
+    "nursingInsurance": 36352.0,
+    "nursingInsuranceEmployee": 18176.0
+  },
+  "24": {
+    "standardMonthlyWage": 340000,
+    "healthInsurance": 33218.0,
+    "healthInsuranceEmployee": 16609.0,
+    "nursingInsurance": 38624.0,
+    "nursingInsuranceEmployee": 19312.0
+  },
+  "25": {
+    "standardMonthlyWage": 360000,
+    "healthInsurance": 35172.0,
+    "healthInsuranceEmployee": 17586.0,
+    "nursingInsurance": 40896.0,
+    "nursingInsuranceEmployee": 20448.0
+  },
+  "26": {
+    "standardMonthlyWage": 380000,
+    "healthInsurance": 37126.0,
+    "healthInsuranceEmployee": 18563.0,
+    "nursingInsurance": 43168.0,
+    "nursingInsuranceEmployee": 21584.0
+  },
+  "27": {
+    "standardMonthlyWage": 410000,
+    "healthInsurance": 40057.0,
+    "healthInsuranceEmployee": 20028.5,
+    "nursingInsurance": 46576.0,
+    "nursingInsuranceEmployee": 23288.0
+  },
+  "28": {
+    "standardMonthlyWage": 440000,
+    "healthInsurance": 42988.0,
+    "healthInsuranceEmployee": 21494.0,
+    "nursingInsurance": 49984.0,
+    "nursingInsuranceEmployee": 24992.0
+  },
+  "29": {
+    "standardMonthlyWage": 470000,
+    "healthInsurance": 45919.0,
+    "healthInsuranceEmployee": 22959.5,
+    "nursingInsurance": 53392.0,
+    "nursingInsuranceEmployee": 26696.0
+  },
+  "30": {
+    "standardMonthlyWage": 500000,
+    "healthInsurance": 48850.0,
+    "healthInsuranceEmployee": 24425.0,
+    "nursingInsurance": 56800.0,
+    "nursingInsuranceEmployee": 28400.0
+  },
+  "31": {
+    "standardMonthlyWage": 530000,
+    "healthInsurance": 51781.0,
+    "healthInsuranceEmployee": 25890.5,
+    "nursingInsurance": 60208.0,
+    "nursingInsuranceEmployee": 30104.0
+  },
+  "32": {
+    "standardMonthlyWage": 560000,
+    "healthInsurance": 54712.0,
+    "healthInsuranceEmployee": 27356.0,
+    "nursingInsurance": 63616.0,
+    "nursingInsuranceEmployee": 31808.0
+  },
+  "33": {
+    "standardMonthlyWage": 590000,
+    "healthInsurance": 57643.0,
+    "healthInsuranceEmployee": 28821.5,
+    "nursingInsurance": 67024.0,
+    "nursingInsuranceEmployee": 33512.0
+  },
+  "34": {
+    "standardMonthlyWage": 620000,
+    "healthInsurance": 60574.0,
+    "healthInsuranceEmployee": 30287.0,
+    "nursingInsurance": 70432.0,
+    "nursingInsuranceEmployee": 35216.0
+  },
+  "35": {
+    "standardMonthlyWage": 650000,
+    "healthInsurance": 63505.0,
+    "healthInsuranceEmployee": 31752.5,
+    "nursingInsurance": 73840.0,
+    "nursingInsuranceEmployee": 36920.0
+  },
+  "36": {
+    "standardMonthlyWage": 680000,
+    "healthInsurance": 66436.0,
+    "healthInsuranceEmployee": 33218.0,
+    "nursingInsurance": 77248.0,
+    "nursingInsuranceEmployee": 38624.0
+  },
+  "37": {
+    "standardMonthlyWage": 710000,
+    "healthInsurance": 69367.0,
+    "healthInsuranceEmployee": 34683.5,
+    "nursingInsurance": 80656.0,
+    "nursingInsuranceEmployee": 40328.0
+  },
+  "38": {
+    "standardMonthlyWage": 750000,
+    "healthInsurance": 73275.0,
+    "healthInsuranceEmployee": 36637.5,
+    "nursingInsurance": 85200.0,
+    "nursingInsuranceEmployee": 42600.0
+  },
+  "39": {
+    "standardMonthlyWage": 790000,
+    "healthInsurance": 77183.0,
+    "healthInsuranceEmployee": 38591.5,
+    "nursingInsurance": 89744.0,
+    "nursingInsuranceEmployee": 44872.0
+  },
+  "40": {
+    "standardMonthlyWage": 830000,
+    "healthInsurance": 81091.0,
+    "healthInsuranceEmployee": 40545.5,
+    "nursingInsurance": 94288.0,
+    "nursingInsuranceEmployee": 47144.0
+  },
+  "41": {
+    "standardMonthlyWage": 880000,
+    "healthInsurance": 85976.0,
+    "healthInsuranceEmployee": 42988.0,
+    "nursingInsurance": 99968.0,
+    "nursingInsuranceEmployee": 49984.0
+  },
+  "42": {
+    "standardMonthlyWage": 930000,
+    "healthInsurance": 90861.0,
+    "healthInsuranceEmployee": 45430.5,
+    "nursingInsurance": 105648.0,
+    "nursingInsuranceEmployee": 52824.0
+  },
+  "43": {
+    "standardMonthlyWage": 980000,
+    "healthInsurance": 95746.0,
+    "healthInsuranceEmployee": 47873.0,
+    "nursingInsurance": 111328.0,
+    "nursingInsuranceEmployee": 55664.0
+  },
+  "44": {
+    "standardMonthlyWage": 1030000,
+    "healthInsurance": 100631.0,
+    "healthInsuranceEmployee": 50315.5,
+    "nursingInsurance": 117008.0,
+    "nursingInsuranceEmployee": 58504.0
+  },
+  "45": {
+    "standardMonthlyWage": 1090000,
+    "healthInsurance": 106493.0,
+    "healthInsuranceEmployee": 53246.5,
+    "nursingInsurance": 123824.0,
+    "nursingInsuranceEmployee": 61912.0
+  },
+  "46": {
+    "standardMonthlyWage": 1150000,
+    "healthInsurance": 112355.0,
+    "healthInsuranceEmployee": 56177.5,
+    "nursingInsurance": 130640.0,
+    "nursingInsuranceEmployee": 65320.0
+  },
+  "47": {
+    "standardMonthlyWage": 1210000,
+    "healthInsurance": 118217.0,
+    "healthInsuranceEmployee": 59108.5,
+    "nursingInsurance": 137456.0,
+    "nursingInsuranceEmployee": 68728.0
+  },
+  "48": {
+    "standardMonthlyWage": 1270000,
+    "healthInsurance": 124079.0,
+    "healthInsuranceEmployee": 62039.5,
+    "nursingInsurance": 144272.0,
+    "nursingInsuranceEmployee": 72136.0
+  },
+  "49": {
+    "standardMonthlyWage": 1330000,
+    "healthInsurance": 129941.0,
+    "healthInsuranceEmployee": 64970.5,
+    "nursingInsurance": 151088.0,
+    "nursingInsuranceEmployee": 75544.0
+  },
+  "50": {
+    "standardMonthlyWage": 1390000,
+    "healthInsurance": 135803.0,
+    "healthInsuranceEmployee": 67901.5,
+    "nursingInsurance": 157904.0,
+    "nursingInsuranceEmployee": 78952.0
+  }
+}

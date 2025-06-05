@@ -1,0 +1,53 @@
+<div class="login-container">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-card-title>ログイン</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>メールアドレス</mat-label>
+          <input matInput
+                 formControlName="email"
+                 placeholder="メールアドレスを入力"
+                 type="email">
+          <mat-error *ngIf="loginForm.get('email')?.hasError('required')">
+            メールアドレスを入力してください
+          </mat-error>
+          <mat-error *ngIf="loginForm.get('email')?.hasError('email')">
+            有効なメールアドレスを入力してください
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>パスワード</mat-label>
+          <input matInput
+                 formControlName="password"
+                 placeholder="パスワードを入力"
+                 type="password">
+          <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
+            パスワードを入力してください
+          </mat-error>
+          <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
+            6文字以上で入力してください
+          </mat-error>
+        </mat-form-field>
+
+        <button mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="loginForm.invalid || isLoading"
+                class="full-width">
+          <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+          <span *ngIf="!isLoading">ログイン</span>
+        </button>
+      </form>
+      <div style="margin-top: 16px; text-align: center;">
+        <button mat-stroked-button color="primary" routerLink="/register" style="width: 100%;">
+          新規アカウント登録はこちら
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div> 

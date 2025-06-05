@@ -1,0 +1,84 @@
+.admin-login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #e8f5e9 0%, #f5f5f5 100%);
+}
+
+.admin-login-card {
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(34, 139, 34, 0.12);
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #b2dfdb;
+  padding: 2.5rem 2rem 2rem 2rem;
+  transition: box-shadow 0.2s;
+}
+
+.admin-login-card:hover {
+  box-shadow: 0 12px 40px rgba(34, 139, 34, 0.18);
+}
+
+.admin-login-message {
+  text-align: center;
+  color: #388e3c;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+mat-card-header {
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+mat-card-title {
+  color: #388e3c;
+  font-weight: 700;
+  font-size: 1.7rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+mat-form-field {
+  margin-bottom: 22px;
+}
+
+input[matInput] {
+  font-size: 1.1rem;
+  padding: 0.7rem 0.8rem;
+  text-transform: uppercase;
+}
+
+.mat-mdc-raised-button.mat-primary {
+  background: linear-gradient(90deg, #43a047 0%, #66bb6a 100%);
+  color: #fff;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(67, 160, 71, 0.12);
+  border-radius: 8px;
+  height: 48px;
+  font-size: 1.1rem;
+  letter-spacing: 0.03em;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.mat-mdc-raised-button.mat-primary:hover {
+  background: linear-gradient(90deg, #388e3c 0%, #43a047 100%);
+  box-shadow: 0 4px 16px rgba(67, 160, 71, 0.18);
+}
+
+mat-error {
+  color: #c62828;
+  font-size: 0.95rem;
+}
+
+mat-spinner {
+  margin: 0 auto;
+} 

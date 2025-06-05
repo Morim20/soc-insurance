@@ -1,0 +1,94 @@
+.insurance-management-container {
+  padding: 20px;
+  max-width: 100%;
+  overflow-x: auto;
+
+  .filter-form {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+
+    mat-form-field {
+      width: 150px;
+    }
+
+    mat-checkbox {
+      margin-left: 16px;
+    }
+  }
+
+  .error-message {
+    color: #f44336;
+    margin: 16px 0;
+    padding: 8px;
+    background-color: #ffebee;
+    border-radius: 4px;
+  }
+
+  .loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+  }
+
+  .table-container {
+    margin-top: 10px;
+    overflow-x: auto;
+
+    table {
+      width: 100%;
+      min-width: 900px;
+      font-size: 0.95rem;
+
+      th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+        white-space: nowrap;
+        padding: 4px 6px;
+      }
+
+      td, th {
+        padding: 4px 6px;
+      }
+
+      tr {
+        height: 32px;
+      }
+
+      .mat-column-actions {
+        width: 60px;
+        text-align: center;
+      }
+
+      .mat-column-employeeId {
+        width: 80px;
+      }
+
+      .mat-column-fullName {
+        width: 100px;
+      }
+
+      .mat-column-department {
+        width: 90px;
+      }
+
+      .mat-column-baseSalary,
+      .mat-column-standardMonthlyRemuneration {
+        text-align: center;
+        width: 110px;
+      }
+
+      .mat-column-healthInsuranceEmployee,
+      .mat-column-healthInsuranceEmployer,
+      .mat-column-nursingInsuranceEmployee,
+      .mat-column-pensionInsuranceEmployee,
+      .mat-column-employeeTotalDeduction {
+        text-align: right;
+        width: 110px;
+      }
+    }
+  }
+} 

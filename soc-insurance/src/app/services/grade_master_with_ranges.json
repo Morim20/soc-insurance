@@ -1,0 +1,252 @@
+[
+  {
+    "grade": 1,
+    "lowerBound": 1,
+    "upperBound": 63000
+  },
+  {
+    "grade": 2,
+    "lowerBound": 63000,
+    "upperBound": 73000
+  },
+  {
+    "grade": 3,
+    "lowerBound": 73000,
+    "upperBound": 83000
+  },
+  {
+    "grade": 4,
+    "lowerBound": 83000,
+    "upperBound": 93000
+  },
+  {
+    "grade": 5,
+    "lowerBound": 93000,
+    "upperBound": 101000
+  },
+  {
+    "grade": 6,
+    "lowerBound": 101000,
+    "upperBound": 107000
+  },
+  {
+    "grade": 7,
+    "lowerBound": 107000,
+    "upperBound": 114000
+  },
+  {
+    "grade": 8,
+    "lowerBound": 114000,
+    "upperBound": 122000
+  },
+  {
+    "grade": 9,
+    "lowerBound": 122000,
+    "upperBound": 130000
+  },
+  {
+    "grade": 10,
+    "lowerBound": 130000,
+    "upperBound": 138000
+  },
+  {
+    "grade": 11,
+    "lowerBound": 138000,
+    "upperBound": 146000
+  },
+  {
+    "grade": 12,
+    "lowerBound": 146000,
+    "upperBound": 155000
+  },
+  {
+    "grade": 13,
+    "lowerBound": 155000,
+    "upperBound": 165000
+  },
+  {
+    "grade": 14,
+    "lowerBound": 165000,
+    "upperBound": 175000
+  },
+  {
+    "grade": 15,
+    "lowerBound": 175000,
+    "upperBound": 185000
+  },
+  {
+    "grade": 16,
+    "lowerBound": 185000,
+    "upperBound": 195000
+  },
+  {
+    "grade": 17,
+    "lowerBound": 195000,
+    "upperBound": 210000
+  },
+  {
+    "grade": 18,
+    "lowerBound": 210000,
+    "upperBound": 230000
+  },
+  {
+    "grade": 19,
+    "lowerBound": 230000,
+    "upperBound": 250000
+  },
+  {
+    "grade": 20,
+    "lowerBound": 250000,
+    "upperBound": 270000
+  },
+  {
+    "grade": 21,
+    "lowerBound": 270000,
+    "upperBound": 290000
+  },
+  {
+    "grade": 22,
+    "lowerBound": 290000,
+    "upperBound": 310000
+  },
+  {
+    "grade": 23,
+    "lowerBound": 310000,
+    "upperBound": 330000
+  },
+  {
+    "grade": 24,
+    "lowerBound": 330000,
+    "upperBound": 350000
+  },
+  {
+    "grade": 25,
+    "lowerBound": 350000,
+    "upperBound": 370000
+  },
+  {
+    "grade": 26,
+    "lowerBound": 370000,
+    "upperBound": 395000
+  },
+  {
+    "grade": 27,
+    "lowerBound": 395000,
+    "upperBound": 425000
+  },
+  {
+    "grade": 28,
+    "lowerBound": 425000,
+    "upperBound": 455000
+  },
+  {
+    "grade": 29,
+    "lowerBound": 455000,
+    "upperBound": 485000
+  },
+  {
+    "grade": 30,
+    "lowerBound": 485000,
+    "upperBound": 515000
+  },
+  {
+    "grade": 31,
+    "lowerBound": 515000,
+    "upperBound": 545000
+  },
+  {
+    "grade": 32,
+    "lowerBound": 545000,
+    "upperBound": 575000
+  },
+  {
+    "grade": 33,
+    "lowerBound": 575000,
+    "upperBound": 605000
+  },
+  {
+    "grade": 34,
+    "lowerBound": 605000,
+    "upperBound": 635000
+  },
+  {
+    "grade": 35,
+    "lowerBound": 635000,
+    "upperBound": 665000
+  },
+  {
+    "grade": 36,
+    "lowerBound": 665000,
+    "upperBound": 695000
+  },
+  {
+    "grade": 37,
+    "lowerBound": 695000,
+    "upperBound": 730000
+  },
+  {
+    "grade": 38,
+    "lowerBound": 730000,
+    "upperBound": 770000
+  },
+  {
+    "grade": 39,
+    "lowerBound": 770000,
+    "upperBound": 810000
+  },
+  {
+    "grade": 40,
+    "lowerBound": 810000,
+    "upperBound": 855000
+  },
+  {
+    "grade": 41,
+    "lowerBound": 855000,
+    "upperBound": 905000
+  },
+  {
+    "grade": 42,
+    "lowerBound": 905000,
+    "upperBound": 955000
+  },
+  {
+    "grade": 43,
+    "lowerBound": 955000,
+    "upperBound": 1005000
+  },
+  {
+    "grade": 44,
+    "lowerBound": 1005000,
+    "upperBound": 1055000
+  },
+  {
+    "grade": 45,
+    "lowerBound": 1055000,
+    "upperBound": 1115000
+  },
+  {
+    "grade": 46,
+    "lowerBound": 1115000,
+    "upperBound": 1175000
+  },
+  {
+    "grade": 47,
+    "lowerBound": 1175000,
+    "upperBound": 1235000
+  },
+  {
+    "grade": 48,
+    "lowerBound": 1235000,
+    "upperBound": 1295000
+  },
+  {
+    "grade": 49,
+    "lowerBound": 1295000,
+    "upperBound": 1355000
+  },
+  {
+    "grade": 50,
+    "lowerBound": 1355000,
+    "upperBound": null
+  }
+]

@@ -1,24 +1,208 @@
 .dashboard {
-  padding: 2rem;
-}
-.tasks ul {
-  padding-left: 1.5rem;
-}
-.shortcuts {
-  margin-top: 2rem;
-}
-.shortcut-list {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  width: 80vw;
+  background: linear-gradient(135deg, #e8f5e9 0%, #f5f5f5 100%);
+  padding: 0;
 }
-.shortcut-btn {
-  background: #1976d2;
+
+.dashboard-title {
+  color: #388e3c;
+  font-size: 3.2rem;
+  font-weight: 800;
+  margin-bottom: 2.5rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.dashboard-content {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  margin: 0 auto;
+}
+
+.tasks, .shortcuts {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(34, 139, 34, 0.12);
+  border: 1px solid #b2dfdb;
+  padding: 2.5rem 2rem 2rem 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.tasks h2, .shortcuts h2 {
+  color: #388e3c;
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 1.2rem;
+}
+
+.tasks ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tasks li {
+  color: #333;
+  font-size: 1.2rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tasks li:last-child {
+  border-bottom: none;
+}
+
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.shortcuts button {
+  margin-right: 1.2rem;
+  margin-bottom: 0.8rem;
+  background: linear-gradient(90deg, #43a047 0%, #66bb6a 100%);
   color: #fff;
-  padding: 0.5rem 1.5rem;
-  border-radius: 4px;
-  text-decoration: none;
-  transition: background 0.2s;
+  font-weight: bold;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(67, 160, 71, 0.12);
+  padding: 0.9rem 2.2rem;
 }
-.shortcut-btn:hover {
-  background: #1565c0;
+
+.shortcuts button:hover {
+  background: linear-gradient(90deg, #388e3c 0%, #43a047 100%);
+  box-shadow: 0 4px 16px rgba(67, 160, 71, 0.18);
+}
+
+.sidenav-container {
+  height: 100vh;
+}
+
+.sidenav {
+  width: 80px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #b2dfdb 100%);
+  border-right: 1px solid #b2dfdb;
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+}
+
+.sidenav-header {
+  padding: 24px 0 16px 0;
+  background: linear-gradient(90deg, #43a047 0%, #66bb6a 100%);
+  color: #fff;
+  text-align: center;
+  border-radius: 0 0 18px 18px;
+  box-shadow: 0 2px 8px rgba(67, 160, 71, 0.10);
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+}
+
+mat-nav-list {
+  padding-top: 24px;
+
+  a {
+    display: flex;
+    align-items: center;
+    padding: 14px 28px;
+    color: #388e3c;
+    text-decoration: none;
+    font-size: 1.18rem;
+    font-weight: 600;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: background 0.2s, color 0.2s;
+
+    mat-icon {
+      margin-right: 18px;
+      color: #43a047;
+      font-size: 1.5rem;
+    }
+
+    &:hover {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    &.active {
+      background: linear-gradient(90deg, #43a047 0%, #66bb6a 100%);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(67, 160, 71, 0.10);
+
+      mat-icon {
+        color: #fff;
+      }
+    }
+  }
+}
+
+mat-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(90deg, #43a047 0%, #66bb6a 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: 0.04em;
+}
+
+.content {
+  padding: 20px;
+  background-color: #fff;
+  min-height: calc(100vh - 64px);
+}
+
+@media (max-width: 900px) {
+  .dashboard-content {
+    max-width: 100%;
+    padding: 0 10px;
+  }
+  .tasks, .shortcuts {
+    padding: 1.2rem 0.7rem 1rem 0.7rem;
+  }
+  .dashboard-title {
+    font-size: 2rem;
+  }
+  .sidenav {
+    width: 100vw;
+    min-width: 0;
+  }
+}
+
+.shortcuts {
+  .shortcut-list {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .shortcut-btn {
+    background: #1976d2;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+
+    &:hover {
+      background: #1565c0;
+    }
+  }
 } 

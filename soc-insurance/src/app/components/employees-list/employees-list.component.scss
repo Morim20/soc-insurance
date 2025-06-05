@@ -1,0 +1,45 @@
+.employees-list-container {
+  max-width: 1300px;
+  margin: 3rem auto;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(67, 160, 71, 0.10);
+  padding: 2.5rem 3rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.employee-table {
+  width: 90%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 2rem;
+  font-size: 1.25rem;
+  table-layout: fixed;
+}
+.employee-table th, .employee-table td {
+  border-bottom: 1.5px solid #b2dfdb;
+  padding: 1.3rem 1.2rem;
+  text-align: left;
+  font-size: 1.18rem;
+  word-break: break-all;
+}
+.employee-table th {
+  background: #d0f5e9;
+  color: #217a3c;
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+}
+.employee-table tr:last-child td {
+  border-bottom: none;
+}
+.error {
+  color: #c62828;
+  margin: 1rem 0;
+}

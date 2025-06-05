@@ -1,0 +1,308 @@
+<div class="insurance-management-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>保険料管理</mat-card-title>
+      <span style="flex: 1 1 auto;"></span>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="filterForm" class="filter-section">
+        <mat-form-field appearance="outline">
+          <mat-label>年度</mat-label>
+          <mat-select formControlName="year">
+            <mat-option *ngFor="let year of [2023, 2024, 2025]" [value]="year">
+              {{year}}年度
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>月</mat-label>
+          <mat-select formControlName="month">
+            <mat-option *ngFor="let month of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="month">
+              {{month}}月
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>部署</mat-label>
+          <mat-select formControlName="department">
+            <mat-option value="all">全て</mat-option>
+            <mat-option value="sales">営業部</mat-option>
+            <mat-option value="development">開発部</mat-option>
+            <mat-option value="hr">人事部</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-checkbox formControlName="showEmployeeId">
+          社員番号を表示
+        </mat-checkbox>
+      </form>
+
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+
+      <div *ngIf="isLoading" class="loading-spinner">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <div class="table-container" *ngIf="!isLoading">
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+          <!-- 氏名 -->
+          <ng-container matColumnDef="fullName">
+            <th mat-header-cell *matHeaderCellDef>氏名</th>
+            <td mat-cell *matCellDef="let element">{{element.fullName}}</td>
+            <td mat-footer-cell *matFooterCellDef>合計</td>
+          </ng-container>
+
+          <!-- 社員番号 -->
+          <ng-container matColumnDef="employeeId">
+            <th mat-header-cell *matHeaderCellDef>社員番号</th>
+            <td mat-cell *matCellDef="let element">{{element.employeeId}}</td>
+            <td mat-footer-cell *matFooterCellDef></td>
+          </ng-container>
+
+          <!-- 所属 -->
+          <ng-container matColumnDef="department">
+            <th mat-header-cell *matHeaderCellDef>所属</th>
+            <td mat-cell *matCellDef="let element">{{element.department}}</td>
+            <td mat-footer-cell *matFooterCellDef></td>
+          </ng-container>
+
+          <!-- 基本給 -->
+          <ng-container matColumnDef="baseSalary">
+            <th mat-header-cell *matHeaderCellDef>基本給</th>
+            <td mat-cell *matCellDef="let element">{{element.baseSalary | number:'1.0-0'}}</td>
+            <td mat-footer-cell *matFooterCellDef></td>
+          </ng-container>
+
+          
+
+          <!-- 標準報酬月額 -->
+          <ng-container matColumnDef="standardMonthlyWage">
+            <th mat-header-cell *matHeaderCellDef>標準報酬月額</th>
+            <td mat-cell *matCellDef="let element">
+              <ng-container *ngIf="element.standardMonthlyWage !== null && element.standardMonthlyWage !== undefined; else notSet">
+                {{element.standardMonthlyWage | number:'1.0-0'}}
+              </ng-container>
+              <ng-template #notSet>
+                <span style="color: red;">未設定</span>
+              </ng-template>
+            </td>
+            <td mat-footer-cell *matFooterCellDef></td>
+          </ng-container>
+
+          <!-- 報酬月額 -->
+          <ng-container matColumnDef="standardMonthlyRemuneration">
+            <th mat-header-cell *matHeaderCellDef>報酬月額</th>
+            <td mat-cell *matCellDef="let element">
+              <ng-container *ngIf="element.standardMonthlyRemuneration !== null && element.standardMonthlyRemuneration !== undefined; else notConfirmed">
+                {{element.standardMonthlyRemuneration | number:'1.0-0'}}
+              </ng-container>
+              <ng-template #notConfirmed>
+                <span style="color: red;">未確定</span>
+              </ng-template>
+            </td>
+            <td mat-footer-cell *matFooterCellDef>{{ totalStandardMonthlyRemuneration | currency:'JPY' }}</td>
+          </ng-container>
+
+          <!-- 等級 -->
+          <ng-container matColumnDef="grade">
+            <th mat-header-cell *matHeaderCellDef>等級</th>
+            <td mat-cell *matCellDef="let element">
+              <ng-container *ngIf="element.grade !== null && element.grade !== undefined && element.grade !== '' && element.grade !== 0; else notSet">
+                {{element.grade}}
+              </ng-container>
+              <ng-template #notSet>
+                <span style="color: red;">従業員管理ページで等級を設定してください</span>
+              </ng-template>
+            </td>
+            <td mat-footer-cell *matFooterCellDef></td>
+          </ng-container>
+
+          <!-- 備考 -->
+          <ng-container matColumnDef="note">
+            <th mat-header-cell *matHeaderCellDef>備考</th>
+            <td mat-cell *matCellDef="let element">
+              <span *ngIf="element.note" style="color: red;">{{element.note}}</span>
+            </td>
+            <td mat-footer-cell *matFooterCellDef></td>
+          </ng-container>
+
+          <!-- アクション -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>操作</th>
+            <td mat-cell *matCellDef="let element">
+              <button mat-icon-button color="primary" matTooltip="編集" (click)="onEdit(element)">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </td>
+            <td mat-footer-cell *matFooterCellDef></td>
+          </ng-container>
+
+          <!-- 出力 -->
+          <ng-container matColumnDef="export">
+            <th mat-header-cell *matHeaderCellDef>出力</th>
+            <td mat-cell *matCellDef="let element">
+              <button mat-icon-button color="accent" matTooltip="PDF出力"
+                [disabled]="element.standardMonthlyRemuneration === null || element.standardMonthlyRemuneration === undefined"
+                (click)="downloadIndividualPdf(element)">
+                <mat-icon>picture_as_pdf</mat-icon>
+              </button>
+              <button mat-icon-button color="accent" matTooltip="CSV出力"
+                [disabled]="element.standardMonthlyRemuneration === null || element.standardMonthlyRemuneration === undefined"
+                (click)="downloadIndividualCsv(element)">
+                <mat-icon>table_view</mat-icon>
+              </button>
+            </td>
+            <td mat-footer-cell *matFooterCellDef></td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr mat-footer-row *matFooterRowDef="displayedColumns"></tr>
+        </table>
+      </div>
+
+      <div *ngIf="isAllConfirmed" class="company-summary">
+        <h3>会社全体の保険料明細</h3>
+        <table class="summary-table" style="border-collapse: collapse; min-width: 480px;">
+          <thead>
+            <tr>
+              <th style="padding: 4px 8px; border-bottom: 2px solid #888;">カテゴリ</th>
+              <th style="padding: 4px 8px; border-bottom: 2px solid #888;">項目</th>
+              <th style="padding: 4px 8px; border-bottom: 2px solid #888;">内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 4px 8px; border-bottom: 1px solid #ccc;">基本情報</td>
+              <td style="padding: 4px 8px;">対象期間</td>
+              <td style="padding: 4px 8px;">{{ companySummary.period }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 8px; border-bottom: 1px solid #ccc;"></td>
+              <td style="padding: 4px 8px;">事業所名</td>
+              <td style="padding: 4px 8px;">{{ companySummary.officeName }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 8px; border-bottom: 1px solid #ccc;" rowspan="8">集計情報</td>
+              <td style="padding: 4px 8px;">健康保険料（会社負担）</td>
+              <td style="padding: 4px 8px;">{{ companySummary.totalHealthInsuranceEmployer | currency:'JPY' }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 8px;">健康保険料（個人負担）</td>
+              <td style="padding: 4px 8px;">{{ companySummary.totalHealthInsuranceEmployee | currency:'JPY' }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 8px;">介護保険料（会社負担）</td>
+              <td style="padding: 4px 8px;">{{ companySummary.totalNursingInsuranceEmployer | currency:'JPY' }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 8px;">介護保険料（個人負担）</td>
+              <td style="padding: 4px 8px;">{{ companySummary.totalNursingInsuranceEmployee | currency:'JPY' }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 8px;">厚生年金保険料（会社負担）</td>
+              <td style="padding: 4px 8px;">{{ companySummary.totalPensionInsuranceEmployer | currency:'JPY' }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 8px;">厚生年金保険料（個人負担）</td>
+              <td style="padding: 4px 8px;">{{ companySummary.totalPensionInsuranceEmployee | currency:'JPY' }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 8px;">子ども・子育て拠出金</td>
+              <td style="padding: 4px 8px;">{{ companySummary.totalChildContribution | currency:'JPY' }}</td>
+            </tr>
+            <tr style="border-bottom: 2px solid #888;">
+              <td style="padding: 4px 8px; font-weight: bold; background: #f5f5f5;">会社負担合計</td>
+              <td style="padding: 4px 8px; font-weight: bold; background: #f5f5f5;" colspan="2">{{ companySummary.totalEmployer | currency:'JPY' }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 8px; font-weight: bold; background: #f5f5f5;">控除合計</td>
+              <td style="padding: 4px 8px; font-weight: bold; background: #f5f5f5;" colspan="2">{{ companySummary.totalEmployee | currency:'JPY' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="button-container" *ngIf="isAllConfirmed" style="margin-top: 20px; text-align: center;">
+          <button mat-raised-button color="accent" (click)="downloadPdf()">PDF出力</button>
+          <button mat-raised-button color="accent" (click)="downloadCsv()">CSV出力</button>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<!-- PDF出力用のテンプレート -->
+<div #pdfContent style="display: none;">
+  <div style="padding: 20px; font-family: 'Noto Sans JP', sans-serif;">
+    <h1 style="text-align: center; font-size: 20px; margin-bottom: 30px;">
+      社会保険料明細書　{{selectedYear}}年{{selectedMonth}}月　{{companyName}}
+    </h1>
+
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+      <tr>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5; width: 25%;">項目</th>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5; width: 25%;">金額</th>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5; width: 25%;">項目</th>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5; width: 25%;">金額</th>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #888; padding: 6px;">健康保険料（会社負担）</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{companySummary.totalHealthInsuranceEmployer | number:'1.0-0'}}円</td>
+        <td style="border: 1px solid #888; padding: 6px;">健康保険料（個人負担）</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{companySummary.totalHealthInsuranceEmployee | number:'1.0-0'}}円</td>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #888; padding: 6px;">介護保険料（会社負担）</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{companySummary.totalNursingInsuranceEmployer | number:'1.0-0'}}円</td>
+        <td style="border: 1px solid #888; padding: 6px;">介護保険料（個人負担）</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{companySummary.totalNursingInsuranceEmployee | number:'1.0-0'}}円</td>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #888; padding: 6px;">厚生年金保険料（会社負担）</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{companySummary.totalPensionInsuranceEmployer | number:'1.0-0'}}円</td>
+        <td style="border: 1px solid #888; padding: 6px;">厚生年金保険料（個人負担）</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{companySummary.totalPensionInsuranceEmployee | number:'1.0-0'}}円</td>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #888; padding: 6px;">子ども・子育て拠出金</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{companySummary.totalChildContribution | number:'1.0-0'}}円</td>
+        <td style="border: 1px solid #888; padding: 6px;"></td>
+        <td style="border: 1px solid #888; padding: 6px;"></td>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">会社負担合計</td>
+        <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">{{companySummary.totalEmployer | number:'1.0-0'}}円</td>
+        <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">個人負担合計</td>
+        <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">{{companySummary.totalEmployee | number:'1.0-0'}}円</td>
+      </tr>
+    </table>
+
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+      <tr>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">氏名</th>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">社員番号</th>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">所属</th>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">等級</th>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">標準報酬月額</th>
+        <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">個人負担合計</th>
+      </tr>
+      <tr *ngFor="let row of dataSource">
+        <td style="border: 1px solid #888; padding: 6px;">{{row.fullName}}</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{row.employeeId}}</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{row.department}}</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{row.grade}}</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{row.standardMonthlyRemuneration | number:'1.0-0'}}</td>
+        <td style="border: 1px solid #888; padding: 6px;">{{row.employeeTotalDeduction | number:'1.0-0'}}</td>
+      </tr>
+    </table>
+
+    <div style="margin-top: 30px; font-size: 12px;">
+      <p>出力日時: {{today | date:'yyyy年MM月dd日 HH:mm'}}</p>
+    </div>
+  </div>
+</div> 

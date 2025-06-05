@@ -1,0 +1,46 @@
+<div class="admin-login-container">
+  <mat-card class="admin-login-card">
+    <mat-card-header>
+      <mat-card-title>管理者ログイン</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <p class="admin-login-message">
+        管理者専用の認証情報を入力してください。
+      </p>
+
+      <form [formGroup]="adminLoginForm" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>管理者コード</mat-label>
+          <input matInput
+                 formControlName="adminCode"
+                 placeholder="管理者コードを入力"
+                 type="text">
+          <mat-error *ngIf="adminLoginForm.get('adminCode')?.hasError('required')">
+            管理者コードを入力してください
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>シークレットキー</mat-label>
+          <input matInput
+                 formControlName="secretKey"
+                 placeholder="シークレットキーを入力"
+                 type="password">
+          <mat-error *ngIf="adminLoginForm.get('secretKey')?.hasError('required')">
+            シークレットキーを入力してください
+          </mat-error>
+        </mat-form-field>
+
+        <button mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="adminLoginForm.invalid || isLoading"
+                class="full-width">
+          <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+          <span *ngIf="!isLoading">管理者としてログイン</span>
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div> 
