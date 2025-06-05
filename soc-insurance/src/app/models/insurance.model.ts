@@ -23,5 +23,12 @@ export interface InsuranceData {
   standardMonthlyWage?: number | null;
   bonusAmount?: number | null;
   standardBonusAmount?: number | null;
+  bonusHealthInsuranceEmployee?: number | null;
+  bonusHealthInsuranceEmployer?: number | null;
+  bonusNursingInsuranceEmployee?: number | null;
+  bonusNursingInsuranceEmployer?: number | null;
+  bonusPensionInsuranceEmployee?: number | null;
+  bonusPensionInsuranceEmployer?: number | null;
+  bonusChildContribution?: number | null;
   notes?: string;
 } 

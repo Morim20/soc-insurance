@@ -3,6 +3,7 @@ import { PrefectureInsuranceRatesService } from './prefectureInsuranceRatesServi
 import { DetailedInsuranceRatesService } from './detailedInsuranceRatesService';
 import gradeMaster from './grade_master_with_ranges.json';
 import * as pensionRatesMaster from './pension_insurance_master.json';
+import bonusInsuranceRates from './bonus_insurance_rates.json';
 
 // 都道府県別の保険料データをインポート
 import * as hokkaidoRates from './01hokkaido_detailed_insurance_rates_grade1to50_final.json';
@@ -176,6 +177,17 @@ interface PensionRatesMaster {
   '厚生年金保険': {
     [key: string]: PensionRateData;
   };
+}
+
+interface BonusInsuranceResult {
+  standardBonusAmount: number;
+  healthInsuranceEmployee: number;
+  healthInsuranceEmployer: number;
+  nursingInsuranceEmployee: number;
+  nursingInsuranceEmployer: number;
+  pensionInsuranceEmployee: number;
+  pensionInsuranceEmployer: number;
+  childContribution: number;
 }
 
 @Injectable({
@@ -389,5 +401,78 @@ export class InsuranceCalculationService {
       }
     }
     return null;
+  }
+
+  /**
+   * 賞与に対する社会保険料計算（賞与回数が3回以下の場合のみ）
+   * @param bonusAmount 賞与支給額
+   * @param prefecture 会社所在地の都道府県
+   * @param age 年齢
+   * @param year 年度（例: '2025'）
+   * @param bonusCount 賞与回数
+   * @param annualBonusTotal 健康保険の年度累計（今回支給前までの累計）
+   * @returns 保険料計算結果 or null
+   */
+  calculateBonusInsurance({
+    bonusAmount,
+    prefecture,
+    age,
+    year = '2025',
+    bonusCount,
+    annualBonusTotal = 0
+  }: {
+    bonusAmount: number;
+    prefecture: string;
+    age: number;
+    year?: string;
+    bonusCount: number;
+    annualBonusTotal?: number;
+  }): BonusInsuranceResult | null {
+    if (bonusCount > 3) return null; // 4回以上は通常の報酬扱い
+    if (!bonusAmount || !prefecture) return null;
+    // 標準賞与額: 1,000円未満切り捨て
+    const standardBonusAmount = Math.floor(bonusAmount / 1000) * 1000;
+    // 厚生年金の1回上限: 150万円
+    const cappedBonusPension = Math.min(standardBonusAmount, 1500000);
+    // 健康保険の年度累計上限: 573万円
+    let cappedBonusHealth = standardBonusAmount;
+    if (annualBonusTotal < 5730000) {
+      cappedBonusHealth = Math.min(standardBonusAmount, 5730000 - annualBonusTotal);
+      cappedBonusHealth = Math.max(0, cappedBonusHealth); // マイナス防止
+    } else {
+      cappedBonusHealth = 0;
+    }
+    // 料率取得
+    const rates = (bonusInsuranceRates as any)[year]?.[prefecture];
+    if (!rates) return null;
+    const healthInsuranceRate = rates.healthInsuranceRate;
+    const nursingInsuranceRate = rates.specialInsuranceRate;
+    const pensionInsuranceRate = 0.183; // 全国一律
+    // 健康保険・介護保険・厚生年金は折半（2分の1）
+    const healthInsuranceTotal = Math.floor(cappedBonusHealth * healthInsuranceRate);
+    const healthInsuranceEmployee = Math.floor(healthInsuranceTotal / 2);
+    const healthInsuranceEmployer = healthInsuranceTotal - healthInsuranceEmployee;
+    const pensionInsuranceTotal = Math.floor(cappedBonusPension * pensionInsuranceRate);
+    const pensionInsuranceEmployee = Math.floor(pensionInsuranceTotal / 2);
+    const pensionInsuranceEmployer = pensionInsuranceTotal - pensionInsuranceEmployee;
+    let nursingInsuranceEmployee = 0;
+    let nursingInsuranceEmployer = 0;
+    if (age >= 40 && age < 65) {
+      const nursingInsuranceTotal = Math.floor(cappedBonusHealth * nursingInsuranceRate);
+      nursingInsuranceEmployee = Math.floor(nursingInsuranceTotal / 2);
+      nursingInsuranceEmployer = nursingInsuranceTotal - nursingInsuranceEmployee;
+    }
+    // 子ども・子育て拠出金（会社分のみ、健康保険の上限と同じ賞与額を使う）
+    const childContribution = Math.floor(cappedBonusHealth * 0.0036);
+    return {
+      standardBonusAmount,
+      healthInsuranceEmployee,
+      healthInsuranceEmployer,
+      nursingInsuranceEmployee,
+      nursingInsuranceEmployer,
+      pensionInsuranceEmployee,
+      pensionInsuranceEmployer,
+      childContribution
+    };
   }
 } 

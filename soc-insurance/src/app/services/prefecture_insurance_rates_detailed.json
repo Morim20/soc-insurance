@@ -1,0 +1,284 @@
+{
+  "北海道": {
+    "healthInsuranceRate": 0.1031,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0693,
+    "childContributionRate": 0.0036
+  },
+  "青森県": {
+    "healthInsuranceRate": 0.0985,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0647,
+    "childContributionRate": 0.0036
+  },
+  "岩手県": {
+    "healthInsuranceRate": 0.0962,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0624,
+    "childContributionRate": 0.0036
+  },
+  "宮城県": {
+    "healthInsuranceRate": 0.1011,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0673,
+    "childContributionRate": 0.0036
+  },
+  "秋田県": {
+    "healthInsuranceRate": 0.1001,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0663,
+    "childContributionRate": 0.0036
+  },
+  "山形県": {
+    "healthInsuranceRate": 0.0975,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0637,
+    "childContributionRate": 0.0036
+  },
+  "福島県": {
+    "healthInsuranceRate": 0.0962,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0624,
+    "childContributionRate": 0.0036
+  },
+  "茨城県": {
+    "healthInsuranceRate": 0.0967,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0629,
+    "childContributionRate": 0.0036
+  },
+  "栃木県": {
+    "healthInsuranceRate": 0.0982,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0644,
+    "childContributionRate": 0.0036
+  },
+  "群馬県": {
+    "healthInsuranceRate": 0.0977,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0639,
+    "childContributionRate": 0.0036
+  },
+  "埼玉県": {
+    "healthInsuranceRate": 0.0976,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0638,
+    "childContributionRate": 0.0036
+  },
+  "千葉県": {
+    "healthInsuranceRate": 0.0979,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0641,
+    "childContributionRate": 0.0036
+  },
+  "東京都": {
+    "healthInsuranceRate": 0.0991,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0653,
+    "childContributionRate": 0.0036
+  },
+  "神奈川県": {
+    "healthInsuranceRate": 0.0992,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0654,
+    "childContributionRate": 0.0036
+  },
+  "新潟県": {
+    "healthInsuranceRate": 0.0955,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0617,
+    "childContributionRate": 0.0036
+  },
+  "富山県": {
+    "healthInsuranceRate": 0.0965,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0627,
+    "childContributionRate": 0.0036
+  },
+  "石川県": {
+    "healthInsuranceRate": 0.0988,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.065,
+    "childContributionRate": 0.0036
+  },
+  "福井県": {
+    "healthInsuranceRate": 0.0994,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0656,
+    "childContributionRate": 0.0036
+  },
+  "山梨県": {
+    "healthInsuranceRate": 0.0989,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0651,
+    "childContributionRate": 0.0036
+  },
+  "長野県": {
+    "healthInsuranceRate": 0.0969,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0631,
+    "childContributionRate": 0.0036
+  },
+  "岐阜県": {
+    "healthInsuranceRate": 0.0993,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0655,
+    "childContributionRate": 0.0036
+  },
+  "静岡県": {
+    "healthInsuranceRate": 0.098,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0642,
+    "childContributionRate": 0.0036
+  },
+  "愛知県": {
+    "healthInsuranceRate": 0.1003,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0665,
+    "childContributionRate": 0.0036
+  },
+  "三重県": {
+    "healthInsuranceRate": 0.0999,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0661,
+    "childContributionRate": 0.0036
+  },
+  "滋賀県": {
+    "healthInsuranceRate": 0.0997,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0659,
+    "childContributionRate": 0.0036
+  },
+  "京都府": {
+    "healthInsuranceRate": 0.1003,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0665,
+    "childContributionRate": 0.0036
+  },
+  "大阪府": {
+    "healthInsuranceRate": 0.1024,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0686,
+    "childContributionRate": 0.0036
+  },
+  "兵庫県": {
+    "healthInsuranceRate": 0.1016,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0678,
+    "childContributionRate": 0.0036
+  },
+  "奈良県": {
+    "healthInsuranceRate": 0.1002,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0664,
+    "childContributionRate": 0.0036
+  },
+  "和歌山県": {
+    "healthInsuranceRate": 0.1019,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0681,
+    "childContributionRate": 0.0036
+  },
+  "鳥取県": {
+    "healthInsuranceRate": 0.0993,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0655,
+    "childContributionRate": 0.0036
+  },
+  "島根県": {
+    "healthInsuranceRate": 0.0994,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0656,
+    "childContributionRate": 0.0036
+  },
+  "岡山県": {
+    "healthInsuranceRate": 0.1017,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0679,
+    "childContributionRate": 0.0036
+  },
+  "広島県": {
+    "healthInsuranceRate": 0.0997,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0659,
+    "childContributionRate": 0.0036
+  },
+  "山口県": {
+    "healthInsuranceRate": 0.1036,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0698,
+    "childContributionRate": 0.0036
+  },
+  "徳島県": {
+    "healthInsuranceRate": 0.1047,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0709,
+    "childContributionRate": 0.0036
+  },
+  "香川県": {
+    "healthInsuranceRate": 0.1021,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0683,
+    "childContributionRate": 0.0036
+  },
+  "愛媛県": {
+    "healthInsuranceRate": 0.1018,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.068,
+    "childContributionRate": 0.0036
+  },
+  "高知県": {
+    "healthInsuranceRate": 0.1013,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0675,
+    "childContributionRate": 0.0036
+  },
+  "福岡県": {
+    "healthInsuranceRate": 0.1031,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0693,
+    "childContributionRate": 0.0036
+  },
+  "佐賀県": {
+    "healthInsuranceRate": 0.1078,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.074,
+    "childContributionRate": 0.0036
+  },
+  "長崎県": {
+    "healthInsuranceRate": 0.1041,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0703,
+    "childContributionRate": 0.0036
+  },
+  "熊本県": {
+    "healthInsuranceRate": 0.1012,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0674,
+    "childContributionRate": 0.0036
+  },
+  "大分県": {
+    "healthInsuranceRate": 0.1025,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0687,
+    "childContributionRate": 0.0036
+  },
+  "宮崎県": {
+    "healthInsuranceRate": 0.1009,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0671,
+    "childContributionRate": 0.0036
+  },
+  "鹿児島県": {
+    "healthInsuranceRate": 0.1031,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0693,
+    "childContributionRate": 0.0036
+  },
+  "沖縄県": {
+    "healthInsuranceRate": 0.0944,
+    "specialInsuranceRate": 0.0338,
+    "baseInsuranceRate": 0.0606,
+    "childContributionRate": 0.0036
+  }
+}

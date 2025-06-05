@@ -114,11 +114,6 @@
         <p>通勤経路: {{ employee.employmentInfo.commuteRoute }}</p>
         <p>片道運賃: {{ employee.employmentInfo.oneWayFare }}円</p>
         <p>学生区分: {{ employee.employmentInfo.studentType || '一般（学生でない）' }}</p>
-        <p>報酬月額（通貨）: {{
-          (employee.employmentInfo.baseSalary || 0) +
-          (employee.employmentInfo.allowances || 0) +
-          (employee.employmentInfo.commutingAllowance || 0)
-        }}</p>
       </div>
       <form *ngIf="editingSection['employmentInfo']" [formGroup]="employmentInfoForm" class="basic-info-form">
         <mat-form-field appearance="outline" class="large-form-field">

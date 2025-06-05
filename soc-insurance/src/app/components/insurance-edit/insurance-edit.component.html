@@ -13,8 +13,8 @@
         <div class="info-value">{{ data?.department }}</div>
         <div class="info-label">等級</div>
         <div class="info-value">
-          <ng-container *ngIf="gradeForDisplay !== null && gradeForDisplay !== undefined && gradeForDisplay !== '' && gradeForDisplay !== 0 && gradeForDisplay !== '未設定'; else notSet">
-            {{ gradeForDisplay }}
+          <ng-container *ngIf="insuranceStatus?.grade !== null && insuranceStatus?.grade !== undefined && insuranceStatus?.grade !== '' && insuranceStatus?.grade !== 0 && insuranceStatus?.grade !== '未設定'; else notSet">
+            {{ insuranceStatus?.grade }}
           </ng-container>
           <ng-template #notSet>
             <span style="color: red;">従業員管理ページで等級を設定してください</span>
@@ -50,7 +50,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>標準賞与額</mat-label>
-          <input matInput type="number" formControlName="standardBonusAmount" min="0">
+          <input matInput [value]="form.get('standardBonusAmount')?.value !== null ? (form.get('standardBonusAmount')?.value | number:'1.0-0') : ''" readonly>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>健康保険料率</mat-label>
@@ -91,6 +91,146 @@
           </tr>
         </table>
       </div>
+      <!-- 賞与用保険料計算表（賞与支給月のみ表示） -->
+      <div *ngIf="isBonusMonth && bonusCount && bonusCount <= 3 && form.get('standardBonusAmount')?.value > 0">
+        <h3>賞与保険料計算</h3>
+        <table class="bonus-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5; width: 25%;">項目</th>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5; width: 25%;">個人分（円）</th>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5; width: 25%;">会社分（円）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">健康保険料</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.healthInsuranceEmployee | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.healthInsuranceEmployer | number:'1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">介護保険料</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.nursingInsuranceEmployee | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.nursingInsuranceEmployer | number:'1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">厚生年金保険料</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.pensionInsuranceEmployee | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.pensionInsuranceEmployer | number:'1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">子ども・子育て拠出金</td>
+              <td style="border: 1px solid #888; padding: 6px;">0</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ isChildCareLeave ? '0' : (bonusInsuranceResult?.childContribution?.toLocaleString() || '0') }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">合計</td>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">
+                {{
+                  (bonusInsuranceResult?.healthInsuranceEmployee || 0)
+                  + (bonusInsuranceResult?.nursingInsuranceEmployee || 0)
+                  + (bonusInsuranceResult?.pensionInsuranceEmployee || 0)
+                | number:'1.0-0'}}
+              </td>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">
+                {{
+                  (bonusInsuranceResult?.healthInsuranceEmployer || 0)
+                  + (bonusInsuranceResult?.nursingInsuranceEmployer || 0)
+                  + (bonusInsuranceResult?.pensionInsuranceEmployer || 0)
+                | number:'1.0-0'}}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- 給与分＋賞与分の社会保険料合計（個人分） -->
+        <div style="font-weight: bold; margin-top: 16px;">社会保険料合計（個人分）</div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">項目</th>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">給与分</th>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">賞与分</th>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">合計</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">健康保険料</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ data?.healthInsuranceEmployee | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.healthInsuranceEmployee | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ ((data?.healthInsuranceEmployee || 0) + (bonusInsuranceResult?.healthInsuranceEmployee || 0)) | number:'1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">介護保険料</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ data?.nursingInsuranceEmployee | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.nursingInsuranceEmployee | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ ((data?.nursingInsuranceEmployee || 0) + (bonusInsuranceResult?.nursingInsuranceEmployee || 0)) | number:'1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">厚生年金保険料</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ data?.pensionInsuranceEmployee | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.pensionInsuranceEmployee | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ ((data?.pensionInsuranceEmployee || 0) + (bonusInsuranceResult?.pensionInsuranceEmployee || 0)) | number:'1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">合計</td>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">
+                {{ ((data?.healthInsuranceEmployee || 0) + (data?.nursingInsuranceEmployee || 0) + (data?.pensionInsuranceEmployee || 0)) | number:'1.0-0' }}
+              </td>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">
+                {{ ((bonusInsuranceResult?.healthInsuranceEmployee || 0) + (bonusInsuranceResult?.nursingInsuranceEmployee || 0) + (bonusInsuranceResult?.pensionInsuranceEmployee || 0)) | number:'1.0-0' }}
+              </td>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">
+                {{ ((data?.healthInsuranceEmployee || 0) + (data?.nursingInsuranceEmployee || 0) + (data?.pensionInsuranceEmployee || 0) + (bonusInsuranceResult?.healthInsuranceEmployee || 0) + (bonusInsuranceResult?.nursingInsuranceEmployee || 0) + (bonusInsuranceResult?.pensionInsuranceEmployee || 0)) | number:'1.0-0' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- 給与分＋賞与分の社会保険料合計（会社分） -->
+        <div style="font-weight: bold; margin-top: 16px;">社会保険料合計（会社分）</div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">項目</th>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">給与分</th>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">賞与分</th>
+              <th style="border: 1px solid #888; padding: 6px; background: #f5f5f5;">合計</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">健康保険料</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ data?.healthInsuranceEmployer | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.healthInsuranceEmployer | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ ((data?.healthInsuranceEmployer || 0) + (bonusInsuranceResult?.healthInsuranceEmployer || 0)) | number:'1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">介護保険料</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ data?.nursingInsuranceEmployer | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.nursingInsuranceEmployer | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ ((data?.nursingInsuranceEmployer || 0) + (bonusInsuranceResult?.nursingInsuranceEmployer || 0)) | number:'1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px;">厚生年金保険料</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ data?.pensionInsuranceEmployer | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ bonusInsuranceResult?.pensionInsuranceEmployer | number:'1.0-0' }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ ((data?.pensionInsuranceEmployer || 0) + (bonusInsuranceResult?.pensionInsuranceEmployer || 0)) | number:'1.0-0' }}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">合計</td>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">
+                {{ ((data?.healthInsuranceEmployer || 0) + (data?.nursingInsuranceEmployer || 0) + (data?.pensionInsuranceEmployer || 0)) | number:'1.0-0' }}
+              </td>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">
+                {{ ((bonusInsuranceResult?.healthInsuranceEmployer || 0) + (bonusInsuranceResult?.nursingInsuranceEmployer || 0) + (bonusInsuranceResult?.pensionInsuranceEmployer || 0)) | number:'1.0-0' }}
+              </td>
+              <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">
+                {{ ((data?.healthInsuranceEmployer || 0) + (data?.nursingInsuranceEmployer || 0) + (data?.pensionInsuranceEmployer || 0) + (bonusInsuranceResult?.healthInsuranceEmployer || 0) + (bonusInsuranceResult?.nursingInsuranceEmployer || 0) + (bonusInsuranceResult?.pensionInsuranceEmployer || 0)) | number:'1.0-0' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <div class="row">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>備考</mat-label>
@@ -118,7 +258,7 @@
       {{data?.employeeId || ''}}
     </h1>
     <div style="margin-bottom: 10px; font-size: 14px;">
-      <strong>等級：</strong> {{ gradeForDisplay }}
+      <strong>等級：</strong> {{ insuranceStatus?.grade }}
     </div>
     
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">

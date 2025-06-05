@@ -88,6 +88,18 @@ interface Address {
                 </div>
               </span>
             </div>
+            <div class="info-row">
+              <span class="label">賞与回数：</span>
+              <span class="value">{{settingsForm.get('bonusCount')?.value}}回</span>
+            </div>
+            <div class="info-row">
+              <span class="label">賞与支給月：</span>
+              <span class="value">
+                <div *ngFor="let month of bonusMonthsFormArray.controls; let i = index">
+                  {{month.value}}月
+                </div>
+              </span>
+            </div>
             <div class="form-actions">
               <button mat-raised-button color="primary" (click)="startEditing()">
                 編集
@@ -227,6 +239,38 @@ interface Address {
                 </button>
               </div>
 
+              <div class="bonus-section">
+                <h3>賞与設定</h3>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>賞与回数</mat-label>
+                  <input matInput type="number" formControlName="bonusCount" min="0" max="12" (change)="onBonusCountChange()">
+                  <mat-error *ngIf="settingsForm.get('bonusCount')?.hasError('required')">
+                    賞与回数は必須です
+                  </mat-error>
+                  <mat-error *ngIf="settingsForm.get('bonusCount')?.hasError('min') || settingsForm.get('bonusCount')?.hasError('max')">
+                    0から12の間で入力してください
+                  </mat-error>
+                </mat-form-field>
+
+                <div formArrayName="bonusMonths">
+                  <div *ngFor="let month of bonusMonthsFormArray.controls; let i = index" class="bonus-month-row">
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>賞与支給月（{{i + 1}}回目）</mat-label>
+                      <input matInput type="number" [formControlName]="i" min="1" max="12">
+                      <mat-error *ngIf="month.hasError('required')">
+                        支給月は必須です
+                      </mat-error>
+                      <mat-error *ngIf="month.hasError('min') || month.hasError('max')">
+                        1から12の間で入力してください
+                      </mat-error>
+                    </mat-form-field>
+                    <button mat-icon-button color="warn" type="button" (click)="removeBonusMonth(i)" [disabled]="bonusMonthsFormArray.length <= 1">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div class="info-row">
                 <span class="label">登録されている従業員数：</span>
                 <span class="value">{{employeeCount}}名</span>
@@ -321,6 +365,21 @@ interface Address {
     .add-department-btn {
       margin-top: 8px;
     }
+    .bonus-section {
+      margin: 20px 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+    }
+    .bonus-month-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .bonus-month-row mat-form-field {
+      flex: 1;
+    }
   `]
 })
 export class SettingsComponent implements OnInit {
@@ -343,6 +402,10 @@ export class SettingsComponent implements OnInit {
     return this.settingsForm.get('departments') as FormArray;
   }
 
+  get bonusMonthsFormArray() {
+    return this.settingsForm.get('bonusMonths') as FormArray;
+  }
+
   constructor(
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
@@ -360,7 +423,12 @@ export class SettingsComponent implements OnInit {
       phoneNumber: ['', [Validators.required, Validators.pattern(/^\d{2,4}-\d{2,4}-\d{4}$/)]],
       establishmentDate: [null, Validators.required],
       actualEmployeeCount: [0, [Validators.required, Validators.min(0)]],
-      departments: this.fb.array([this.fb.control('', Validators.required)])
+      departments: this.fb.array([this.fb.control('', Validators.required)]),
+      bonusCount: [2, [Validators.required, Validators.min(0), Validators.max(12)]],
+      bonusMonths: this.fb.array([
+        this.fb.control(6, [Validators.required, Validators.min(1), Validators.max(12)]),
+        this.fb.control(12, [Validators.required, Validators.min(1), Validators.max(12)])
+      ])
     });
   }
 
@@ -385,7 +453,8 @@ export class SettingsComponent implements OnInit {
         ownerName: data['ownerName'],
         phoneNumber: data['phoneNumber'],
         establishmentDate: data['establishmentDate']?.toDate(),
-        actualEmployeeCount: data['actualEmployeeCount'] || 0
+        actualEmployeeCount: data['actualEmployeeCount'] || 0,
+        bonusCount: data['bonusCount'] || 2
       });
 
       // 部署一覧の設定
@@ -393,6 +462,14 @@ export class SettingsComponent implements OnInit {
         this.departmentsFormArray.clear();
         data['departments'].forEach((dept: string) => {
           this.departmentsFormArray.push(this.fb.control(dept, Validators.required));
+        });
+      }
+
+      // 賞与支給月の設定
+      if (data['bonusMonths'] && Array.isArray(data['bonusMonths'])) {
+        this.bonusMonthsFormArray.clear();
+        data['bonusMonths'].forEach((month: number) => {
+          this.bonusMonthsFormArray.push(this.fb.control(month, [Validators.required, Validators.min(1), Validators.max(12)]));
         });
       }
 
@@ -479,6 +556,33 @@ export class SettingsComponent implements OnInit {
         this.snackBar.open('設定の保存に失敗しました', '閉じる', {
           duration: 3000
         });
+      }
+    }
+  }
+
+  addBonusMonth() {
+    if (this.bonusMonthsFormArray.length < this.settingsForm.get('bonusCount')?.value) {
+      this.bonusMonthsFormArray.push(this.fb.control(6, [Validators.required, Validators.min(1), Validators.max(12)]));
+    }
+  }
+
+  removeBonusMonth(index: number) {
+    if (this.bonusMonthsFormArray.length > 1) {
+      this.bonusMonthsFormArray.removeAt(index);
+    }
+  }
+
+  onBonusCountChange() {
+    const currentCount = this.bonusMonthsFormArray.length;
+    const newCount = this.settingsForm.get('bonusCount')?.value;
+
+    if (newCount > currentCount) {
+      for (let i = currentCount; i < newCount; i++) {
+        this.bonusMonthsFormArray.push(this.fb.control(6, [Validators.required, Validators.min(1), Validators.max(12)]));
+      }
+    } else if (newCount < currentCount) {
+      for (let i = currentCount; i > newCount; i--) {
+        this.bonusMonthsFormArray.removeAt(i - 1);
       }
     }
   }

@@ -146,15 +146,20 @@
           <ng-container matColumnDef="export">
             <th mat-header-cell *matHeaderCellDef>出力</th>
             <td mat-cell *matCellDef="let element">
+              <button mat-icon-button color="accent" matTooltip="CSV出力"
+                [disabled]="element.standardMonthlyRemuneration === null || element.standardMonthlyRemuneration === undefined"
+                (click)="downloadIndividualCsv(element)">
+                <mat-icon>table_view</mat-icon>
+              </button>
               <button mat-icon-button color="accent" matTooltip="PDF出力"
                 [disabled]="element.standardMonthlyRemuneration === null || element.standardMonthlyRemuneration === undefined"
                 (click)="downloadIndividualPdf(element)">
                 <mat-icon>picture_as_pdf</mat-icon>
               </button>
-              <button mat-icon-button color="accent" matTooltip="CSV出力"
-                [disabled]="element.standardMonthlyRemuneration === null || element.standardMonthlyRemuneration === undefined"
-                (click)="downloadIndividualCsv(element)">
-                <mat-icon>table_view</mat-icon>
+              <button mat-icon-button color="warn" matTooltip="賞与PDF出力"
+                *ngIf="element.bonusAmount && element.bonusAmount > 0 && element.standardBonusAmount && element.standardBonusAmount > 0 && bonusCount && bonusCount <= 3"
+                (click)="downloadIndividualBonusPdf(element)">
+                <mat-icon>picture_as_pdf</mat-icon>
               </button>
             </td>
             <td mat-footer-cell *matFooterCellDef></td>

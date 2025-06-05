@@ -75,6 +75,7 @@ export class InsuranceManagementComponent implements OnInit {
   private companyPrefecture: string | null = null;
   companyName: string = '';
   today = new Date();
+  bonusCount: number = 3; // 賞与回数の初期値を3に設定
 
   constructor(
     private fb: FormBuilder,
@@ -104,14 +105,28 @@ export class InsuranceManagementComponent implements OnInit {
     await this.loadCompanyName();
     this.filterForm.valueChanges.subscribe(values => {
       this.showEmployeeId = values.showEmployeeId;
+      this.selectedYear = values.year;
+      this.selectedMonth = values.month;
       this.updateDisplayedColumns();
       this.loadData();
     });
+    // 初期値も反映
+    this.selectedYear = this.filterForm.get('year')?.value;
+    this.selectedMonth = this.filterForm.get('month')?.value;
     this.loadData();
   }
 
   private updateDisplayedColumns(): void {
-    const baseColumns = ['fullName', 'department', 'grade', 'baseSalary', 'standardMonthlyRemuneration', 'actions'];
+    const baseColumns = [
+      'fullName',
+      'department',
+      'grade',
+      'baseSalary',
+      'standardMonthlyWage',
+      'standardMonthlyRemuneration',
+      'actions',
+      'export'
+    ];
     if (this.showEmployeeId) {
       this.displayedColumns = ['fullName', 'employeeId', ...baseColumns.filter(col => col !== 'fullName')];
     } else {
@@ -227,6 +242,18 @@ export class InsuranceManagementComponent implements OnInit {
       this.insuranceData = [];
 
       for (const employee of employees) {
+        // 在籍判定
+        const startDate = employee.employmentInfo?.startDate ? new Date(employee.employmentInfo.startDate) : null;
+        const endDate = employee.employmentInfo?.endDate ? new Date(employee.employmentInfo.endDate) : null;
+        const targetDate = new Date(this.selectedYear, this.selectedMonth - 1, 1);
+        // 入社日が未設定の場合は除外
+        if (!startDate) continue;
+        // 在籍判定: 入社日 <= 対象月末 && (退職日が未設定 or 退職日 >= 対象月初)
+        const targetMonthStart = new Date(this.selectedYear, this.selectedMonth - 1, 1);
+        const targetMonthEnd = new Date(this.selectedYear, this.selectedMonth, 0, 23, 59, 59, 999);
+        if (startDate > targetMonthEnd) continue;
+        if (endDate && endDate < targetMonthStart) continue;
+
         // 保険加入判定
         const eligibility = await this.insuranceEligibilityService.getInsuranceEligibility(employee).toPromise();
         if (!eligibility.healthInsurance && !eligibility.pensionInsurance) {
@@ -258,16 +285,49 @@ export class InsuranceManagementComponent implements OnInit {
 
         // FirestoreからinsuranceDetailsを取得
         const insuranceDetail = await this.employeeService.getInsuranceDetail(employee.id, period);
-        if (insuranceDetail && insuranceDetail.standardMonthlyRemuneration !== undefined) {
-          standardMonthlyRemuneration = insuranceDetail.standardMonthlyRemuneration;
+        // データがなければ未確定・未設定で埋める
+        if (!insuranceDetail) {
+          this.insuranceData.push({
+            id: employee.id,
+            employeeId: employee.employeeBasicInfo.employeeId,
+            fullName: `${employee.employeeBasicInfo.lastNameKanji} ${employee.employeeBasicInfo.firstNameKanji}`,
+            department: employee.employmentInfo?.department || '未設定',
+            grade: gradeForDisplay,
+            baseSalary: employee.employmentInfo?.baseSalary ?? null,
+            standardMonthlyRemuneration: null,
+            healthInsuranceEmployee: null,
+            healthInsuranceEmployer: null,
+            nursingInsuranceEmployee: null,
+            nursingInsuranceEmployer: null,
+            pensionInsuranceEmployee: null,
+            pensionInsuranceEmployer: null,
+            childContribution: null,
+            employeeTotalDeduction: null,
+            period,
+            age,
+            isNursingInsuranceEligible: age >= 40 && age < 65,
+            standardMonthlyWage: insuranceStatus?.standardMonthlyWage || null,
+            bonusAmount: null,
+            standardBonusAmount: null,
+            notes: ''
+          });
+          continue;
         }
-        // 基本給はemploymentInfoから
-        baseSalary = employee.employmentInfo?.baseSalary ?? null;
 
-        // 追加: ボーナス・備考
+        // データがある場合は従来通り
+        standardMonthlyRemuneration = insuranceDetail.standardMonthlyRemuneration ?? null;
+        baseSalary = employee.employmentInfo?.baseSalary ?? null;
         const bonusAmount = insuranceDetail?.bonusAmount ?? null;
         const standardBonusAmount = insuranceDetail?.standardBonusAmount ?? null;
         const notes = insuranceDetail?.notes ?? '';
+        // 賞与保険料プロパティを取得
+        const bonusHealthInsuranceEmployee = insuranceDetail?.bonusHealthInsuranceEmployee ?? 0;
+        const bonusHealthInsuranceEmployer = insuranceDetail?.bonusHealthInsuranceEmployer ?? 0;
+        const bonusNursingInsuranceEmployee = insuranceDetail?.bonusNursingInsuranceEmployee ?? 0;
+        const bonusNursingInsuranceEmployer = insuranceDetail?.bonusNursingInsuranceEmployer ?? 0;
+        const bonusPensionInsuranceEmployee = insuranceDetail?.bonusPensionInsuranceEmployee ?? 0;
+        const bonusPensionInsuranceEmployer = insuranceDetail?.bonusPensionInsuranceEmployer ?? 0;
+        const bonusChildContribution = insuranceDetail?.bonusChildContribution ?? 0;
 
         if (isOnLeave) {
           this.insuranceData.push({
@@ -290,7 +350,7 @@ export class InsuranceManagementComponent implements OnInit {
             age,
             isNursingInsuranceEligible: age >= 40 && age < 65,
             notes: '育児休暇中のため',
-            standardMonthlyWage: employee.insuranceStatus?.standardMonthlyWage || null,
+            standardMonthlyWage: insuranceStatus?.standardMonthlyWage || null,
             bonusAmount,
             standardBonusAmount
           });
@@ -323,9 +383,17 @@ export class InsuranceManagementComponent implements OnInit {
           period,
           age,
           isNursingInsuranceEligible: age >= 40 && age < 65,
-          standardMonthlyWage: employee.insuranceStatus?.standardMonthlyWage || null,
+          standardMonthlyWage: insuranceStatus?.standardMonthlyWage || null,
           bonusAmount,
           standardBonusAmount,
+          // 賞与保険料もセット
+          bonusHealthInsuranceEmployee,
+          bonusHealthInsuranceEmployer,
+          bonusNursingInsuranceEmployee,
+          bonusNursingInsuranceEmployer,
+          bonusPensionInsuranceEmployee,
+          bonusPensionInsuranceEmployer,
+          bonusChildContribution,
           notes
         } : {
           id: employee.id,
@@ -346,9 +414,17 @@ export class InsuranceManagementComponent implements OnInit {
           period,
           age,
           isNursingInsuranceEligible: age >= 40 && age < 65,
-          standardMonthlyWage: employee.insuranceStatus?.standardMonthlyWage || null,
+          standardMonthlyWage: insuranceStatus?.standardMonthlyWage || null,
           bonusAmount,
           standardBonusAmount,
+          // 賞与保険料もセット（0で）
+          bonusHealthInsuranceEmployee,
+          bonusHealthInsuranceEmployer,
+          bonusNursingInsuranceEmployee,
+          bonusNursingInsuranceEmployer,
+          bonusPensionInsuranceEmployee,
+          bonusPensionInsuranceEmployer,
+          bonusChildContribution,
           notes
         });
       }
@@ -491,7 +567,15 @@ export class InsuranceManagementComponent implements OnInit {
       // 社員の保険ステータスを取得
       const insuranceStatus = await this.employeeService.getInsuranceStatus(element.id);
       const grade = insuranceStatus?.grade ?? '未設定';
-
+      // 賞与回数（4回以上なら賞与枠を表示）
+      const bonusCount = (element as any).bonusCount ?? 0;
+      const showBonusRow = bonusCount > 3;
+      // 保険料合計計算
+      const healthTotal = (element.healthInsuranceEmployee || 0) + (element.healthInsuranceEmployer || 0);
+      const nursingTotal = (element.nursingInsuranceEmployee || 0) + (element.nursingInsuranceEmployer || 0);
+      const pensionTotal = (element.pensionInsuranceEmployee || 0) + (element.pensionInsuranceEmployer || 0);
+      const childTotal = element.childContribution || 0;
+      const total = healthTotal + nursingTotal + pensionTotal + childTotal;
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'fixed';
       tempDiv.style.left = '-9999px';
@@ -501,7 +585,6 @@ export class InsuranceManagementComponent implements OnInit {
           <h1 style="text-align: center; font-size: 20px; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px;">
             社会保険料明細書
           </h1>
-          
           <div style="margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 14px;">
             <div>
               <strong>対象期間：</strong>${element.period.year}年${element.period.month}月
@@ -513,80 +596,75 @@ export class InsuranceManagementComponent implements OnInit {
               <strong>社員番号：</strong>${element.employeeId}
             </div>
           </div>
-
           <div style="margin-bottom: 20px; font-size: 14px;">
             <strong>等級：</strong>${grade}
           </div>
-          
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+          <!-- 給与情報テーブル -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
             <tr>
-              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 25%;">項目</th>
-              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 25%;">金額</th>
-              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 25%;">項目</th>
-              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 25%;">金額</th>
+              <td style="border: 1px solid #888; padding: 8px; width: 40%; background: #f5f5f5;">基本給</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.baseSalary?.toLocaleString() || '0'}円</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #888; padding: 8px;">報酬月額</td>
+              <td style="border: 1px solid #888; padding: 8px; background: #f5f5f5;">報酬月額</td>
               <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.standardMonthlyRemuneration?.toLocaleString() || '0'}円</td>
-              <td style="border: 1px solid #888; padding: 8px;">賞与支給額（該当月）</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.bonusAmount?.toLocaleString() || '0'}円</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #888; padding: 8px;">標準報酬月額</td>
+              <td style="border: 1px solid #888; padding: 8px; background: #f5f5f5;">標準報酬月額</td>
               <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.standardMonthlyWage?.toLocaleString() || '0'}円</td>
-              <td style="border: 1px solid #888; padding: 8px;">標準賞与額</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.standardBonusAmount?.toLocaleString() || '0'}円</td>
+            </tr>
+            ${showBonusRow ? `
+            <tr>
+              <td style='border: 1px solid #888; padding: 8px; background: #f5f5f5;'>賞与支給額</td>
+              <td style='border: 1px solid #888; padding: 8px; text-align: right;'>${element.bonusAmount?.toLocaleString() || '0'}円</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #888; padding: 8px;">健康保険料（個人分）</td>
+              <td style='border: 1px solid #888; padding: 8px; background: #f5f5f5;'>標準賞与額</td>
+              <td style='border: 1px solid #888; padding: 8px; text-align: right;'>${element.standardBonusAmount?.toLocaleString() || '0'}円</td>
+            </tr>
+            ` : ''}
+          </table>
+          <!-- 保険料合計テーブル -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
+            <tr>
+              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 33%;">項目</th>
+              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 33%;">個人分</th>
+              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 33%;">会社分</th>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 8px;">健康保険料</td>
               <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.healthInsuranceEmployee?.toLocaleString() || '0'}円</td>
-              <td style="border: 1px solid #888; padding: 8px;">健康保険料（会社分）</td>
               <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.healthInsuranceEmployer?.toLocaleString() || '0'}円</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #888; padding: 8px;"></td>
-              <td style="border: 1px solid #888; padding: 8px;"></td>
-              <td style="border: 1px solid #888; padding: 8px;">内0.36％：子ども・子育て拠出金</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${((element.healthInsuranceEmployer || 0) * 0.0036).toLocaleString()}円</td>
-            </tr>
-            <tr>
-              <td style="border: 1px solid #888; padding: 8px;">介護保険料（個人分）</td>
+              <td style="border: 1px solid #888; padding: 8px;">介護保険料</td>
               <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.nursingInsuranceEmployee?.toLocaleString() || '0'}円</td>
-              <td style="border: 1px solid #888; padding: 8px;">介護保険料（会社分）</td>
               <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.nursingInsuranceEmployer?.toLocaleString() || '0'}円</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #888; padding: 8px;">厚生年金保険料（個人分）</td>
+              <td style="border: 1px solid #888; padding: 8px;">厚生年金保険料</td>
               <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.pensionInsuranceEmployee?.toLocaleString() || '0'}円</td>
-              <td style="border: 1px solid #888; padding: 8px;">厚生年金保険料（会社分）</td>
               <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.pensionInsuranceEmployer?.toLocaleString() || '0'}円</td>
             </tr>
-            
             <tr>
-              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5;">個人負担保険料合計</td>
-              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5; text-align: right;">${this.roundAmount(element.employeeTotalDeduction || 0).toLocaleString()}円</td>
-              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5;">会社負担保険料合計</td>
-              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5; text-align: right;">
-                ${this.roundAmount(
-                  (element.healthInsuranceEmployer || 0) +
-                  (element.nursingInsuranceEmployer || 0) +
-                  (element.pensionInsuranceEmployer || 0)
-                ).toLocaleString()}円
-              </td>
+              <td style="border: 1px solid #888; padding: 8px;">子ども・子育て拠出金</td>
+              <td colspan="2" style="border: 1px solid #888; padding: 8px; text-align: right;">${element.childContribution?.toLocaleString() || '0'}円</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5;">合計</td>
+              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5; text-align: right;">${((element.healthInsuranceEmployee || 0) + (element.nursingInsuranceEmployee || 0) + (element.pensionInsuranceEmployee || 0)).toLocaleString()}円</td>
+              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5; text-align: right;">${((element.healthInsuranceEmployer || 0) + (element.nursingInsuranceEmployer || 0) + (element.pensionInsuranceEmployer || 0)).toLocaleString()}円</td>
             </tr>
           </table>
-
           <div style="margin-bottom: 20px; font-size: 14px;">
             <strong>備考：</strong>${element.notes || ''}
           </div>
-
           <div style="margin-top: 30px; font-size: 12px; text-align: right;">
             <p>出力日時: ${new Date().toLocaleString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
           </div>
         </div>
       `;
       document.body.appendChild(tempDiv);
-
       const canvas = await html2canvas(tempDiv, { scale: 2 });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -594,11 +672,9 @@ export class InsuranceManagementComponent implements OnInit {
       const pdfWidth = 210;
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
       const yearMonth = `${this.selectedYear}年${this.selectedMonth}月`;
       const fileName = `社会保険料明細書_${yearMonth}_${element.fullName || ''}_${element.employeeId || ''}.pdf`;
       pdf.save(fileName);
-
       document.body.removeChild(tempDiv);
     } catch (error) {
       console.error('PDF出力エラー:', error);
@@ -652,8 +728,109 @@ export class InsuranceManagementComponent implements OnInit {
     }
   }
 
-  // 端数処理を行う
+  // 端数
   roundAmount(amount: number): number {
     return Math.round(amount);
+  }
+
+  async downloadIndividualBonusPdf(element: InsuranceData) {
+    try {
+      const insuranceStatus = await this.employeeService.getInsuranceStatus(element.id);
+      const grade = insuranceStatus?.grade ?? '未設定';
+      if (!element.bonusAmount || element.bonusAmount === 0) {
+        alert('この月は賞与がありません');
+        return;
+      }
+      // 合計計算
+      const totalEmployee =
+        (element.bonusHealthInsuranceEmployee || 0) +
+        (element.bonusNursingInsuranceEmployee || 0) +
+        (element.bonusPensionInsuranceEmployee || 0);
+      const totalEmployer =
+        (element.bonusHealthInsuranceEmployer || 0) +
+        (element.bonusNursingInsuranceEmployer || 0) +
+        (element.bonusPensionInsuranceEmployer || 0);
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'fixed';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.width = '800px';
+      tempDiv.innerHTML = `
+        <div style="font-family: 'Noto Sans JP', sans-serif; padding: 20px;">
+          <h1 style="text-align: center; font-size: 20px; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px;">
+            賞与分 社会保険料明細書
+          </h1>
+          <div style="margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 14px;">
+            <div>
+              <strong>対象期間：</strong>${element.period.year}年${element.period.month}月
+            </div>
+            <div>
+              <strong>氏名：</strong>${element.fullName}
+            </div>
+            <div>
+              <strong>社員番号：</strong>${element.employeeId}
+            </div>
+          </div>
+          <div style="margin-bottom: 20px; font-size: 14px;">
+            <strong>等級：</strong>${grade}
+          </div>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+            <tr>
+              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 33%;">項目</th>
+              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 33%;">個人分</th>
+              <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 33%;">会社分</th>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 8px;">賞与支給額</td>
+              <td colspan="2" style="border: 1px solid #888; padding: 8px; text-align: right;">${element.bonusAmount?.toLocaleString() || '0'}円</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 8px;">標準賞与額</td>
+              <td colspan="2" style="border: 1px solid #888; padding: 8px; text-align: right;">${element.standardBonusAmount?.toLocaleString() || '0'}円</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 8px;">健康保険料</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.bonusHealthInsuranceEmployee?.toLocaleString() || '0'}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.bonusHealthInsuranceEmployer?.toLocaleString() || '0'}円</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 8px;">介護保険料</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.bonusNursingInsuranceEmployee?.toLocaleString() || '0'}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.bonusNursingInsuranceEmployer?.toLocaleString() || '0'}円</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 8px;">厚生年金保険料</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.bonusPensionInsuranceEmployee?.toLocaleString() || '0'}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.bonusPensionInsuranceEmployer?.toLocaleString() || '0'}円</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5;">合計</td>
+              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5; text-align: right;">${totalEmployee.toLocaleString()}円</td>
+              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5; text-align: right;">${totalEmployer.toLocaleString()}円</td>
+            </tr>
+          </table>
+          <div style="margin-bottom: 20px; font-size: 14px;">
+            <strong>備考：</strong>${element.notes || ''}
+          </div>
+          <div style="margin-top: 30px; font-size: 12px; text-align: right;">
+            <p>出力日時: ${new Date().toLocaleString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(tempDiv);
+      const canvas = await html2canvas(tempDiv, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = 210;
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const yearMonth = `${this.selectedYear}年${this.selectedMonth}月`;
+      const fileName = `賞与分社会保険料明細書_${yearMonth}_${element.fullName || ''}_${element.employeeId || ''}.pdf`;
+      pdf.save(fileName);
+      document.body.removeChild(tempDiv);
+    } catch (error) {
+      console.error('賞与PDF出力エラー:', error);
+      alert('賞与PDFの出力中にエラーが発生しました。もう一度お試しください。');
+    }
   }
 } 
