@@ -5,6 +5,7 @@ export interface InsuranceData {
   department: string;
   standardMonthlyRemuneration: number;
   grade?: number;
+  newGrade?: number | null;
   baseSalary?: number;
   healthInsuranceEmployee: number;
   healthInsuranceEmployer: number;

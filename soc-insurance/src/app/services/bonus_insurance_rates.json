@@ -1,193 +1,145 @@
 {
   "2025": {
     "北海道": {
-      "healthInsuranceRate": 0.1031,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1031
     },
     "青森県": {
-      "healthInsuranceRate": 0.0985,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0985
     },
     "岩手県": {
-      "healthInsuranceRate": 0.0962,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0962
     },
     "宮城県": {
-      "healthInsuranceRate": 0.1011,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1011
     },
     "秋田県": {
-      "healthInsuranceRate": 0.1001,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1001
     },
     "山形県": {
-      "healthInsuranceRate": 0.0975,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0975
     },
     "福島県": {
-      "healthInsuranceRate": 0.0962,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0962
     },
     "茨城県": {
-      "healthInsuranceRate": 0.0967,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0967
     },
     "栃木県": {
-      "healthInsuranceRate": 0.0982,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0982
     },
     "群馬県": {
-      "healthInsuranceRate": 0.0977,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0977
     },
     "埼玉県": {
-      "healthInsuranceRate": 0.0976,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0976
     },
     "千葉県": {
-      "healthInsuranceRate": 0.0979,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0979
     },
     "東京都": {
-      "healthInsuranceRate": 0.0991,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0991
     },
     "神奈川県": {
-      "healthInsuranceRate": 0.0992,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0992
     },
     "新潟県": {
-      "healthInsuranceRate": 0.0955,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0955
     },
     "富山県": {
-      "healthInsuranceRate": 0.0965,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0965
     },
     "石川県": {
-      "healthInsuranceRate": 0.0988,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0988
     },
     "福井県": {
-      "healthInsuranceRate": 0.0994,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0994
     },
     "山梨県": {
-      "healthInsuranceRate": 0.0989,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0989
     },
     "長野県": {
-      "healthInsuranceRate": 0.0969,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0969
     },
     "岐阜県": {
-      "healthInsuranceRate": 0.0993,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0993
     },
     "静岡県": {
-      "healthInsuranceRate": 0.098,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.098
     },
     "愛知県": {
-      "healthInsuranceRate": 0.1003,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1003
     },
     "三重県": {
-      "healthInsuranceRate": 0.0999,
-      "specialInsuranceRate": 0.0338,
-      "baseInsuranceRate": 0.0661
+      "healthInsuranceRate": 0.0999
     },
     "滋賀県": {
-      "healthInsuranceRate": 0.0997,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0997
     },
     "京都府": {
-      "healthInsuranceRate": 0.1003,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1003
     },
     "大阪府": {
-      "healthInsuranceRate": 0.1024,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1024
     },
     "兵庫県": {
-      "healthInsuranceRate": 0.1016,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1016
     },
     "奈良県": {
-      "healthInsuranceRate": 0.1002,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1002
     },
     "和歌山県": {
-      "healthInsuranceRate": 0.1019,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1019
     },
     "鳥取県": {
-      "healthInsuranceRate": 0.0993,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0993
     },
     "島根県": {
-      "healthInsuranceRate": 0.0994,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0994
     },
     "岡山県": {
-      "healthInsuranceRate": 0.1017,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1017
     },
     "広島県": {
-      "healthInsuranceRate": 0.0997,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0997
     },
     "山口県": {
-      "healthInsuranceRate": 0.1036,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1036
     },
     "徳島県": {
-      "healthInsuranceRate": 0.1047,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1047
     },
     "香川県": {
-      "healthInsuranceRate": 0.1021,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1021
     },
     "愛媛県": {
-      "healthInsuranceRate": 0.1018,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1018
     },
     "高知県": {
-      "healthInsuranceRate": 0.1013,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1013
     },
     "福岡県": {
-      "healthInsuranceRate": 0.1031,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1031
     },
     "佐賀県": {
-      "healthInsuranceRate": 0.1078,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1078
     },
     "長崎県": {
-      "healthInsuranceRate": 0.1041,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1041
     },
     "熊本県": {
-      "healthInsuranceRate": 0.1012,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1012
     },
     "大分県": {
-      "healthInsuranceRate": 0.1025,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1025
     },
     "宮崎県": {
-      "healthInsuranceRate": 0.1009,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1009
     },
     "鹿児島県": {
-      "healthInsuranceRate": 0.1031,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.1031
     },
     "沖縄県": {
-      "healthInsuranceRate": 0.0944,
-      "specialInsuranceRate": 0.0338
+      "healthInsuranceRate": 0.0944
     }
   }
 }

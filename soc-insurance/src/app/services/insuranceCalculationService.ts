@@ -82,6 +82,7 @@ interface PrefectureGradeData {
   healthInsuranceEmployee: number;
   nursingInsurance: number;
   nursingInsuranceEmployee: number;
+  nursingInsuranceEmployeeReal: number;
 }
 
 interface PrefectureRates {
@@ -90,53 +91,53 @@ interface PrefectureRates {
 
 // 都道府県コードと保険料データのマッピング
 const prefectureRatesMap: { [key: string]: PrefectureRates | HokkaidoRates } = {
-  '北海道': hokkaidoRates as HokkaidoRates,
-  '青森県': aomoriRates as PrefectureRates,
-  '岩手県': iwateRates as PrefectureRates,
-  '宮城県': miyagiRates as PrefectureRates,
-  '秋田県': akitaRates as PrefectureRates,
-  '山形県': yamagataRates as PrefectureRates,
-  '福島県': fukushimaRates as PrefectureRates,
-  '茨城県': ibarakiRates as PrefectureRates,
-  '栃木県': tochigiRates as PrefectureRates,
-  '群馬県': gunmaRates as PrefectureRates,
-  '埼玉県': saitamaRates as PrefectureRates,
-  '千葉県': chibaRates as PrefectureRates,
-  '東京都': tokyoRates as PrefectureRates,
-  '神奈川県': kanagawaRates as PrefectureRates,
-  '新潟県': niigataRates as PrefectureRates,
-  '富山県': toyamaRates as PrefectureRates,
-  '石川県': ishikawaRates as PrefectureRates,
-  '福井県': fukuiRates as PrefectureRates,
-  '山梨県': yamanashiRates as PrefectureRates,
-  '長野県': naganoRates as PrefectureRates,
-  '岐阜県': gifuRates as PrefectureRates,
-  '静岡県': shizuokaRates as PrefectureRates,
-  '愛知県': aichiRates as PrefectureRates,
-  '三重県': mieRates as PrefectureRates,
-  '滋賀県': shigaRates as PrefectureRates,
-  '京都府': kyotoRates as PrefectureRates,
-  '大阪府': osakaRates as PrefectureRates,
-  '兵庫県': hyogoRates as PrefectureRates,
-  '奈良県': naraRates as PrefectureRates,
-  '和歌山県': wakayamaRates as PrefectureRates,
-  '鳥取県': tottoriRates as PrefectureRates,
-  '島根県': shimaneRates as PrefectureRates,
-  '岡山県': okayamaRates as PrefectureRates,
-  '広島県': hiroshimaRates as PrefectureRates,
-  '山口県': yamaguchiRates as PrefectureRates,
-  '徳島県': tokushimaRates as PrefectureRates,
-  '香川県': kagawaRates as PrefectureRates,
-  '愛媛県': ehimeRates as PrefectureRates,
-  '高知県': kochiRates as PrefectureRates,
-  '福岡県': fukuokaRates as PrefectureRates,
-  '佐賀県': sagaRates as PrefectureRates,
-  '長崎県': nagasakiRates as PrefectureRates,
-  '熊本県': kumamotoRates as PrefectureRates,
-  '大分県': oitaRates as PrefectureRates,
-  '宮崎県': miyazakiRates as PrefectureRates,
-  '鹿児島県': kagoshimaRates as PrefectureRates,
-  '沖縄県': okinawaRates as PrefectureRates
+  '北海道': hokkaidoRates as unknown as HokkaidoRates,
+  '青森県': aomoriRates as unknown as PrefectureRates,
+  '岩手県': iwateRates as unknown as PrefectureRates,
+  '宮城県': miyagiRates as unknown as PrefectureRates,
+  '秋田県': akitaRates as unknown as PrefectureRates,
+  '山形県': yamagataRates as unknown as PrefectureRates,
+  '福島県': fukushimaRates as unknown as PrefectureRates,
+  '茨城県': ibarakiRates as unknown as PrefectureRates,
+  '栃木県': tochigiRates as unknown as PrefectureRates,
+  '群馬県': gunmaRates as unknown as PrefectureRates,
+  '埼玉県': saitamaRates as unknown as PrefectureRates,
+  '千葉県': chibaRates as unknown as PrefectureRates,
+  '東京都': tokyoRates as unknown as PrefectureRates,
+  '神奈川県': kanagawaRates as unknown as PrefectureRates,
+  '新潟県': niigataRates as unknown as PrefectureRates,
+  '富山県': toyamaRates as unknown as PrefectureRates,
+  '石川県': ishikawaRates as unknown as PrefectureRates,
+  '福井県': fukuiRates as unknown as PrefectureRates,
+  '山梨県': yamanashiRates as unknown as PrefectureRates,
+  '長野県': naganoRates as unknown as PrefectureRates,
+  '岐阜県': gifuRates as unknown as PrefectureRates,
+  '静岡県': shizuokaRates as unknown as PrefectureRates,
+  '愛知県': aichiRates as unknown as PrefectureRates,
+  '三重県': mieRates as unknown as PrefectureRates,
+  '滋賀県': shigaRates as unknown as PrefectureRates,
+  '京都府': kyotoRates as unknown as PrefectureRates,
+  '大阪府': osakaRates as unknown as PrefectureRates,
+  '兵庫県': hyogoRates as unknown as PrefectureRates,
+  '奈良県': naraRates as unknown as PrefectureRates,
+  '和歌山県': wakayamaRates as unknown as PrefectureRates,
+  '鳥取県': tottoriRates as unknown as PrefectureRates,
+  '島根県': shimaneRates as unknown as PrefectureRates,
+  '岡山県': okayamaRates as unknown as PrefectureRates,
+  '広島県': hiroshimaRates as unknown as PrefectureRates,
+  '山口県': yamaguchiRates as unknown as PrefectureRates,
+  '徳島県': tokushimaRates as unknown as PrefectureRates,
+  '香川県': kagawaRates as unknown as PrefectureRates,
+  '愛媛県': ehimeRates as unknown as PrefectureRates,
+  '高知県': kochiRates as unknown as PrefectureRates,
+  '福岡県': fukuokaRates as unknown as PrefectureRates,
+  '佐賀県': sagaRates as unknown as PrefectureRates,
+  '長崎県': nagasakiRates as unknown as PrefectureRates,
+  '熊本県': kumamotoRates as unknown as PrefectureRates,
+  '大分県': oitaRates as unknown as PrefectureRates,
+  '宮崎県': miyazakiRates as unknown as PrefectureRates,
+  '鹿児島県': kagoshimaRates as unknown as PrefectureRates,
+  '沖縄県': okinawaRates as unknown as PrefectureRates
 };
 
 interface InsuranceCalculationResult {
@@ -219,7 +220,8 @@ export class InsuranceCalculationService {
           healthInsurance: hokkaidoData.healthInsurance,
           healthInsuranceEmployee: hokkaidoData.healthInsuranceEmployee,
           nursingInsurance: hokkaidoData.nursingInsurance,
-          nursingInsuranceEmployee: hokkaidoData.nursingInsuranceEmployee
+          nursingInsuranceEmployee: hokkaidoData.nursingInsuranceEmployee,
+          nursingInsuranceEmployeeReal: hokkaidoData.nursingInsuranceEmployee
         };
       }
     } else {
@@ -307,16 +309,13 @@ export class InsuranceCalculationService {
   }
 
   // 厚生年金保険料を計算
-  private calculatePensionInsurance(standardMonthlyWage: number): number {
-    // 健康保険・介護保険と同じ等級判定ロジックを使用
-    const grade = this.determineGrade(standardMonthlyWage, '全国');
-    const pensionRates = (pensionRatesMaster as PensionRatesMaster)['厚生年金保険'];
-    
-    if (!grade || !pensionRates[grade.toString()]) {
-      throw new Error('厚生年金保険料の計算に必要な等級が見つかりません');
-    }
-
-    return pensionRates[grade.toString()].pensionInsuranceEmployee;
+  private calculatePensionInsurance(standardMonthlyWage: number): { employee: number; employer: number } {
+    const pensionRate = 0.183; // 18.3%
+    const totalPension = Math.round(standardMonthlyWage * pensionRate);
+    return {
+      employee: Math.round(totalPension / 2),
+      employer: Math.round(totalPension / 2)
+    };
   }
 
   // 子ども・子育て拠出金の計算
@@ -326,64 +325,60 @@ export class InsuranceCalculationService {
     return Math.round(standardMonthlyWage * childContributionRate);
   }
 
+  private roundAmount(amount: number): number {
+    const decimal = amount - Math.floor(amount);
+    if (decimal <= 0.5) {
+      return Math.floor(amount);
+    } else {
+      return Math.ceil(amount);
+    }
+  }
+
   // 保険料を計算
   calculateInsurance(params: InsuranceCalculationParams): InsuranceCalculationResult | null {
     const { prefecture, grade, age } = params;
 
-    // 等級から都道府県ごとのデータを取得
-    const gradeData = this.getPrefectureGradeData(prefecture, grade);
-    if (!gradeData) {
-      // 等級が未設定やデータがない場合はnullを返す（エラーを投げない）
+    // 都道府県の保険料率データを取得
+    const prefectureData = this.detailedRatesService.getRates(prefecture);
+    if (!prefectureData || !prefectureData[grade.toString()]) {
       return null;
     }
 
-    // 健康保険料
-    const healthInsuranceEmployee = gradeData.healthInsuranceEmployee;
-    const healthInsuranceEmployer = gradeData.healthInsurance - gradeData.healthInsuranceEmployee;
-
-    // 介護保険料（40歳以上の場合のみ）
-    let nursingInsuranceEmployee = 0;
-    let nursingInsuranceEmployer = 0;
+    const gradeData = prefectureData[grade.toString()];
+    const healthInsuranceEmployeeRaw = gradeData.healthInsuranceEmployee;
+    const healthInsuranceEmployerRaw = gradeData.healthInsurance - healthInsuranceEmployeeRaw;
+    
+    // 介護保険の対象年齢判定（40歳以上65歳未満）
+    let nursingInsuranceEmployeeRaw = 0;
+    let nursingInsuranceEmployerRaw = 0;
     if (age >= 40 && age < 65) {
-      const nursingInsuranceEmployeeAmount = gradeData.nursingInsuranceEmployee - gradeData.healthInsuranceEmployee;
-      const decimal = nursingInsuranceEmployeeAmount - Math.floor(nursingInsuranceEmployeeAmount);
-      nursingInsuranceEmployee = decimal <= 0.5 
-        ? Math.floor(nursingInsuranceEmployeeAmount)
-        : Math.ceil(nursingInsuranceEmployeeAmount);
-      nursingInsuranceEmployer = Math.round(gradeData.nursingInsurance - gradeData.healthInsurance - nursingInsuranceEmployee);
+      nursingInsuranceEmployeeRaw = gradeData.nursingInsuranceEmployeeReal - healthInsuranceEmployeeRaw;
+      nursingInsuranceEmployerRaw = gradeData.nursingInsurance - gradeData.healthInsurance - nursingInsuranceEmployeeRaw;
     }
 
-    // 厚生年金保険料
-    // pensionRatesMasterの利用は従来通り（gradeを直接使う）
-    const pensionRates = (pensionRatesMaster as PensionRatesMaster)['厚生年金保険'];
-    const pensionInsuranceEmployee = pensionRates[grade.toString()]?.pensionInsuranceEmployee || 0;
-    const pensionInsuranceEmployer = pensionInsuranceEmployee;
-
-    // 子ども・子育て拠出金（全国統一）
-    const childContributionRate = 0.0036;
-    const childContribution = Math.round(gradeData.standardMonthlyWage * childContributionRate);
-
-    // 合計
-    const employeeTotal = healthInsuranceEmployee + nursingInsuranceEmployee + pensionInsuranceEmployee;
-    const employerTotal = healthInsuranceEmployer + nursingInsuranceEmployer + pensionInsuranceEmployer + childContribution;
+    const pensionInsuranceEmployeeRaw = this.calculatePensionInsurance(gradeData.standardMonthlyWage).employee;
+    const pensionInsuranceEmployerRaw = this.calculatePensionInsurance(gradeData.standardMonthlyWage).employer;
+    const childContributionRaw = this.calculateChildContribution(gradeData.standardMonthlyWage);
+    const employeeTotalRaw = healthInsuranceEmployeeRaw + nursingInsuranceEmployeeRaw + pensionInsuranceEmployeeRaw + childContributionRaw;
+    const employerBurdenRaw = healthInsuranceEmployerRaw + nursingInsuranceEmployerRaw + pensionInsuranceEmployerRaw;
 
     return {
       healthInsurance: {
-        employee: healthInsuranceEmployee,
-        employer: healthInsuranceEmployer
+        employee: healthInsuranceEmployeeRaw,
+        employer: healthInsuranceEmployerRaw
       },
       nursingInsurance: {
-        employee: nursingInsuranceEmployee,
-        employer: nursingInsuranceEmployer
+        employee: nursingInsuranceEmployeeRaw,
+        employer: nursingInsuranceEmployerRaw
       },
       pensionInsurance: {
-        employee: pensionInsuranceEmployee,
-        employer: pensionInsuranceEmployer
+        employee: pensionInsuranceEmployeeRaw,
+        employer: pensionInsuranceEmployerRaw
       },
-      childContribution,
+      childContribution: childContributionRaw,
       total: {
-        employee: employeeTotal,
-        employer: employerTotal
+        employee: employeeTotalRaw,
+        employer: employerBurdenRaw
       }
     };
   }
@@ -419,7 +414,8 @@ export class InsuranceCalculationService {
     age,
     year = '2025',
     bonusCount,
-    annualBonusTotal = 0
+    annualBonusTotal = 0,
+    isMaternityLeave = false
   }: {
     bonusAmount: number;
     prefecture: string;
@@ -427,9 +423,23 @@ export class InsuranceCalculationService {
     year?: string;
     bonusCount: number;
     annualBonusTotal?: number;
+    isMaternityLeave?: boolean;
   }): BonusInsuranceResult | null {
     if (bonusCount > 3) return null; // 4回以上は通常の報酬扱い
     if (!bonusAmount || !prefecture) return null;
+    if (isMaternityLeave) {
+      // 育休・産休中は全て0円
+      return {
+        standardBonusAmount: 0,
+        healthInsuranceEmployee: 0,
+        healthInsuranceEmployer: 0,
+        nursingInsuranceEmployee: 0,
+        nursingInsuranceEmployer: 0,
+        pensionInsuranceEmployee: 0,
+        pensionInsuranceEmployer: 0,
+        childContribution: 0
+      };
+    }
     // 標準賞与額: 1,000円未満切り捨て
     const standardBonusAmount = Math.floor(bonusAmount / 1000) * 1000;
     // 厚生年金の1回上限: 150万円
@@ -446,21 +456,22 @@ export class InsuranceCalculationService {
     const rates = (bonusInsuranceRates as any)[year]?.[prefecture];
     if (!rates) return null;
     const healthInsuranceRate = rates.healthInsuranceRate;
-    const nursingInsuranceRate = rates.specialInsuranceRate;
+    const nursingInsuranceRate = 0.0159; // 介護保険料率は全国一律1.59%
     const pensionInsuranceRate = 0.183; // 全国一律
     // 健康保険・介護保険・厚生年金は折半（2分の1）
-    const healthInsuranceTotal = Math.floor(cappedBonusHealth * healthInsuranceRate);
-    const healthInsuranceEmployee = Math.floor(healthInsuranceTotal / 2);
-    const healthInsuranceEmployer = healthInsuranceTotal - healthInsuranceEmployee;
-    const pensionInsuranceTotal = Math.floor(cappedBonusPension * pensionInsuranceRate);
-    const pensionInsuranceEmployee = Math.floor(pensionInsuranceTotal / 2);
-    const pensionInsuranceEmployer = pensionInsuranceTotal - pensionInsuranceEmployee;
+    const healthInsuranceTotal = cappedBonusHealth * healthInsuranceRate;
+    const healthInsuranceEmployee = healthInsuranceTotal / 2;
+    const healthInsuranceEmployer = healthInsuranceTotal / 2;
+    const pensionInsuranceTotal = cappedBonusPension * pensionInsuranceRate;
+    const pensionInsuranceEmployee = pensionInsuranceTotal / 2;
+    const pensionInsuranceEmployer = pensionInsuranceTotal / 2;
     let nursingInsuranceEmployee = 0;
     let nursingInsuranceEmployer = 0;
     if (age >= 40 && age < 65) {
-      const nursingInsuranceTotal = Math.floor(cappedBonusHealth * nursingInsuranceRate);
-      nursingInsuranceEmployee = Math.floor(nursingInsuranceTotal / 2);
-      nursingInsuranceEmployer = nursingInsuranceTotal - nursingInsuranceEmployee;
+      // 介護保険も健康保険と同様に573万円が上限
+      const nursingInsuranceTotal = cappedBonusHealth * nursingInsuranceRate;
+      nursingInsuranceEmployee = Math.floor(nursingInsuranceTotal / 2);  // 端数切り捨て
+      nursingInsuranceEmployer = nursingInsuranceTotal - nursingInsuranceEmployee;  // 残りを事業主負担
     }
     // 子ども・子育て拠出金（会社分のみ、健康保険の上限と同じ賞与額を使う）
     const childContribution = Math.floor(cappedBonusHealth * 0.0036);

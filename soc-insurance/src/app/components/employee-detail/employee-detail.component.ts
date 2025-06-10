@@ -17,6 +17,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import aichiGradesData from '../../services/23aichi_insurance_grades.json';
+import pensionGradesData from '../../services/pension_grades.json';
 
 @Component({
   selector: 'app-employee-detail',
@@ -44,6 +45,7 @@ export class EmployeeDetailComponent implements OnInit {
   insuranceEligibility$: Observable<any> | null = null;
   standardMonthlyWage: number | null = null;
   public aichiGrades: { [key: string]: { standardMonthlyWage: number } } = aichiGradesData;
+  public pensionGrades: { [key: string]: { standardMonthlyWage: number } } = pensionGradesData;
 
   editingSection: Record<string, boolean> = {
     basicInfo: false,
@@ -145,7 +147,10 @@ export class EmployeeDetailComponent implements OnInit {
       standardMonthlyRevisionDate: [''],
       insuranceQualificationDate: [''],
       qualificationLossDate: [''],
-      grade: [null]
+      grade: [null],
+      newGrade: [null],
+      newStandardMonthlyWage: [null],
+      newRevisionDate: [null]
     });
 
     this.specialAttributesForm = this.fb.group({
@@ -199,7 +204,10 @@ export class EmployeeDetailComponent implements OnInit {
         this.employmentInfoForm.patchValue(this.employee.employmentInfo);
         this.insuranceStatusForm.patchValue({
           ...this.employee.insuranceStatus,
-          grade: this.employee.insuranceStatus.grade ?? null
+          grade: this.employee.insuranceStatus.grade ?? null,
+          newGrade: this.employee.insuranceStatus.newGrade ?? null,
+          newStandardMonthlyWage: this.employee.insuranceStatus.newStandardMonthlyWage ?? null,
+          newRevisionDate: this.employee.insuranceStatus.newRevisionDate ?? null
         });
         this.specialAttributesForm.patchValue(this.employee.specialAttributes);
         // 社会保険の加入判定を計算
@@ -224,6 +232,14 @@ export class EmployeeDetailComponent implements OnInit {
         if (initialGrade && this.aichiGrades[String(initialGrade)]) {
           this.standardMonthlyWage = this.aichiGrades[String(initialGrade)].standardMonthlyWage;
         }
+        this.insuranceStatusForm.get('newGrade')?.valueChanges.subscribe((grade) => {
+          const key = String(grade);
+          if (grade && this.pensionGrades[key]) {
+            this.insuranceStatusForm.get('newStandardMonthlyWage')?.setValue(this.pensionGrades[key].standardMonthlyWage);
+          } else {
+            this.insuranceStatusForm.get('newStandardMonthlyWage')?.setValue(null);
+          }
+        });
       }
     } catch (error) {
       console.error('従業員情報の取得に失敗しました:', error);
@@ -255,7 +271,10 @@ export class EmployeeDetailComponent implements OnInit {
         standardMonthlyRevisionDate: this.employee.insuranceStatus.standardMonthlyRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.standardMonthlyRevisionDate) : '',
         insuranceQualificationDate: this.employee.insuranceStatus.insuranceQualificationDate ? this.formatDateInput(this.employee.insuranceStatus.insuranceQualificationDate) : '',
         qualificationLossDate: this.employee.insuranceStatus.qualificationLossDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationLossDate) : '',
-        grade: this.employee.insuranceStatus.grade ?? null
+        grade: this.employee.insuranceStatus.grade ?? null,
+        newGrade: this.employee.insuranceStatus.newGrade ?? null,
+        newStandardMonthlyWage: this.employee.insuranceStatus.newStandardMonthlyWage ?? null,
+        newRevisionDate: this.employee.insuranceStatus.newRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.newRevisionDate) : null
       });
     }
     if (section === 'specialAttributes' && this.employee) {
@@ -343,21 +362,28 @@ export class EmployeeDetailComponent implements OnInit {
               this.employee.employmentInfo = updatedEmploymentInfo;
               break;
             case 'insuranceStatus':
-              const gradeValue = form.get('grade')?.value;
-              const standardMonthlyWage = gradeValue && this.aichiGrades[String(gradeValue)]
-                ? this.aichiGrades[String(gradeValue)].standardMonthlyWage
-                : null;
-              const updatedInsuranceStatus: InsuranceStatus = {
-                ...formValue,
-                qualificationAcquisitionDate: formValue.qualificationAcquisitionDate ? new Date(formValue.qualificationAcquisitionDate) : null,
-                standardMonthlyRevisionDate: formValue.standardMonthlyRevisionDate ? new Date(formValue.standardMonthlyRevisionDate) : null,
-                grade: gradeValue ?? null,
-                standardMonthlyWage: standardMonthlyWage
+              const insuranceStatusValue = this.insuranceStatusForm.value;
+              // 日付型の変換（他項目と同様）
+              if (insuranceStatusValue.qualificationAcquisitionDate instanceof Date) {
+                insuranceStatusValue.qualificationAcquisitionDate = insuranceStatusValue.qualificationAcquisitionDate;
+              }
+              if (insuranceStatusValue.standardMonthlyRevisionDate instanceof Date) {
+                insuranceStatusValue.standardMonthlyRevisionDate = insuranceStatusValue.standardMonthlyRevisionDate;
+              }
+              if (insuranceStatusValue.newRevisionDate instanceof Date) {
+                insuranceStatusValue.newRevisionDate = insuranceStatusValue.newRevisionDate;
+              }
+              // 保存
+              this.employee.insuranceStatus = {
+                ...this.employee.insuranceStatus,
+                ...insuranceStatusValue
               };
-              await this.employeeService.setInsuranceStatus(this.employee.id, updatedInsuranceStatus);
-              this.employee.insuranceStatus = updatedInsuranceStatus;
-              // 等級を即時反映
-              this.employee.insuranceStatus.grade = this.insuranceStatusForm.get('grade')?.value;
+              // 保存前に内容を出力
+              console.log('保存するinsuranceStatus:', this.employee.insuranceStatus);
+              // サブコレクションにも保存（employee.idを使う）
+              await this.employeeService.setInsuranceStatus(this.employee.id, this.employee.insuranceStatus);
+              this.editingSection['insuranceStatus'] = false;
+              this.snackBar.open('社会保険情報を更新しました', '閉じる', { duration: 3000 });
               break;
             case 'specialAttributes':
               const updatedSpecialAttributes: SpecialAttributes = {

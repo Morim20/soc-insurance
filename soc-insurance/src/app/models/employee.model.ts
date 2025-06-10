@@ -60,6 +60,9 @@ export interface InsuranceStatus {
   insuranceQualificationDate: Date | null;
   grade: number | null;
   standardMonthlyWage: number | null;
+  newGrade?: number | null;
+  newStandardMonthlyWage?: number | null;
+  newRevisionDate?: Date | null;
 }
 
 export interface Dependent {

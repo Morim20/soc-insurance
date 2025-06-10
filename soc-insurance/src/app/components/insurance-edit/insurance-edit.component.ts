@@ -10,13 +10,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EmployeeService } from '../../services/employee.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, getDoc, getDocs, query, where, collection } from '@angular/fire/firestore';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { InsuranceCalculationService } from '../../services/insuranceCalculationService';
 import { InsuranceData } from '../../models/insurance.model';
 import aichiGradesData from '../../services/23aichi_insurance_grades.json';
 import { SettingsService } from '../../services/settings.service';
+import { InsuranceSummaryService } from '../../services/insurance-summary.service';
 
 @Component({
   selector: 'app-insurance-edit',
@@ -63,6 +64,9 @@ export class InsuranceEditComponent implements OnInit {
   isBonusMonth = false;
   bonusInsuranceResult: any = null;
   bonusCount: number = 0;
+  @Input() companySummaryTable: any;
+  @Input() companyBonusSummaryTable: any;
+  @Input() hasBonus: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -71,7 +75,8 @@ export class InsuranceEditComponent implements OnInit {
     private employeeService: EmployeeService,
     private snackBar: MatSnackBar,
     private firestore: Firestore,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private insuranceSummaryService: InsuranceSummaryService
   ) {
     this.form = this.fb.group({
       month: [''],
@@ -80,6 +85,7 @@ export class InsuranceEditComponent implements OnInit {
       commutingAllowance: [0, Validators.required],
       bonusAmount: [0],
       standardBonusAmount: [0],
+      variableWage: [0],
       notes: ['']
     });
     this.data = this.data || {}; // dataの初期化
@@ -90,6 +96,18 @@ export class InsuranceEditComponent implements OnInit {
     // 標準報酬月額の自動計算
     this.form.valueChanges.subscribe(() => {
       this.calculateStandardMonthlyRemuneration();
+      // 育休・産休中は賞与も0円
+      if (this.isChildCareLeave) {
+        this.bonusInsuranceResult = {
+          healthInsuranceEmployee: 0,
+          healthInsuranceEmployer: 0,
+          nursingInsuranceEmployee: 0,
+          nursingInsuranceEmployer: 0,
+          pensionInsuranceEmployee: 0,
+          pensionInsuranceEmployer: 0,
+          childContribution: 0
+        };
+      }
     });
   }
 
@@ -116,7 +134,8 @@ export class InsuranceEditComponent implements OnInit {
     const baseSalary = this.form.get('baseSalary')?.value || 0;
     const allowances = this.form.get('allowances')?.value || 0;
     const commutingAllowance = this.form.get('commutingAllowance')?.value || 0;
-    let total = baseSalary + allowances + commutingAllowance;
+    const variableWage = this.form.get('variableWage')?.value || 0;
+    let total = baseSalary + allowances + commutingAllowance + variableWage;
 
     // 賞与が年4回以上かつ賞与月の場合は賞与も加算
     if (this.bonusCount >= 4 && this.isBonusMonth) {
@@ -149,6 +168,29 @@ export class InsuranceEditComponent implements OnInit {
       };
     }
 
+    // ここから累計賞与額の取得処理を追加
+    if (this.data?.period?.year && id) {
+      const year = this.data.period.year;
+      const employeeId = id;
+      let annualBonusTotal = 0;
+      // Firestoreから今年の賞与合計を取得（今回の賞与を除く）
+      const bonusDocs = await getDocs(
+        query(
+          collection(this.firestore, 'insuranceDetails'),
+          where('employeeId', '==', employeeId)
+        )
+      );
+      annualBonusTotal = bonusDocs.docs
+        .filter(doc => {
+          const data = doc.data();
+          // 今年分のみ、かつ今回のperiodと異なるもの
+          return data['period']?.year === year && (data['period']?.month !== this.data.period.month);
+        })
+        .map(doc => doc.data()['bonusAmount'] || 0)
+        .reduce((sum, val) => sum + val, 0);
+      this.data.annualBonusTotal = annualBonusTotal;
+    }
+
     if (id) {
       this.employeeId = id;
       this.basicInfo = await this.employeeService.getBasicInfo(id);
@@ -177,6 +219,7 @@ export class InsuranceEditComponent implements OnInit {
           commutingAllowance: Number(insuranceDetail?.commutingAllowance ?? this.employmentInfo?.commutingAllowance ?? 0),
           bonusAmount: Number(insuranceDetail?.bonusAmount ?? 0),
           standardBonusAmount: Number(insuranceDetail?.standardBonusAmount ?? 0),
+          variableWage: Number(insuranceDetail?.variableWage ?? 0),
           notes: insuranceDetail?.notes ?? ''
         });
         // 氏名・社員番号・所属をthis.dataにセット
@@ -225,6 +268,7 @@ export class InsuranceEditComponent implements OnInit {
           commutingAllowance: 0,
           bonusAmount: 0,
           standardBonusAmount: 0,
+          variableWage: 0,
           notes: ''
         });
         // 新規作成時も氏名・社員番号・所属をthis.dataに必ずセット
@@ -330,7 +374,9 @@ export class InsuranceEditComponent implements OnInit {
           prefecture: companySettings.prefecture,
           age: this.data?.age,
           year: '2025',
-          bonusCount
+          bonusCount,
+          isMaternityLeave: this.form.value.isMaternityLeave || false,
+          annualBonusTotal: this.data?.annualBonusTotal || 0
         });
         const stdBonus = Math.floor((val || 0) / 1000) * 1000;
         this.form.get('standardBonusAmount')?.setValue(stdBonus, { emitEvent: false });
@@ -361,7 +407,20 @@ export class InsuranceEditComponent implements OnInit {
     return age;
   }
 
+  get canSave(): boolean {
+    // 健康保険等級と厚生年金等級の両方が未設定ならfalse、両方登録されていればtrue
+    const healthGrade = this.insuranceStatus?.grade;
+    const pensionGrade = this.insuranceStatus?.newGrade;
+    const hasHealth = healthGrade !== null && healthGrade !== undefined && healthGrade !== '' && healthGrade !== 0 && healthGrade !== '未設定';
+    const hasPension = pensionGrade !== null && pensionGrade !== undefined && pensionGrade !== '' && pensionGrade !== 0 && pensionGrade !== '未設定';
+    return hasHealth && hasPension;
+  }
+
   async onSave() {
+    if (!this.canSave) {
+      this.snackBar.open('健康保険等級と厚生年金等級の両方を設定してください', '閉じる', { duration: 3000 });
+      return;
+    }
     if (!this.employeeId || !this.data?.period) {
       this.snackBar.open('保存に必要な情報が不足しています', '閉じる', { duration: 3000 });
       return;
@@ -380,7 +439,8 @@ export class InsuranceEditComponent implements OnInit {
     const baseSalary = Number(this.form.value.baseSalary) || 0;
     const allowances = Number(this.form.value.allowances) || 0;
     const commutingAllowance = Number(this.form.value.commutingAllowance) || 0;
-    const total = baseSalary + allowances + commutingAllowance;
+    const variableWage = Number(this.form.value.variableWage) || 0;
+    const total = baseSalary + allowances + commutingAllowance + variableWage;
     const standardMonthlyRemuneration = Math.floor(total);
 
     // 生年月日から年齢を再計算
@@ -419,8 +479,12 @@ export class InsuranceEditComponent implements OnInit {
         baseSalary,
         allowances,
         commutingAllowance,
+        variableWage,
         standardMonthlyRemuneration: 0,
-        standardMonthlyWage: 0, // 標準報酬月額も0に
+        grade: this.insuranceStatus?.grade ?? null,
+        standardMonthlyWage: this.insuranceStatus?.standardMonthlyWage ?? null,
+        newGrade: this.insuranceStatus?.newGrade ?? null,
+        newStandardMonthlyWage: this.insuranceStatus?.newStandardMonthlyWage ?? null,
         bonusAmount: Number(this.form.value.bonusAmount) || 0,
         standardBonusAmount: Number(this.form.value.standardBonusAmount) || 0,
         // 賞与の社会保険料も0で保存
@@ -448,27 +512,33 @@ export class InsuranceEditComponent implements OnInit {
         isNursingInsuranceEligible
       };
     } else {
+      // 端数処理前（2分割直後）の値を保存
+      const bonusRaw = this.bonusInsuranceResult || {};
       saveValue = result ? {
         baseSalary,
         allowances,
         commutingAllowance,
+        variableWage,
         standardMonthlyRemuneration,
-        standardMonthlyWage: this.standardMonthlyWage || 0, // 標準報酬月額を保存
+        grade: this.insuranceStatus?.grade ?? null,
+        standardMonthlyWage: this.insuranceStatus?.standardMonthlyWage ?? null,
+        newGrade: this.insuranceStatus?.newGrade ?? null,
+        newStandardMonthlyWage: this.insuranceStatus?.newStandardMonthlyWage ?? null,
         bonusAmount: Number(this.form.value.bonusAmount) || 0,
         standardBonusAmount: Number(this.form.value.standardBonusAmount) || 0,
-        // 賞与の社会保険料も保存
-        bonusHealthInsuranceEmployee: this.bonusInsuranceResult?.healthInsuranceEmployee || 0,
-        bonusHealthInsuranceEmployer: this.bonusInsuranceResult?.healthInsuranceEmployer || 0,
-        bonusNursingInsuranceEmployee: this.bonusInsuranceResult?.nursingInsuranceEmployee || 0,
-        bonusNursingInsuranceEmployer: this.bonusInsuranceResult?.nursingInsuranceEmployer || 0,
-        bonusPensionInsuranceEmployee: this.bonusInsuranceResult?.pensionInsuranceEmployee || 0,
-        bonusPensionInsuranceEmployer: this.bonusInsuranceResult?.pensionInsuranceEmployer || 0,
-        bonusChildContribution: this.bonusInsuranceResult?.childContribution || 0,
+        // 賞与の社会保険料は2分割直後の値（端数処理前）を保存
+        bonusHealthInsuranceEmployee: typeof bonusRaw.healthInsuranceEmployee === 'number' ? bonusRaw.healthInsuranceEmployee : 0,
+        bonusHealthInsuranceEmployer: typeof bonusRaw.healthInsuranceEmployer === 'number' ? bonusRaw.healthInsuranceEmployer : 0,
+        bonusNursingInsuranceEmployee: typeof bonusRaw.nursingInsuranceEmployee === 'number' ? bonusRaw.nursingInsuranceEmployee : 0,
+        bonusNursingInsuranceEmployer: typeof bonusRaw.nursingInsuranceEmployer === 'number' ? bonusRaw.nursingInsuranceEmployer : 0,
+        bonusPensionInsuranceEmployee: typeof bonusRaw.pensionInsuranceEmployee === 'number' ? bonusRaw.pensionInsuranceEmployee : 0,
+        bonusPensionInsuranceEmployer: typeof bonusRaw.pensionInsuranceEmployer === 'number' ? bonusRaw.pensionInsuranceEmployer : 0,
+        bonusChildContribution: typeof bonusRaw.childContribution === 'number' ? bonusRaw.childContribution : 0,
         notes: noteText,
         healthInsuranceEmployee: result.healthInsurance.employee,
         healthInsuranceEmployer: result.healthInsurance.employer,
-        nursingInsuranceEmployee: isNursingInsuranceEligible ? result.nursingInsurance.employee : 0,
-        nursingInsuranceEmployer: isNursingInsuranceEligible ? result.nursingInsurance.employer : 0,
+        nursingInsuranceEmployee: isNursingInsuranceEligible ? (result.nursingInsurance.employee - result.healthInsurance.employee) : 0,
+        nursingInsuranceEmployer: isNursingInsuranceEligible ? (result.nursingInsurance.employer - result.healthInsurance.employer - result.nursingInsurance.employee) : 0,
         pensionInsuranceEmployee: result.pensionInsurance.employee,
         pensionInsuranceEmployer: result.pensionInsurance.employer,
         childContribution: result.childContribution,
@@ -483,8 +553,12 @@ export class InsuranceEditComponent implements OnInit {
         baseSalary,
         allowances,
         commutingAllowance,
+        variableWage,
         standardMonthlyRemuneration,
-        standardMonthlyWage: this.standardMonthlyWage || 0, // 標準報酬月額を保存
+        grade: this.insuranceStatus?.grade ?? null,
+        standardMonthlyWage: this.insuranceStatus?.standardMonthlyWage ?? null,
+        newGrade: this.insuranceStatus?.newGrade ?? null,
+        newStandardMonthlyWage: this.insuranceStatus?.newStandardMonthlyWage ?? null,
         bonusAmount: Number(this.form.value.bonusAmount) || 0,
         standardBonusAmount: Number(this.form.value.standardBonusAmount) || 0,
         // 賞与の社会保険料も0で保存
@@ -515,10 +589,22 @@ export class InsuranceEditComponent implements OnInit {
 
     try {
       await this.employeeService.saveInsuranceDetail(this.employeeId, this.data.period, saveValue);
-      // 保存したデータをthis.dataとsavedInsuranceDataの両方に反映
-      this.data = { ...this.data, ...saveValue };
-      this.savedInsuranceData = saveValue;
+      // Firestoreから最新データを再取得して反映
+      const latest = await this.employeeService.getInsuranceDetail(this.employeeId, this.data.period);
+      this.data = { ...this.data, ...latest };
+      this.savedInsuranceData = latest;
       this.showDownloadButtons = true;
+
+      // 会社全体の保険料明細も即時更新
+      if (this.data?.period && this.companySummaryTable && this.companyBonusSummaryTable !== undefined && this.hasBonus !== undefined) {
+        await this.insuranceSummaryService.saveCompanySummary(
+          this.data.period.year,
+          this.data.period.month,
+          this.companySummaryTable,
+          this.companyBonusSummaryTable,
+          this.hasBonus
+        );
+      }
 
       this.snackBar.open('保存が完了しました', '閉じる', { duration: 2000 });
       this.router.navigate(['/admin/insurance']);
@@ -543,7 +629,18 @@ export class InsuranceEditComponent implements OnInit {
         ...this.data,
         ...this.savedInsuranceData,
         standardMonthlyWage: this.standardMonthlyWage,
-        standardMonthlyRemuneration: this.data.standardMonthlyRemuneration
+        standardMonthlyRemuneration: this.savedInsuranceData.standardMonthlyRemuneration,
+        healthInsuranceEmployee: this.savedInsuranceData.healthInsuranceEmployee,
+        healthInsuranceEmployer: this.savedInsuranceData.healthInsuranceEmployer,
+        nursingInsuranceEmployee: this.savedInsuranceData.nursingInsuranceEmployee,
+        nursingInsuranceEmployer: this.savedInsuranceData.nursingInsuranceEmployer,
+        pensionInsuranceEmployee: this.savedInsuranceData.pensionInsuranceEmployee,
+        pensionInsuranceEmployer: this.savedInsuranceData.pensionInsuranceEmployer,
+        childContribution: this.savedInsuranceData.childContribution,
+        employeeTotalDeduction: this.savedInsuranceData.employeeTotalDeduction,
+        employerTotalDeduction: this.savedInsuranceData.employerTotalDeduction,
+        bonusAmount: this.savedInsuranceData.bonusAmount,
+        standardBonusAmount: this.savedInsuranceData.standardBonusAmount
       };
       
       const element = this.pdfContent.nativeElement;
@@ -601,7 +698,7 @@ export class InsuranceEditComponent implements OnInit {
     const employeeId = this.savedInsuranceData.employeeId || '';
 
     const headers = [
-      '氏名', '社員番号', '等級', '年月', '標準報酬月額', '賞与支給額（該当月）', '標準賞与額',
+      '氏名', '社員番号', '等級', '年月', /* '標準報酬月額', */ '賞与支給額（該当月）', '標準賞与額',
       '健康保険料（個人分）', '健康保険料（会社分）', '介護保険料（個人分）', '介護保険料（会社分）',
       '厚生年金保険料（個人分）', '厚生年金保険料（会社分）', '子ども・子育て拠出金',
       '個人負担保険料合計', '会社負担保険料合計', '備考'
@@ -612,7 +709,7 @@ export class InsuranceEditComponent implements OnInit {
       `"${employeeId}"`,
       `"${this.insuranceStatus?.grade || ''}"`,
       `"${yearMonth}"`,
-      `"${this.savedInsuranceData.standardMonthlyRemuneration || 0}"`,
+      // `"${this.savedInsuranceData.standardMonthlyWage || 0}"`, // ← 削除
       `"${this.savedInsuranceData.bonusAmount || 0}"`,
       `"${this.savedInsuranceData.standardBonusAmount || 0}"`,
       `"${this.savedInsuranceData.healthInsuranceEmployee || 0}"`,
@@ -649,7 +746,38 @@ export class InsuranceEditComponent implements OnInit {
    * 50銭以下は切り捨て、50銭超は切り上げ
    */
   roundAmount(amount: number): number {
-    return Math.round(amount);
+    const decimal = amount - Math.floor(amount);
+    if (decimal <= 0.5) {
+      return Math.floor(amount);
+    } else {
+      return Math.ceil(amount);
+    }
+  }
+
+  // 従業員負担分の合計を計算する関数
+  calculateEmployeeTotalInsurance(employee: number, nursing: number, pension: number): number {
+    const total = employee + nursing + pension;
+    return this.roundAmount(total);
+  }
+
+  // 会社負担分の合計を計算する関数（個人分の端数処理に応じて端数処理）
+  calculateEmployerTotalInsurance(employee: number, nursing: number, pension: number): number {
+    const total = employee + nursing + pension;
+    const decimal = total - Math.floor(total);
+    
+    // 個人分の合計を計算
+    const employeeTotal = employee + nursing + pension;
+    const employeeTotalDecimal = employeeTotal - Math.floor(employeeTotal);
+    
+    // 個人分の端数処理を確認（50銭以下は切り捨て、50銭超は切り上げ）
+    const wasEmployeeRoundedUp = employeeTotalDecimal > 0.5;
+    
+    // 個人分が切り上げられた場合は切り捨て、切り捨てられた場合は切り上げ
+    if (wasEmployeeRoundedUp) {
+      return Math.floor(total);
+    } else {
+      return Math.ceil(total);
+    }
   }
 
   private calculateInsurance() {
@@ -688,8 +816,18 @@ export class InsuranceEditComponent implements OnInit {
       this.data.pensionInsuranceEmployee = result ? result.pensionInsurance.employee : 0;
       this.data.pensionInsuranceEmployer = result ? result.pensionInsurance.employer : 0;
       this.data.childContribution = result ? result.childContribution : 0;
-      this.data.employeeTotalDeduction = result ? result.total.employee : 0;
-      this.data.employerTotalDeduction = result ? result.total.employer : 0;
+      // 従業員負担分の合計は端数処理を適用
+      this.data.employeeTotalDeduction = result ? this.calculateEmployeeTotalInsurance(
+        result.healthInsurance.employee,
+        result.nursingInsurance.employee,
+        result.pensionInsurance.employee
+      ) : 0;
+      // 会社負担分の合計は端数処理なし
+      this.data.employerTotalDeduction = result ? this.calculateEmployerTotalInsurance(
+        result.healthInsurance.employer,
+        result.nursingInsurance.employer,
+        result.pensionInsurance.employer
+      ) : 0;
     }
   }
 
@@ -705,5 +843,41 @@ export class InsuranceEditComponent implements OnInit {
       return today >= start && (!end || today <= end);
     }
     return false;
+  }
+
+  // 賞与分：従業員負担分の合計（各保険料ごとに端数処理→合算）
+  calculateBonusEmployeeTotalInsurance(health: number, nursing: number, pension: number): number {
+    const healthRounded = this.roundAmount(health);
+    const nursingRounded = this.roundAmount(nursing);
+    const pensionRounded = this.roundAmount(pension);
+    return healthRounded + nursingRounded + pensionRounded;
+  }
+
+  // 賞与分：会社負担分の合計（従業員分の端数処理結果に応じて切り上げ/切り捨て）
+  calculateBonusEmployerTotalInsurance(healthEmp: number, nursingEmp: number, pensionEmp: number, healthCom: number, nursingCom: number, pensionCom: number): number {
+    const healthRounded = this.roundAmount(healthEmp);
+    const nursingRounded = this.roundAmount(nursingEmp);
+    const pensionRounded = this.roundAmount(pensionEmp);
+    const empTotal = healthRounded + nursingRounded + pensionRounded;
+    const comTotalRaw = healthCom + nursingCom + pensionCom;
+    // 元の合計値の端数
+    const empSumDecimal = (healthEmp + nursingEmp + pensionEmp) - Math.floor(healthEmp + nursingEmp + pensionEmp);
+    const wasEmpRoundedUp = empSumDecimal > 0.5;
+    return wasEmpRoundedUp ? Math.floor(comTotalRaw) : Math.ceil(comTotalRaw);
+  }
+
+  get displayBonusInsuranceResult() {
+    if (this.isChildCareLeave) {
+      return {
+        healthInsuranceEmployee: 0,
+        healthInsuranceEmployer: 0,
+        nursingInsuranceEmployee: 0,
+        nursingInsuranceEmployer: 0,
+        pensionInsuranceEmployee: 0,
+        pensionInsuranceEmployer: 0,
+        childContribution: 0
+      };
+    }
+    return this.bonusInsuranceResult || {};
   }
 } 

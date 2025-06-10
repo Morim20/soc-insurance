@@ -74,7 +74,7 @@ export class EmployeeService {
   }
   async setInsuranceStatus(employeeId: string, insuranceStatus: InsuranceStatus): Promise<void> {
     const subRef = doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/insuranceStatus/info`);
-    await setDoc(subRef, insuranceStatus);
+    await setDoc(subRef, insuranceStatus, { merge: true });
   }
   async setSpecialAttributes(employeeId: string, specialAttributes: SpecialAttributes): Promise<void> {
     const subRef = doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/specialAttributes/info`);
