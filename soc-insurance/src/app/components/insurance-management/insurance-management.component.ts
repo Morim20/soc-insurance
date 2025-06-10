@@ -340,7 +340,9 @@ export class InsuranceManagementComponent implements OnInit {
         // 在籍判定: 入社日 <= 対象月末 && (退職日が未設定 or 退職日 >= 対象月初)
         const targetMonthStart = new Date(this.selectedYear, this.selectedMonth - 1, 1);
         const targetMonthEnd = new Date(this.selectedYear, this.selectedMonth, 0, 23, 59, 59, 999);
+        // 入社日が選択された月より後の場合は除外
         if (startDate > targetMonthEnd) continue;
+        // 退職日が選択された月より前の場合は除外
         if (endDate && endDate < targetMonthStart) continue;
 
         // 保険加入判定
@@ -407,7 +409,8 @@ export class InsuranceManagementComponent implements OnInit {
             bonusPensionInsuranceEmployee: null,
             bonusPensionInsuranceEmployer: null,
             bonusChildContribution: null,
-            notes: ''
+            notes: '',
+            variableWage: null
           });
           continue;
         }
@@ -417,6 +420,7 @@ export class InsuranceManagementComponent implements OnInit {
         baseSalary = employee.employmentInfo?.baseSalary ?? null;
         const bonusAmount = insuranceDetail?.bonusAmount ?? null;
         const standardBonusAmount = insuranceDetail?.standardBonusAmount ?? null;
+        const variableWage = insuranceDetail?.variableWage ?? null;
         const notes = insuranceDetail?.notes ?? '';
         // 賞与保険料プロパティを取得
         const bonusHealthInsuranceEmployee = insuranceDetail?.bonusHealthInsuranceEmployee ?? 0;
@@ -448,10 +452,18 @@ export class InsuranceManagementComponent implements OnInit {
             period,
             age,
             isNursingInsuranceEligible: age >= 40 && age < 65,
-            notes: '育児休暇中のため',
             standardMonthlyWage: insuranceStatus?.standardMonthlyWage || null,
             bonusAmount,
-            standardBonusAmount
+            standardBonusAmount,
+            variableWage,
+            bonusHealthInsuranceEmployee,
+            bonusHealthInsuranceEmployer,
+            bonusNursingInsuranceEmployee,
+            bonusNursingInsuranceEmployer,
+            bonusPensionInsuranceEmployee,
+            bonusPensionInsuranceEmployer,
+            bonusChildContribution,
+            notes: '育児休暇中のため'
           });
           continue;
         }
@@ -486,6 +498,7 @@ export class InsuranceManagementComponent implements OnInit {
           standardMonthlyWage: insuranceStatus?.standardMonthlyWage || null,
           bonusAmount,
           standardBonusAmount,
+          variableWage,
           bonusHealthInsuranceEmployee,
           bonusHealthInsuranceEmployer,
           bonusNursingInsuranceEmployee,
@@ -517,6 +530,7 @@ export class InsuranceManagementComponent implements OnInit {
           standardMonthlyWage: insuranceStatus?.standardMonthlyWage || null,
           bonusAmount,
           standardBonusAmount,
+          variableWage,
           bonusHealthInsuranceEmployee,
           bonusHealthInsuranceEmployer,
           bonusNursingInsuranceEmployee,
@@ -832,55 +846,60 @@ export class InsuranceManagementComponent implements OnInit {
       const bonusNursingEmployee = element.bonusNursingInsuranceEmployee || 0;
       const bonusPensionEmployee = element.bonusPensionInsuranceEmployee || 0;
       const bonusEmployeeTotal = bonusHealthEmployee + bonusNursingEmployee + bonusPensionEmployee;
-      // ヘッダー
+
+      // 手当、通勤手当、報酬月額を取得
+      const period = { year: this.selectedYear, month: this.selectedMonth };
+      const insuranceDetail = await this.employeeService.getInsuranceDetail(element.id, period);
+      console.log('insuranceDetail:', insuranceDetail); // デバッグ用
+      const baseSalary = insuranceDetail?.baseSalary ?? '';
+      const allowances = insuranceDetail?.allowances ?? '';
+      const commutingAllowance = insuranceDetail?.commutingAllowance ?? '';
+      const variableWage = insuranceDetail?.variableWage ?? '';
+      const standardMonthlyRemuneration = insuranceDetail?.standardMonthlyRemuneration ?? '';
+
+      // ヘッダー（タブ区切り、指定順）
       const headers = [
-        '氏名', '社員番号', '所属',
+        '年月', '氏名', '社員番号', '所属',
         '健康保険等級', '健康保険標準報酬月額', '厚生年金等級', '厚生年金標準報酬月額',
-        '等級', '基本給', '標準報酬月額',
-        '報酬月額',
+        '基本給', '手当', '通勤手当', '報酬月額', '非固定的賃金',
         '賞与支給額', '標準賞与額',
-        '健康保険料（従業員負担分）',
-        '介護保険料（従業員負担分）',
-        '厚生年金保険料（従業員負担分）',
-        '従業員負担保険料合計',
-        // 賞与分（賞与月のみ）
-        ...(element.bonusAmount ? [
-          '賞与健康保険料（従業員負担分）',
-          '賞与介護保険料（従業員負担分）',
-          '賞与厚生年金保険料（従業員負担分）',
-          '賞与従業員負担保険料合計',
-        ] : []),
+        '健康保険料（従業員負担分）', '介護保険料（従業員負担分）', '厚生年金保険料（従業員負担分）', '従業員負担保険料合計',
+        '賞与健康保険料（従業員負担分）', '賞与介護保険料（従業員負担分）', '賞与厚生年金保険料（従業員負担分）', '賞与従業員負担保険料合計',
         '備考'
       ];
-      // データ
+      // データ（タブ区切り、指定順、すべて文字列化）
       const row = [
-        `"${element.fullName || ''}"`,
-        `"${element.employeeId || ''}"`,
-        `"${element.department || ''}"`,
-        `"${grade}"`,
-        `"${standardMonthlyWage}"`,
-        `"${pensionGrade}"`,
-        `"${pensionStandardMonthlyWage}"`,
-        `"${grade}"`,
-        `"${element.baseSalary || 0}"`,
-        `"${element.standardMonthlyWage || 0}"`,
-        `"${element.standardMonthlyRemuneration !== undefined && element.standardMonthlyRemuneration !== null ? element.standardMonthlyRemuneration : ''}"`,
-        `"${showBonusRow ? (element.bonusAmount || 0) : ''}"`,
-        `"${showBonusRow ? (element.standardBonusAmount || 0) : ''}"`,
-        `"${healthEmployee}"`,
-        `"${nursingEmployee}"`,
-        `"${pensionEmployee}"`,
-        `"${employeeTotal}"`,
-        // 賞与分（賞与月のみ）
-        ...(element.bonusAmount ? [
-          `"${bonusHealthEmployee}"`,
-          `"${bonusNursingEmployee}"`,
-          `"${bonusPensionEmployee}"`,
-          `"${bonusEmployeeTotal}"`,
-        ] : []),
-        `"${element.notes || ''}"`
-      ];
-      const csvContent = [headers.join(','), row.join(',')].join('\r\n');
+        yearMonth,
+        element.fullName || '',
+        element.employeeId || '',
+        element.department || '',
+        grade,
+        standardMonthlyWage,
+        pensionGrade,
+        pensionStandardMonthlyWage,
+        baseSalary,
+        allowances,
+        commutingAllowance,
+        standardMonthlyRemuneration,
+        variableWage,
+        showBonusRow ? (element.bonusAmount || 0) : '',
+        showBonusRow ? (element.standardBonusAmount || 0) : '',
+        healthEmployee,
+        nursingEmployee,
+        pensionEmployee,
+        employeeTotal,
+        bonusHealthEmployee,
+        bonusNursingEmployee,
+        bonusPensionEmployee,
+        bonusEmployeeTotal,
+        element.notes || ''
+      ].map(v => String(v));
+
+      // デバッグ用
+      console.log('CSVヘッダー:', headers);
+      console.log('CSVデータ:', row);
+
+      const csvContent = [headers.join('\t'), row.join('\t')].join('\r\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const fileName = `社会保険料明細書_${yearMonth}_${element.fullName || ''}_${element.employeeId || ''}.csv`;
       const link = document.createElement('a');
