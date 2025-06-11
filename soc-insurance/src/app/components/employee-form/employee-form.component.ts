@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, FormArray, ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, FormArray, ReactiveFormsModule, AbstractControl, ValidatorFn } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 import { EmployeeService } from '../../services/employee.service';
@@ -20,6 +20,8 @@ import { doc, getDoc } from '@angular/fire/firestore';
 import { Timestamp } from 'firebase/firestore';
 import aichiGradesData from '../../services/23aichi_insurance_grades.json';
 const aichiGrades: { [key: string]: { standardMonthlyWage: number } } = aichiGradesData;
+import pensionGradesData from '../../services/pension_grades.json';
+const pensionGrades: { [key: string]: { standardMonthlyWage: number } } = pensionGradesData;
 
 @Component({
   selector: 'app-employee-form',
@@ -47,6 +49,36 @@ export class EmployeeFormComponent implements OnInit {
   departments: string[] = [];
   employeeId: string | null = null;
   standardMonthlyWage: number | null = null;
+  pensionMonthlyWage: number | null = null;
+  public aichiGrades: { [key: string]: { standardMonthlyWage: number } } = aichiGrades;
+  public pensionGrades: { [key: string]: { standardMonthlyWage: number } } = pensionGrades;
+  gradeSort = (a: any, b: any) => Number(a.key) - Number(b.key);
+
+  // カスタムバリデーター: relationshipが「その他」の場合はrelationshipOther必須
+  relationshipOtherRequiredValidator: ValidatorFn = (group: AbstractControl) => {
+    const relationship = group.get('relationship')?.value;
+    const relationshipOther = group.get('relationshipOther')?.value;
+    if (relationship === 'その他' && !relationshipOther) {
+      group.get('relationshipOther')?.setErrors({ required: true });
+      return { relationshipOtherRequired: true };
+    } else {
+      group.get('relationshipOther')?.setErrors(null);
+    }
+    return null;
+  };
+
+  // 生年月日が未来日ならエラー
+  futureDateValidator(control: AbstractControl) {
+    const value = control.value;
+    if (!value) return null;
+    const inputDate = new Date(value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (inputDate > today) {
+      return { futureDate: true };
+    }
+    return null;
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -63,7 +95,7 @@ export class EmployeeFormComponent implements OnInit {
         firstNameKanji: ['', Validators.required],
         lastNameKana: ['', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
         firstNameKana: ['', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
-        birthDate: [null, Validators.required],
+        birthDate: [null, [Validators.required, this.futureDateValidator]],
         gender: ['', Validators.required],
         address: ['' ],
         myNumber: [''],
@@ -80,7 +112,12 @@ export class EmployeeFormComponent implements OnInit {
         expectedEmploymentMonths: ['', [Validators.min(1)]],
         grade: [null, [(control: AbstractControl) => {
           const value = control.value;
-          if (value === null) return null; // 「なし」の場合はバリデーションをスキップ
+          if (value === null) return null;
+          return value >= 1 ? null : { min: true };
+        }]],
+        pensionGrade: [null, [(control: AbstractControl) => {
+          const value = control.value;
+          if (value === null) return null;
           return value >= 1 ? null : { min: true };
         }]],
         baseSalary: ['', [Validators.required, Validators.min(0)]],
@@ -93,28 +130,62 @@ export class EmployeeFormComponent implements OnInit {
         oneWayFare: [0],
       }),
       insuranceStatus: this.fb.group({
-        qualificationAcquisitionDate: [null],
-        qualificationLossDate: [null],
-        insuranceType: ['協会けんぽ'],
-        remunerationCurrency: [0],
+        healthInsurance: [''],
+        nursingInsurance: [''],
+        pensionInsurance: [''],
+        qualificationAcquisitionDate: [''],
+        insuranceType: [''],
+        remunerationCurrency: [''],
         remunerationInKind: [''],
-        standardMonthlyRevisionDate: [null],
-        insuranceQualificationDate: [null]
+        standardMonthlyRevisionDate: [''],
+        insuranceQualificationDate: [''],
+        qualificationLossDate: [''],
+        grade: [null],
+        newGrade: [null],
+        newStandardMonthlyWage: [null],
+        newRevisionDate: [null]
       }),
-      dependents: this.fb.array([]),
       specialAttributes: this.fb.group({
         leaveType: [''],
-        leaveStartDate: [null],
-        leaveEndDate: [null],
-        isOver70: [false],
-        pensionExempt: [false],
-        reached70Date: [null],
-        isShortTimeWorker: [false],
-        monthlyIncome: [0],
-        residencyCertificateLocation: [''],
-        assignmentAllowance: [0],
-        cohabitationWithFamily: [true]
-      })
+        leaveStartDate: [''],
+        leaveEndDate: ['']
+      }),
+      dependents: this.fb.array([
+        this.fb.group({
+          lastName: ['', Validators.required],
+          firstName: ['', Validators.required],
+          lastNameKana: ['', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
+          firstNameKana: ['', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
+          myNumber: ['', [Validators.pattern(/^[0-9]{12}$/)]],
+          birthDate: [null, [Validators.required, this.futureDateValidator]],
+          relationship: ['', Validators.required],
+          relationshipOther: [''],
+          income: [null, [Validators.required, Validators.min(0)]],
+          residency: ['', Validators.required],
+          cohabitation: ['', Validators.required],
+          occupation: [''],
+          schoolGrade: [''],
+          occupationOther: ['']
+        }, { validators: this.relationshipOtherRequiredValidator })
+      ])
+    });
+
+    // 健康保険等級の変更を監視
+    this.employeeForm.get('employmentInfo.grade')?.valueChanges.subscribe(grade => {
+      if (grade && this.aichiGrades[grade]) {
+        this.standardMonthlyWage = this.aichiGrades[grade].standardMonthlyWage;
+      } else {
+        this.standardMonthlyWage = null;
+      }
+    });
+
+    // 厚生年金等級の変更を監視
+    this.employeeForm.get('employmentInfo.pensionGrade')?.valueChanges.subscribe(grade => {
+      if (grade && this.pensionGrades[grade]) {
+        this.pensionMonthlyWage = this.pensionGrades[grade].standardMonthlyWage;
+      } else {
+        this.pensionMonthlyWage = null;
+      }
     });
   }
 
@@ -124,7 +195,7 @@ export class EmployeeFormComponent implements OnInit {
     if (this.employeeId) {
       await this.loadEmployee();
     }
-    // 等級変更時に標準報酬月額を自動反映
+    // 健康保険等級変更時に標準報酬月額を自動反映
     this.employeeForm.get('employmentInfo.grade')?.valueChanges.subscribe((grade) => {
       const key = String(grade);
       if (grade && aichiGrades[key]) {
@@ -133,10 +204,23 @@ export class EmployeeFormComponent implements OnInit {
         this.standardMonthlyWage = null;
       }
     });
+    // 厚生年金等級変更時に標準報酬月額を自動反映
+    this.employeeForm.get('employmentInfo.pensionGrade')?.valueChanges.subscribe((grade) => {
+      const key = String(grade);
+      if (grade && pensionGrades[key]) {
+        this.pensionMonthlyWage = pensionGrades[key].standardMonthlyWage;
+      } else {
+        this.pensionMonthlyWage = null;
+      }
+    });
     // 初期値セット時も反映
     const initialGrade = this.employeeForm.get('employmentInfo.grade')?.value;
     if (initialGrade && aichiGrades[String(initialGrade)]) {
       this.standardMonthlyWage = aichiGrades[String(initialGrade)].standardMonthlyWage;
+    }
+    const initialPensionGrade = this.employeeForm.get('employmentInfo.pensionGrade')?.value;
+    if (initialPensionGrade && pensionGrades[String(initialPensionGrade)]) {
+      this.pensionMonthlyWage = pensionGrades[String(initialPensionGrade)].standardMonthlyWage;
     }
   }
 
@@ -205,7 +289,9 @@ export class EmployeeFormComponent implements OnInit {
               income: [dependent.income],
               residency: [dependent.residency],
               cohabitation: [dependent.cohabitation],
-              occupation: [dependent.occupation]
+              occupation: [dependent.occupation],
+              schoolGrade: [dependent.schoolGrade],
+              occupationOther: [dependent.occupationOther]
             });
             this.dependents.push(dependentGroup);
           });
@@ -232,13 +318,15 @@ export class EmployeeFormComponent implements OnInit {
       lastNameKana: [''],
       firstNameKana: [''],
       myNumber: [''],
-      birthDate: [null],
+      birthDate: [null, [Validators.required, this.futureDateValidator]],
       relationship: [''],
       relationshipOther: [''],
       income: [0],
       residency: ['国内'],
       cohabitation: ['同居'],
-      occupation: ['']
+      occupation: [''],
+      schoolGrade: [''],
+      occupationOther: ['']
     });
     this.dependents.push(dependent);
   }

@@ -51,11 +51,7 @@ export class LoginComponent {
           this.loginForm.value.password
         );
         if (success) {
-          if (await this.authService.isAdmin()) {
-            this.router.navigate(['/admin']);
-          } else {
-            this.router.navigate(['/home']);
-          }
+          this.router.navigate(['/home']);
         } else {
           this.snackBar.open('メールアドレスまたはパスワードが正しくありません。', '閉じる', {
             duration: 3000,

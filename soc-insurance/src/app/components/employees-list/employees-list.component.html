@@ -1,29 +1,48 @@
 <div class="employees-list-container">
   <div class="header">
     <h2>従業員一覧</h2>
-    <button mat-raised-button color="primary" (click)="onAddEmployee()">新規追加</button>
+    <button mat-raised-button class="green-btn" (click)="onAddEmployee()">新規追加</button>
   </div>
 
   <div *ngIf="isLoading">読み込み中...</div>
   <div *ngIf="error" class="error">{{ error }}</div>
 
-  <table *ngIf="!isLoading && employees.length > 0" class="employee-table">
+  <div class="filter-row">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>雇用形態</mat-label>
+      <mat-select [(ngModel)]="selectedEmploymentType" (selectionChange)="applyFilter()">
+        <mat-option value="">全て</mat-option>
+        <mat-option *ngFor="let type of employmentTypeOptions" [value]="type">{{ type }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>部署</mat-label>
+      <mat-select [(ngModel)]="selectedDepartment" (selectionChange)="applyFilter()">
+        <mat-option value="">全て</mat-option>
+        <mat-option *ngFor="let dept of departmentOptions" [value]="dept">{{ dept }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <table *ngIf="!isLoading && employeesFiltered.length > 0" class="employee-table">
     <thead>
       <tr>
         <th>社員番号</th>
         <th>氏名</th>
+        <th>雇用形態</th>
         <th>部署</th>
         <th>入社年月日</th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let emp of employees" (click)="router.navigate(['/admin/employees', emp.id])" style="cursor:pointer;">
+      <tr *ngFor="let emp of employeesFiltered" (click)="router.navigate(['/admin/employees', emp.id])" style="cursor:pointer;">
         <td>{{ emp.employeeId || '-' }}</td>
         <td>{{ emp.fullName || '-' }}</td>
+        <td>{{ emp.employmentType || '-' }}</td>
         <td>{{ emp.department || '-' }}</td>
         <td>{{ emp.startDate ? (emp.startDate | date:'yyyy/MM/dd') : '-' }}</td>
       </tr>
     </tbody>
   </table>
-  <div *ngIf="!isLoading && employees.length === 0">従業員が登録されていません。</div>
+  <div *ngIf="!isLoading && employeesFiltered.length === 0">従業員が登録されていません。</div>
 </div>

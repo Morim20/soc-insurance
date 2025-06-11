@@ -43,23 +43,11 @@ export class HomeComponent implements OnInit {
   async ngOnInit() {
     const user = this.authService.getCurrentUser();
     this.isAdmin = await this.authService.isAdmin();
-    if (user && user.id) {
-      const id = user.id;
-      const [basicInfo, employmentInfo, insuranceStatus, dependents, specialAttributes] = await Promise.all([
-        this.employeeService.getBasicInfo(id),
-        this.employeeService.getEmploymentInfo(id),
-        this.employeeService.getInsuranceStatus(id),
-        this.employeeService.getDependents(id),
-        this.employeeService.getSpecialAttributes(id)
-      ]);
-      this.currentUser = {
-        ...user,
-        employeeBasicInfo: basicInfo!,
-        employmentInfo: employmentInfo!,
-        insuranceStatus: insuranceStatus!,
-        dependents: dependents!,
-        specialAttributes: specialAttributes!
-      };
+    if (user) {
+      const fullInfo = await this.employeeService.getEmployee(user.id);
+      if (fullInfo) {
+        this.currentUser = fullInfo;
+      }
     }
   }
 

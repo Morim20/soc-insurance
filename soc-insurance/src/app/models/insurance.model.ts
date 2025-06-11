@@ -32,4 +32,5 @@ export interface InsuranceData {
   bonusPensionInsuranceEmployer?: number | null;
   bonusChildContribution?: number | null;
   notes?: string;
+  variableWage?: number | null;
 } 

@@ -1,5 +1,5 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, getDoc, collection, getDocs, query, where, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { Auth, signInWithEmailAndPassword, UserCredential, createUserWithEmailAndPassword } from '@angular/fire/auth';
 import { Employee, EmployeeBasicInfo, EmploymentInfo, InsuranceStatus, SpecialAttributes } from '../models/employee.model';
 import { BehaviorSubject } from 'rxjs';
@@ -42,33 +42,75 @@ export class AuthService {
       try {
         const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
         const uid = userCredential.user.uid;
-        // Employee本体（最小限）
-        const employee: Employee = {
-          id: uid,
-          companyId: '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        await setDoc(doc(this.firestore, 'employees', uid), convertUndefinedToNull(employee));
-        // basicInfoサブコレクション
-        const basicInfo: EmployeeBasicInfo = {
-          employeeId: '',
-          lastNameKanji: lastName,
-          firstNameKanji: firstName,
-          lastNameKana: '',
-          firstNameKana: '',
-          lastNameRoman: '',
-          firstNameRoman: '',
-          birthDate: null,
-          hireDate: new Date(),
-          gender: '',
-          address: '',
-          myNumber: '',
-          email,
-          phoneNumber: '',
-          role: 'user',
-        };
-        await this.employeeService.setBasicInfo(uid, convertUndefinedToNull(basicInfo) as EmployeeBasicInfo);
+
+        // 既存の従業員basicInfoサブコレクションに同じメールアドレスがあるか検索
+        const employeesRef = collection(this.firestore, 'employees');
+        const snapshot = await getDocs(employeesRef);
+        let matchedEmployeeId: string | null = null;
+        for (const docSnap of snapshot.docs) {
+          const empId = docSnap.id;
+          const basicInfoRef = doc(this.firestore, `employees/${empId}/basicInfo/info`);
+          const basicInfoSnap = await getDoc(basicInfoRef);
+          if (basicInfoSnap.exists() && basicInfoSnap.data()['email'] === email) {
+            matchedEmployeeId = empId;
+            break;
+          }
+        }
+
+        if (matchedEmployeeId) {
+          // 既存従業員IDのドキュメントIDを新しいuidに変更（データ移行）
+          // 1. 既存従業員データを取得
+          const oldDocRef = doc(this.firestore, 'employees', matchedEmployeeId);
+          const oldDocSnap = await getDoc(oldDocRef);
+          if (oldDocSnap.exists()) {
+            const oldData = oldDocSnap.data();
+            // 2. 新しいuidでドキュメント作成
+            await setDoc(doc(this.firestore, 'employees', uid), { ...oldData, id: uid });
+            // 3. サブコレクションもコピー（basicInfo, employmentInfo, insuranceStatus, dependents, specialAttributes）
+            const subCollections = ['basicInfo', 'employmentInfo', 'insuranceStatus', 'dependents', 'specialAttributes'];
+            for (const sub of subCollections) {
+              const subRef = doc(this.firestore, `employees/${matchedEmployeeId}/${sub}/info`);
+              const subSnap = await getDoc(subRef);
+              if (subSnap.exists()) {
+                await setDoc(doc(this.firestore, `employees/${uid}/${sub}/info`), subSnap.data());
+              }
+            }
+            // insuranceDetailsサブコレクションも全件コピー
+            const insuranceDetailsRef = collection(this.firestore, `employees/${matchedEmployeeId}/insuranceDetails`);
+            const insuranceDetailsSnap = await getDocs(insuranceDetailsRef);
+            for (const docSnap of insuranceDetailsSnap.docs) {
+              await setDoc(doc(this.firestore, `employees/${uid}/insuranceDetails/${docSnap.id}`), docSnap.data());
+            }
+            // 4. 旧従業員ドキュメントは削除しない（安全のため）
+          }
+        } else {
+          // 新規従業員として作成
+          const employee: Employee = {
+            id: uid,
+            companyId: '',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          await setDoc(doc(this.firestore, 'employees', uid), convertUndefinedToNull(employee));
+          // basicInfoサブコレクション
+          const basicInfo: EmployeeBasicInfo = {
+            employeeId: '',
+            lastNameKanji: lastName,
+            firstNameKanji: firstName,
+            lastNameKana: '',
+            firstNameKana: '',
+            lastNameRoman: '',
+            firstNameRoman: '',
+            birthDate: null,
+            hireDate: new Date(),
+            gender: '',
+            address: '',
+            myNumber: '',
+            phoneNumber: '',
+            role: 'user',
+          };
+          await this.employeeService.setBasicInfo(uid, convertUndefinedToNull(basicInfo) as EmployeeBasicInfo);
+        }
         return true;
       } catch (error) {
         console.error('登録エラー:', error);
@@ -193,7 +235,6 @@ export class AuthService {
               gender: '',
               address: '',
               myNumber: '',
-              email: '',
               phoneNumber: '',
               role: 'admin',
             };

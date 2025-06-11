@@ -21,10 +21,7 @@
         <p>性別: {{ employee.employeeBasicInfo.gender }}</p>
         <p>住所: {{ employee.employeeBasicInfo.address }}</p>
         <p>マイナンバー: {{ employee.employeeBasicInfo.myNumber }}</p>
-        <p>メールアドレス: {{ employee.employeeBasicInfo.email }}</p>
         <p>電話番号: {{ employee.employeeBasicInfo.phoneNumber }}</p>
-        <p>マイナンバー: {{ employee.employeeBasicInfo.myNumber }}</p>
-        <p>権限: {{ employee.employeeBasicInfo.role }}</p>
       </div>
       <form *ngIf="editingSection['basicInfo']" [formGroup]="basicInfoForm" class="basic-info-form">
         <mat-form-field appearance="outline" class="large-form-field">
@@ -56,6 +53,9 @@
           <input matInput [matDatepicker]="picker" formControlName="birthDate">
           <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
+          <mat-error *ngIf="basicInfoForm.get('birthDate')?.hasError('futureDate')">
+            未来の日付は入力できません
+          </mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline" class="large-form-field">
           <mat-label>性別</mat-label>
@@ -70,23 +70,12 @@
           <input matInput formControlName="address">
         </mat-form-field>
         <mat-form-field appearance="outline" class="large-form-field">
-          <mat-label>メールアドレス</mat-label>
-          <input matInput formControlName="email">
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="large-form-field">
-          <mat-label>電話番号</mat-label>
-          <input matInput formControlName="phoneNumber">
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="large-form-field">
           <mat-label>マイナンバー</mat-label>
           <input matInput formControlName="myNumber">
         </mat-form-field>
         <mat-form-field appearance="outline" class="large-form-field">
-          <mat-label>権限</mat-label>
-          <mat-select formControlName="role">
-            <mat-option value="user">user</mat-option>
-            <mat-option value="admin">admin</mat-option>
-          </mat-select>
+          <mat-label>電話番号</mat-label>
+          <input matInput formControlName="phoneNumber">
         </mat-form-field>
         <div style="margin-top: 16px;">
           <button mat-raised-button color="primary" (click)="saveSection('basicInfo')" type="button">保存</button>
@@ -185,7 +174,8 @@
             <mat-option value="大学">大学</mat-option>
             <mat-option value="高校">高校</mat-option>
             <mat-option value="専門学校">専門学校</mat-option>
-            <mat-option value="その他学校">その他学校</mat-option>
+            <mat-option value="休学中">休学中</mat-option>
+            <mat-option value="卒業見込">卒業見込</mat-option>
           </mat-select>
         </mat-form-field>
         <div style="margin-top: 16px;">
@@ -388,6 +378,9 @@
               <input matInput [matDatepicker]="depBirthPicker" formControlName="birthDate">
               <mat-datepicker-toggle matSuffix [for]="depBirthPicker"></mat-datepicker-toggle>
               <mat-datepicker #depBirthPicker></mat-datepicker>
+              <mat-error *ngIf="depGroup.get('birthDate')?.hasError('futureDate')">
+                未来の日付は入力できません
+              </mat-error>
             </mat-form-field>
             <mat-form-field appearance="outline" class="large-form-field">
               <mat-label>年収</mat-label>
@@ -395,7 +388,10 @@
             </mat-form-field>
             <mat-form-field appearance="outline" class="large-form-field">
               <mat-label>居住地</mat-label>
-              <input matInput formControlName="residency">
+              <mat-select formControlName="residency">
+                <mat-option value="国内">国内</mat-option>
+                <mat-option value="海外">海外</mat-option>
+              </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline" class="large-form-field">
               <mat-label>マイナンバー</mat-label>
@@ -410,8 +406,27 @@
             </mat-form-field>
             <mat-form-field appearance="outline" class="large-form-field">
               <mat-label>職業</mat-label>
-              <input matInput formControlName="occupation">
+              <mat-select formControlName="occupation">
+                <mat-option value="無職">無職</mat-option>
+                <mat-option value="パート">パート</mat-option>
+                <mat-option value="年金受給者">年金受給者</mat-option>
+                <mat-option value="小・中学生以下">小・中学生以下</mat-option>
+                <mat-option value="高・大学生">高・大学生</mat-option>
+                <mat-option value="その他">その他</mat-option>
+              </mat-select>
             </mat-form-field>
+            <div *ngIf="depGroup.get('occupation')?.value === '高・大学生'" style="margin-bottom: 8px;">
+              <mat-form-field appearance="outline" class="large-form-field">
+                <mat-label>学年（例：3年生）</mat-label>
+                <input matInput formControlName="schoolGrade">
+              </mat-form-field>
+            </div>
+            <div *ngIf="depGroup.get('occupation')?.value === 'その他'" style="margin-bottom: 8px;">
+              <mat-form-field appearance="outline" class="large-form-field">
+                <mat-label>その他（具体的に）</mat-label>
+                <input matInput formControlName="occupationOther">
+              </mat-form-field>
+            </div>
             <button mat-button color="warn" (click)="removeDependent(i)" type="button">削除</button>
             <hr>
           </div>
@@ -445,18 +460,20 @@
             <mat-option value="介護休業">介護休業</mat-option>
           </mat-select>
         </mat-form-field>
-        <mat-form-field appearance="outline" class="large-form-field">
-          <mat-label>開始日</mat-label>
-          <input matInput [matDatepicker]="leaveStartPicker" formControlName="leaveStartDate">
-          <mat-datepicker-toggle matSuffix [for]="leaveStartPicker"></mat-datepicker-toggle>
-          <mat-datepicker #leaveStartPicker></mat-datepicker>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="large-form-field">
-          <mat-label>終了日</mat-label>
-          <input matInput [matDatepicker]="leaveEndPicker" formControlName="leaveEndDate">
-          <mat-datepicker-toggle matSuffix [for]="leaveEndPicker"></mat-datepicker-toggle>
-          <mat-datepicker #leaveEndPicker></mat-datepicker>
-        </mat-form-field>
+        <ng-container *ngIf="specialAttributesForm.get('leaveType')?.value">
+          <mat-form-field appearance="outline" class="large-form-field">
+            <mat-label>開始日</mat-label>
+            <input matInput [matDatepicker]="leaveStartPicker" formControlName="leaveStartDate" required>
+            <mat-datepicker-toggle matSuffix [for]="leaveStartPicker"></mat-datepicker-toggle>
+            <mat-datepicker #leaveStartPicker></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="large-form-field">
+            <mat-label>終了日</mat-label>
+            <input matInput [matDatepicker]="leaveEndPicker" formControlName="leaveEndDate" required>
+            <mat-datepicker-toggle matSuffix [for]="leaveEndPicker"></mat-datepicker-toggle>
+            <mat-datepicker #leaveEndPicker></mat-datepicker>
+          </mat-form-field>
+        </ng-container>
         <div style="margin-top: 16px;">
           <button mat-raised-button color="primary" (click)="saveSection('specialAttributes')" type="button">保存</button>
           <button mat-button (click)="cancelEdit('specialAttributes')" type="button">キャンセル</button>

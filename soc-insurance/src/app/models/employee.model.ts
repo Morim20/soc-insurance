@@ -18,7 +18,6 @@ export interface EmployeeBasicInfo {
   gender?: string;
   address?: string;
   myNumber?: string;
-  email: string;
   phoneNumber?: string;
   role: 'user' | 'admin';
   department?: string;
@@ -45,6 +44,8 @@ export interface EmploymentInfo {
   department?: string;
   oneWayFare: number;
   standardMonthlyRevisionDate?: Date | null;
+  hasRenewalClause?: boolean;
+  contractType?: string;
 }
 
 export interface InsuranceStatus {
@@ -80,6 +81,8 @@ export interface Dependent {
   residency: '国内' | '海外';
   cohabitation: '同居' | '別居';
   occupation?: string;
+  schoolGrade?: string;
+  occupationOther?: string;
 }
 
 export interface SpecialAttributes {
@@ -94,6 +97,7 @@ export interface SpecialAttributes {
   residencyCertificateLocation?: string;
   assignmentAllowance: number;
   cohabitationWithFamily: boolean;
+  bonusPaymentDates?: string[];
 }
 
 export interface EmployeeFullInfo extends Employee {

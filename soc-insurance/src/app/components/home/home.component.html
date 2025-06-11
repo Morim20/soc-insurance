@@ -21,12 +21,12 @@
             -
           </ng-container>
         </p>
-      </div>
-
-      <div class="info-section">
-        <h3>保険情報</h3>
-        <p>健康保険: {{ currentUser?.insuranceStatus?.healthInsurance ? '加入' : '未加入' }}</p>
-        <p>厚生年金: {{ currentUser?.insuranceStatus?.pensionInsurance ? '加入' : '未加入' }}</p>
+        <p>部署: {{ currentUser?.employmentInfo?.department || '-' }}</p>
+        <p>基本給: {{ currentUser?.employmentInfo?.baseSalary | number }} 円</p>
+        <p>手当て: {{ currentUser?.employmentInfo?.allowances | number }} 円</p>
+        <p>通勤手当: {{ currentUser?.employmentInfo?.commutingAllowance | number }} 円</p>
+        <p>週の所定労働時間: {{ currentUser?.employmentInfo?.weeklyHours || '-' }} 時間</p>
+        <p>月の所定労働日数: {{ currentUser?.employmentInfo?.monthlyWorkDays || '-' }} 日</p>
       </div>
 
       <div class="admin-section" *ngIf="!isAdmin">

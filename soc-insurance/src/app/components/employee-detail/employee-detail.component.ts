@@ -8,7 +8,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Timestamp } from 'firebase/firestore';
-import { FormBuilder, FormGroup, ReactiveFormsModule, FormArray, Validators, AbstractControl } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormArray, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -18,6 +18,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import aichiGradesData from '../../services/23aichi_insurance_grades.json';
 import pensionGradesData from '../../services/pension_grades.json';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-employee-detail',
@@ -61,13 +62,40 @@ export class EmployeeDetailComponent implements OnInit {
   specialAttributesForm!: FormGroup;
   dependentsForm!: FormGroup;
 
+  // カスタムバリデーター: relationshipが「その他」の場合はrelationshipOther必須
+  relationshipOtherRequiredValidator: ValidatorFn = (group: AbstractControl) => {
+    const relationship = group.get('relationship')?.value;
+    const relationshipOther = group.get('relationshipOther')?.value;
+    if (relationship === 'その他' && !relationshipOther) {
+      group.get('relationshipOther')?.setErrors({ required: true });
+      return { relationshipOtherRequired: true };
+    } else {
+      group.get('relationshipOther')?.setErrors(null);
+    }
+    return null;
+  };
+
+  // 生年月日が未来日ならエラー
+  futureDateValidator(control: AbstractControl) {
+    const value = control.value;
+    if (!value) return null;
+    const inputDate = new Date(value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (inputDate > today) {
+      return { futureDate: true };
+    }
+    return null;
+  }
+
   constructor(
     private route: ActivatedRoute,
     private employeeService: EmployeeService,
     private router: Router,
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
-    private insuranceEligibilityService: InsuranceEligibilityService
+    private insuranceEligibilityService: InsuranceEligibilityService,
+    private authService: AuthService
   ) {}
 
   async loadDepartments() {
@@ -104,13 +132,12 @@ export class EmployeeDetailComponent implements OnInit {
       firstNameKanji: [''],
       lastNameKana: [''],
       firstNameKana: [''],
-      birthDate: [''],
+      birthDate: ['', [this.futureDateValidator]],
       gender: [''],
       address: [''],
       myNumber: [''],
       email: [''],
-      phoneNumber: [''],
-      role: ['']
+      phoneNumber: ['']
     });
 
     this.employmentInfoForm = this.fb.group({
@@ -247,6 +274,22 @@ export class EmployeeDetailComponent implements OnInit {
     } finally {
       this.isLoading = false;
     }
+
+    this.specialAttributesForm.get('leaveType')?.valueChanges.subscribe((leaveType) => {
+      const startCtrl = this.specialAttributesForm.get('leaveStartDate');
+      const endCtrl = this.specialAttributesForm.get('leaveEndDate');
+      if (leaveType) {
+        startCtrl?.setValidators([Validators.required]);
+        endCtrl?.setValidators([Validators.required]);
+      } else {
+        startCtrl?.clearValidators();
+        endCtrl?.clearValidators();
+        startCtrl?.setValue('');
+        endCtrl?.setValue('');
+      }
+      startCtrl?.updateValueAndValidity();
+      endCtrl?.updateValueAndValidity();
+    });
   }
 
   // 編集開始
@@ -331,7 +374,9 @@ export class EmployeeDetailComponent implements OnInit {
           // 扶養者情報の保存処理を改善
           const dependents = formValue.dependents.map((dep: any) => ({
             ...dep,
-            birthDate: dep.birthDate ? new Date(dep.birthDate) : null
+            birthDate: dep.birthDate ? new Date(dep.birthDate) : null,
+            schoolGrade: dep.schoolGrade || '',
+            occupationOther: dep.occupationOther || ''
           }));
           
           await this.employeeService.setDependents(this.employee.id, dependents);
@@ -427,20 +472,21 @@ export class EmployeeDetailComponent implements OnInit {
   addDependent() {
     const dependentsArray = this.dependentsForm.get('dependents') as FormArray;
     dependentsArray.push(this.fb.group({
-      name: [''],
-      lastName: [''],
-      firstName: [''],
-      lastNameKana: [''],
-      firstNameKana: [''],
-      myNumber: [''],
-      relationship: [''],
+      lastName: ['', Validators.required],
+      firstName: ['', Validators.required],
+      lastNameKana: ['', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
+      firstNameKana: ['', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
+      relationship: ['', Validators.required],
       relationshipOther: [''],
-      birthDate: [null],
-      income: [0],
-      residency: ['国内'],
-      cohabitation: ['同居'],
-      occupation: ['']
-    }));
+      birthDate: [null, [Validators.required, this.futureDateValidator]],
+      income: [0, [Validators.required, Validators.min(0)]],
+      residency: ['', Validators.required],
+      cohabitation: ['', Validators.required],
+      occupation: [''],
+      schoolGrade: [''],
+      occupationOther: [''],
+      myNumber: ['', [Validators.pattern(/^[0-9]{12}$/)]]
+    }, { validators: this.relationshipOtherRequiredValidator }));
   }
 
   removeDependent(index: number) {
@@ -462,18 +508,25 @@ export class EmployeeDetailComponent implements OnInit {
 
   createDependentFormGroup(dependent?: Dependent): FormGroup {
     return this.fb.group({
-      lastName: [dependent?.lastName || ''],
-      firstName: [dependent?.firstName || ''],
-      lastNameKana: [dependent?.lastNameKana || ''],
-      firstNameKana: [dependent?.firstNameKana || ''],
-      relationship: [dependent?.relationship || ''],
+      lastName: [dependent?.lastName || '', Validators.required],
+      firstName: [dependent?.firstName || '', Validators.required],
+      lastNameKana: [dependent?.lastNameKana || '', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
+      firstNameKana: [dependent?.firstNameKana || '', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
+      relationship: [dependent?.relationship || '', Validators.required],
       relationshipOther: [dependent?.relationshipOther || ''],
-      birthDate: [dependent?.birthDate || null],
-      income: [dependent?.income || 0],
-      residency: [dependent?.residency || ''],
-      cohabitation: [dependent?.cohabitation || ''],
+      birthDate: [dependent?.birthDate || null, [Validators.required, this.futureDateValidator]],
+      income: [dependent?.income || 0, [Validators.required, Validators.min(0)]],
+      residency: [dependent?.residency || '', Validators.required],
+      cohabitation: [dependent?.cohabitation || '', Validators.required],
       occupation: [dependent?.occupation || ''],
-      myNumber: [dependent?.myNumber || '']
-    });
+      schoolGrade: [dependent?.schoolGrade || ''],
+      occupationOther: [dependent?.occupationOther || ''],
+      myNumber: [dependent?.myNumber || '', [Validators.pattern(/^[0-9]{12}$/)]]
+    }, { validators: this.relationshipOtherRequiredValidator });
+  }
+
+  onLogout() {
+    this.authService.logout();
+    this.router.navigate(['/home']);
   }
 }

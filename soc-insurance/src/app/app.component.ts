@@ -48,4 +48,9 @@ export class AppComponent implements OnInit {
   toggleSidenav() {
     this.isExpanded = !this.isExpanded;
   }
+
+  onSidebarLogout() {
+    this.authService.logout();
+    this.router.navigate(['/home']);
+  }
 }

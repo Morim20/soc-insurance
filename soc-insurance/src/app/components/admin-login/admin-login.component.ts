@@ -49,7 +49,7 @@ export class AdminLoginComponent {
           this.adminLoginForm.value.secretKey
         );
         if (success) {
-          await this.router.navigate(['/admin/dashboard']);
+          await this.router.navigate(['/admin/employees']);
         } else {
           this.snackBar.open('管理者コードまたはシークレットキーが正しくありません。', '閉じる', {
             duration: 3000,

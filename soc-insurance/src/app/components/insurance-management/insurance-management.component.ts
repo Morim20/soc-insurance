@@ -347,8 +347,8 @@ export class InsuranceManagementComponent implements OnInit {
 
         // 保険加入判定
         const eligibility = await this.insuranceEligibilityService.getInsuranceEligibility(employee).toPromise();
-        if (!eligibility.healthInsurance && !eligibility.pensionInsurance) {
-          continue; // 加入していない場合はスキップ
+        if (!eligibility || (!eligibility.healthInsurance && !eligibility.pensionInsurance)) {
+          continue; // 加入していない場合や判定失敗時はスキップ
         }
 
         // 保険ステータスを取得

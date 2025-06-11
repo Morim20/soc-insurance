@@ -51,7 +51,6 @@ export interface DetailedInsuranceRate {
   healthInsurance: number;
   healthInsuranceEmployee: number;
   nursingInsurance: number;
-  nursingInsuranceEmployee: number;
   nursingInsuranceEmployeeReal: number;
 }
 
@@ -61,79 +60,54 @@ export class DetailedInsuranceRatesService {
 
   private constructor() {
     this.rates = {
-      '北海道': this.transformRates(hokkaidoRates['北海道']),
-      '青森県': this.transformRates(aomoriRates),
-      '岩手県': this.transformRates(iwateRates),
-      '宮城県': this.transformRates(miyagiRates),
-      '秋田県': this.transformRates(akitaRates),
-      '山形県': this.transformRates(yamagataRates),
-      '福島県': this.transformRates(fukushimaRates),
-      '茨城県': this.transformRates(ibarakiRates),
-      '栃木県': this.transformRates(tochigiRates),
-      '群馬県': this.transformRates(gunmaRates),
-      '埼玉県': this.transformRates(saitamaRates),
-      '千葉県': this.transformRates(chibaRates),
-      '東京都': this.transformRates(tokyoRates),
-      '神奈川県': this.transformRates(kanagawaRates),
-      '新潟県': this.transformRates(niigataRates),
-      '富山県': this.transformRates(toyamaRates),
-      '石川県': this.transformRates(ishikawaRates),
-      '福井県': this.transformRates(fukuiRates),
-      '山梨県': this.transformRates(yamanashiRates),
-      '長野県': this.transformRates(naganoRates),
-      '岐阜県': this.transformRates(gifuRates),
-      '静岡県': this.transformRates(shizuokaRates),
-      '愛知県': this.transformRates(aichiRates),
-      '三重県': this.transformRates(mieRates),
-      '滋賀県': this.transformRates(shigaRates),
-      '京都府': this.transformRates(kyotoRates),
-      '大阪府': this.transformRates(osakaRates),
-      '兵庫県': this.transformRates(hyogoRates),
-      '奈良県': this.transformRates(naraRates),
-      '和歌山県': this.transformRates(wakayamaRates),
-      '鳥取県': this.transformRates(tottoriRates),
-      '島根県': this.transformRates(shimaneRates),
-      '岡山県': this.transformRates(okayamaRates),
-      '広島県': this.transformRates(hiroshimaRates),
-      '山口県': this.transformRates(yamaguchiRates),
-      '徳島県': this.transformRates(tokushimaRates),
-      '香川県': this.transformRates(kagawaRates),
-      '愛媛県': this.transformRates(ehimeRates),
-      '高知県': this.transformRates(kochiRates),
-      '福岡県': this.transformRates(fukuokaRates),
-      '佐賀県': this.transformRates(sagaRates),
-      '長崎県': this.transformRates(nagasakiRates),
-      '熊本県': this.transformRates(kumamotoRates),
-      '大分県': this.transformRates(oitaRates),
-      '宮崎県': this.transformRates(miyazakiRates),
-      '鹿児島県': this.transformRates(kagoshimaRates),
-      '沖縄県': this.transformRates(okinawaRates)
+      '北海道': hokkaidoRates['北海道'],
+      '青森県': aomoriRates,
+      '岩手県': iwateRates,
+      '宮城県': miyagiRates,
+      '秋田県': akitaRates,
+      '山形県': yamagataRates,
+      '福島県': fukushimaRates,
+      '茨城県': ibarakiRates,
+      '栃木県': tochigiRates,
+      '群馬県': gunmaRates,
+      '埼玉県': saitamaRates,
+      '千葉県': chibaRates,
+      '東京都': tokyoRates,
+      '神奈川県': kanagawaRates,
+      '新潟県': niigataRates,
+      '富山県': toyamaRates,
+      '石川県': ishikawaRates,
+      '福井県': fukuiRates,
+      '山梨県': yamanashiRates,
+      '長野県': naganoRates,
+      '岐阜県': gifuRates,
+      '静岡県': shizuokaRates,
+      '愛知県': aichiRates,
+      '三重県': mieRates,
+      '滋賀県': shigaRates,
+      '京都府': kyotoRates,
+      '大阪府': osakaRates,
+      '兵庫県': hyogoRates,
+      '奈良県': naraRates,
+      '和歌山県': wakayamaRates,
+      '鳥取県': tottoriRates,
+      '島根県': shimaneRates,
+      '岡山県': okayamaRates,
+      '広島県': hiroshimaRates,
+      '山口県': yamaguchiRates,
+      '徳島県': tokushimaRates,
+      '香川県': kagawaRates,
+      '愛媛県': ehimeRates,
+      '高知県': kochiRates,
+      '福岡県': fukuokaRates,
+      '佐賀県': sagaRates,
+      '長崎県': nagasakiRates,
+      '熊本県': kumamotoRates,
+      '大分県': oitaRates,
+      '宮崎県': miyazakiRates,
+      '鹿児島県': kagoshimaRates,
+      '沖縄県': okinawaRates
     };
-  }
-
-  private transformRates(rates: any): { [key: string]: DetailedInsuranceRate } {
-    const transformedRates: { [key: string]: DetailedInsuranceRate } = {};
-    
-    for (const [grade, rate] of Object.entries(rates)) {
-      const typedRate = rate as {
-        standardMonthlyWage: number;
-        healthInsurance: number;
-        healthInsuranceEmployee: number;
-        nursingInsurance: number;
-        nursingInsuranceEmployeeReal: number;
-      };
-      
-      transformedRates[grade] = {
-        standardMonthlyWage: typedRate.standardMonthlyWage,
-        healthInsurance: typedRate.healthInsurance,
-        healthInsuranceEmployee: typedRate.healthInsuranceEmployee,
-        nursingInsurance: typedRate.nursingInsurance,
-        nursingInsuranceEmployee: typedRate.nursingInsuranceEmployeeReal,
-        nursingInsuranceEmployeeReal: typedRate.nursingInsuranceEmployeeReal
-      };
-    }
-    
-    return transformedRates;
   }
 
   public static getInstance(): DetailedInsuranceRatesService {

@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -256,7 +256,7 @@ interface Address {
                   <div *ngFor="let month of bonusMonthsFormArray.controls; let i = index" class="bonus-month-row">
                     <mat-form-field appearance="outline" class="full-width">
                       <mat-label>賞与支給月（{{i + 1}}回目）</mat-label>
-                      <input matInput type="number" [formControlName]="i" min="1" max="12">
+                      <input matInput type="number" [formControlName]="i" min="1" max="12" (change)="onBonusMonthChange()">
                       <mat-error *ngIf="month.hasError('required')">
                         支給月は必須です
                       </mat-error>
@@ -264,9 +264,6 @@ interface Address {
                         1から12の間で入力してください
                       </mat-error>
                     </mat-form-field>
-                    <button mat-icon-button color="warn" type="button" (click)="removeBonusMonth(i)" [disabled]="bonusMonthsFormArray.length <= 1">
-                      <mat-icon>delete</mat-icon>
-                    </button>
                   </div>
                 </div>
               </div>
@@ -430,6 +427,9 @@ export class SettingsComponent implements OnInit {
         this.fb.control(12, [Validators.required, Validators.min(1), Validators.max(12)])
       ])
     });
+
+    // カスタムバリデーターを追加
+    this.settingsForm.addValidators(this.bonusMonthsIntervalValidator());
   }
 
   async ngOnInit() {
@@ -541,8 +541,143 @@ export class SettingsComponent implements OnInit {
       });
   }
 
+  onBonusCountChange() {
+    const currentCount = this.bonusMonthsFormArray.length;
+    const newCount = this.settingsForm.get('bonusCount')?.value;
+
+    if (newCount > currentCount) {
+      for (let i = currentCount; i < newCount; i++) {
+        this.bonusMonthsFormArray.push(
+          this.fb.control(6, [Validators.required, Validators.min(1), Validators.max(12)])
+        );
+      }
+    } else if (newCount < currentCount) {
+      for (let i = currentCount; i > newCount; i--) {
+        this.bonusMonthsFormArray.removeAt(i - 1);
+      }
+    }
+
+    // バリデーションの実行とフォームエラーの設定
+    this.validateBonusMonthsWithFormError();
+  }
+
+  validateBonusMonthsWithFormError() {
+    const bonusCount = this.settingsForm.get('bonusCount')?.value;
+    
+    // 賞与回数が2回または3回の場合のみバリデーション
+    if (bonusCount === 2 || bonusCount === 3) {
+      const isValid = this.validateBonusMonths();
+      
+      // フォーム全体にエラーを設定
+      if (!isValid) {
+        this.settingsForm.get('bonusCount')?.setErrors({ 'bonusMonthsInterval': true });
+      } else {
+        // エラーをクリア（他のエラーがある場合は保持）
+        const currentErrors = this.settingsForm.get('bonusCount')?.errors;
+        if (currentErrors) {
+          delete currentErrors['bonusMonthsInterval'];
+          if (Object.keys(currentErrors).length === 0) {
+            this.settingsForm.get('bonusCount')?.setErrors(null);
+          }
+        }
+      }
+    } else {
+      // 2回、3回以外の場合はこのエラーをクリア
+      const currentErrors = this.settingsForm.get('bonusCount')?.errors;
+      if (currentErrors && currentErrors['bonusMonthsInterval']) {
+        delete currentErrors['bonusMonthsInterval'];
+        if (Object.keys(currentErrors).length === 0) {
+          this.settingsForm.get('bonusCount')?.setErrors(null);
+        }
+      }
+    }
+  }
+
+  validateBonusMonths(): boolean {
+    const months = this.bonusMonthsFormArray.controls
+      .map(control => control.value)
+      .filter(month => month !== null && month !== undefined); // nullやundefinedを除外
+    
+    // 月が設定されていない場合はバリデーション不要
+    if (months.length === 0) {
+      return true;
+    }
+    
+    const sortedMonths = [...months].sort((a, b) => a - b);
+    
+    // 重複チェック
+    const uniqueMonths = [...new Set(sortedMonths)];
+    if (uniqueMonths.length !== sortedMonths.length) {
+      this.snackBar.open('同じ月を重複して設定することはできません', '閉じる', {
+        duration: 5000
+      });
+      return false;
+    }
+    
+    // 3ヶ月以上の間隔チェック
+    for (let i = 1; i < sortedMonths.length; i++) {
+      const diff = sortedMonths[i] - sortedMonths[i - 1];
+      if (diff < 3) {
+        this.snackBar.open('賞与支給月は3ヶ月以上間隔を空けて設定してください', '閉じる', {
+          duration: 5000
+        });
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  // 月選択時にも呼び出すメソッド
+  onBonusMonthChange() {
+    this.validateBonusMonthsWithFormError();
+  }
+
+  // カスタムバリデーター
+  bonusMonthsIntervalValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const bonusCount = this.settingsForm?.get('bonusCount')?.value;
+      
+      if (bonusCount !== 2 && bonusCount !== 3) {
+        return null; // バリデーション対象外
+      }
+      
+      const months = this.bonusMonthsFormArray?.controls
+        .map(c => c.value)
+        .filter(month => month !== null && month !== undefined);
+        
+      if (!months || months.length === 0) {
+        return null;
+      }
+      
+      const sortedMonths = [...months].sort((a, b) => a - b);
+      
+      // 重複チェック
+      const uniqueMonths = [...new Set(sortedMonths)];
+      if (uniqueMonths.length !== sortedMonths.length) {
+        return { bonusMonthsDuplicate: true };
+      }
+      
+      // 間隔チェック
+      for (let i = 1; i < sortedMonths.length; i++) {
+        if (sortedMonths[i] - sortedMonths[i - 1] < 3) {
+          return { bonusMonthsInterval: true };
+        }
+      }
+      
+      return null;
+    };
+  }
+
   async onSubmit() {
     if (this.settingsForm.valid) {
+      const bonusCount = this.settingsForm.get('bonusCount')?.value;
+      
+      // 賞与回数が2回または3回の場合、3ヶ月ごとの対象月のバリデーションを実行
+      if ((bonusCount === 2 || bonusCount === 3) && !this.validateBonusMonths()) {
+        return;
+      }
+
       try {
         const settingsRef = doc(this.firestore, 'settings', 'office');
         await setDoc(settingsRef, this.settingsForm.value);
@@ -569,21 +704,6 @@ export class SettingsComponent implements OnInit {
   removeBonusMonth(index: number) {
     if (this.bonusMonthsFormArray.length > 1) {
       this.bonusMonthsFormArray.removeAt(index);
-    }
-  }
-
-  onBonusCountChange() {
-    const currentCount = this.bonusMonthsFormArray.length;
-    const newCount = this.settingsForm.get('bonusCount')?.value;
-
-    if (newCount > currentCount) {
-      for (let i = currentCount; i < newCount; i++) {
-        this.bonusMonthsFormArray.push(this.fb.control(6, [Validators.required, Validators.min(1), Validators.max(12)]));
-      }
-    } else if (newCount < currentCount) {
-      for (let i = currentCount; i > newCount; i--) {
-        this.bonusMonthsFormArray.removeAt(i - 1);
-      }
     }
   }
 } 

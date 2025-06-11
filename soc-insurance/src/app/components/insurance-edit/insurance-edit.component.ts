@@ -385,6 +385,19 @@ export class InsuranceEditComponent implements OnInit {
         this.form.get('standardBonusAmount')?.setValue(0, { emitEvent: false });
       }
     });
+
+    // isBonusMonthの状態に応じてbonusAmountコントロールを制御
+    this.toggleBonusAmountControl();
+  }
+
+  // isBonusMonthの変化に応じてbonusAmountコントロールを制御するメソッドを追加
+  private toggleBonusAmountControl() {
+    const bonusAmountControl = this.form.get('bonusAmount');
+    if (!this.isBonusMonth) {
+      bonusAmountControl?.disable({ emitEvent: false });
+    } else {
+      bonusAmountControl?.enable({ emitEvent: false });
+    }
   }
 
   // 日付を日本語表記（YYYY年MM月DD日）で表示する関数

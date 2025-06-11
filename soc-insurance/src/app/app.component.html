@@ -178,42 +178,43 @@
 </style>
 
 <mat-sidenav-container class="sidenav-container" *ngIf="isSidebarRoute">
-  <mat-sidenav #sidenav mode="side" [opened]="isExpanded" class="sidenav">
-    <div class="sidenav-header">
+  <mat-sidenav #sidenav mode="side" [opened]="isExpanded" class="sidenav cute-green-sidebar">
+    <div class="sidenav-header cute-green-header">
       <h2>管理者メニュー</h2>
     </div>
-    <mat-nav-list>
-      <a mat-list-item [routerLink]="'/admin/dashboard'" routerLinkActive="active">
+    <mat-nav-list class="cute-green-list">
+      <!-- <a mat-list-item [routerLink]="'/admin/dashboard'" routerLinkActive="active" class="cute-green-item">
         <mat-icon>dashboard</mat-icon>
         <span *ngIf="isExpanded">ダッシュボード</span>
-      </a>
-      <a mat-list-item [routerLink]="'/admin/employees'" routerLinkActive="active">
+      </a> -->
+      <a mat-list-item [routerLink]="'/admin/employees'" routerLinkActive="active" class="cute-green-item">
         <mat-icon>people</mat-icon>
         <span *ngIf="isExpanded">従業員管理</span>
       </a>
-      <a mat-list-item [routerLink]="'/admin/insurance'" routerLinkActive="active">
+      <a mat-list-item [routerLink]="'/admin/insurance'" routerLinkActive="active" class="cute-green-item">
         <mat-icon>health_and_safety</mat-icon>
         <span *ngIf="isExpanded">保険料管理</span>
       </a>
-      <a mat-list-item [routerLink]="'/admin/reports'" routerLinkActive="active">
+      <!-- <a mat-list-item [routerLink]="'/admin/reports'" routerLinkActive="active" class="cute-green-item">
         <mat-icon>assessment</mat-icon>
         <span *ngIf="isExpanded">帳票</span>
-      </a>
-      <a mat-list-item [routerLink]="'/admin/settings'" routerLinkActive="active">
+      </a> -->
+      <a mat-list-item [routerLink]="'/admin/settings'" routerLinkActive="active" class="cute-green-item">
         <mat-icon>settings</mat-icon>
         <span *ngIf="isExpanded">設定</span>
+      </a>
+      <a mat-list-item class="cute-green-item" [routerLink]="'/home'" style="margin-top: 1.5rem; color: #388e3c; cursor: pointer;">
+        <mat-icon>home</mat-icon>
+        <span *ngIf="isExpanded">ホームに戻る</span>
+      </a>
+      <a mat-list-item class="cute-green-item" (click)="onSidebarLogout()" style="margin-top: 0.5rem; color: #c62828; cursor: pointer;">
+        <mat-icon>logout</mat-icon>
+        <span *ngIf="isExpanded">ログアウト</span>
       </a>
     </mat-nav-list>
   </mat-sidenav>
 
   <mat-sidenav-content>
-    <mat-toolbar color="primary">
-      <button mat-icon-button (click)="toggleSidenav()">
-        <mat-icon>menu</mat-icon>
-      </button>
-      <span>管理者ダッシュボード</span>
-    </mat-toolbar>
-
     <div class="content">
       <router-outlet></router-outlet>
     </div>

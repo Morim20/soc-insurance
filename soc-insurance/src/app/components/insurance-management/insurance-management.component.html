@@ -169,52 +169,62 @@
       </div>
 
       <div *ngIf="!isLoading && isAllConfirmed" class="company-summary">
-        <div style="display: flex; align-items: center; justify-content: flex-start;">
-          <h3 style="margin: 0 8px 0 0;">会社全体の保険料明細</h3>
-          <div class="button-container" *ngIf="isAllConfirmed">
-            <button mat-raised-button color="accent" (click)="downloadCsv()">CSV出力</button>
+        <div *ngIf="companySummaryTable.rows.length > 0; else noCompanySummary">
+          <div style="display: flex; align-items: center; justify-content: flex-start;">
+            <h3 style="margin: 0 8px 0 0;">会社全体の保険料明細</h3>
+            <div class="button-container" *ngIf="isAllConfirmed">
+              <button mat-raised-button color="accent" (click)="downloadCsv()">CSV出力</button>
+            </div>
           </div>
+          <table class="summary-table">
+            <thead>
+              <tr>
+                <th>保険種別</th>
+                <th>納入告知額（合計納付額）</th>
+                <th>従業員負担額合計</th>
+                <th>事業主負担額合計</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of companySummaryTable.rows; let i = index" [class.stripe]="i % 2 === 1" [class.total-row]="row.label === '合計'">
+                <td>{{ row.label }}</td>
+                <td class="right">{{ row.notice | number }}</td>
+                <td class="right">{{ row.employee | number }}</td>
+                <td class="right">{{ row.employer | number }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <table class="summary-table">
-          <thead>
-            <tr>
-              <th>保険種別</th>
-              <th>納入告知額（合計納付額）</th>
-              <th>従業員負担額合計</th>
-              <th>事業主負担額合計</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of companySummaryTable.rows; let i = index" [class.stripe]="i % 2 === 1" [class.total-row]="row.label === '合計'">
-              <td>{{ row.label }}</td>
-              <td class="right">{{ row.notice | number }}</td>
-              <td class="right">{{ row.employee | number }}</td>
-              <td class="right">{{ row.employer | number }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <ng-template #noCompanySummary>
+          <p>会社全体の保険料明細がありません。</p>
+        </ng-template>
       </div>
 
-      <div *ngIf="hasBonus" class="company-bonus-summary">
-        <h3>会社全体の賞与分保険料明細</h3>
-        <table class="summary-table">
-          <thead>
-            <tr>
-              <th>保険種別</th>
-              <th>納入告知額（合計納付額）</th>
-              <th>従業員負担額合計</th>
-              <th>事業主負担額合計</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of companyBonusSummaryTable.rows; let i = index" [class.stripe]="i % 2 === 1" [class.total-row]="row.label === '合計'">
-              <td>{{ row.label }}</td>
-              <td class="right">{{ row.notice | number }}</td>
-              <td class="right">{{ row.employee | number }}</td>
-              <td class="right">{{ row.employer | number }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div *ngIf="!isLoading && hasBonus" class="company-bonus-summary">
+        <ng-container *ngIf="companyBonusSummaryTable.rows.length > 0; else noBonusSummary">
+          <h3>会社全体の賞与分保険料明細</h3>
+          <table class="summary-table">
+            <thead>
+              <tr>
+                <th>保険種別</th>
+                <th>納入告知額（合計納付額）</th>
+                <th>従業員負担額合計</th>
+                <th>事業主負担額合計</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of companyBonusSummaryTable.rows; let i = index" [class.stripe]="i % 2 === 1" [class.total-row]="row.label === '合計'">
+                <td>{{ row.label }}</td>
+                <td class="right">{{ row.notice | number }}</td>
+                <td class="right">{{ row.employee | number }}</td>
+                <td class="right">{{ row.employer | number }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+        <ng-template #noBonusSummary>
+          <p>会社全体の賞与分保険料明細がありません。</p>
+        </ng-template>
       </div>
     </mat-card-content>
   </mat-card>

@@ -1,1 +1,69 @@
 /* You can add global styles to this file, and also import other style files */
+
+.cute-green-sidebar {
+  background: #e8f5e9;
+  min-width: 220px;
+  max-width: 220px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-shadow: 2px 0 12px rgba(34, 139, 34, 0.08);
+  border-right: 1px solid #b2dfdb;
+  z-index: 1000;
+  overflow-y: auto;
+}
+.cute-green-header {
+  padding: 2rem 1.5rem 1rem 1.5rem;
+  background: none;
+}
+.cute-green-header h2 {
+  color: #388e3c;
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 8px #b2dfdb44;
+}
+.cute-green-list {
+  padding: 0 0.5rem;
+}
+.cute-green-item {
+  border-radius: 12px;
+  margin: 0.3rem 0;
+  transition: background 0.2s, color 0.2s;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: #388e3c;
+  background: none;
+}
+.cute-green-item .mat-icon {
+  color: #43a047;
+  font-size: 1.6rem;
+  margin-right: 0.7rem;
+}
+.cute-green-item.active, .cute-green-item:hover {
+  background: #a5d6a7;
+  color: #fff;
+}
+.cute-green-item.active .mat-icon, .cute-green-item:hover .mat-icon {
+  color: #fff;
+}
+.sidenav-container {
+  padding-left: 220px;
+  height: 100vh;
+}
+.mat-sidenav-content, .content, .dashboard {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+  background: #f8faf7;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}

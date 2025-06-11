@@ -10,7 +10,7 @@
         <div class="form-section">
           <h3>基本情報</h3>
           <div formGroupName="employeeBasicInfo" class="form-grid">
-            <mat-form-field>
+            <mat-form-field class="full-width">
               <mat-label>社員番号 *</mat-label>
               <input matInput formControlName="employeeId" required>
               <mat-error *ngIf="employeeForm.get('employeeBasicInfo.employeeId')?.hasError('required')">
@@ -18,62 +18,63 @@
               </mat-error>
             </mat-form-field>
 
-            <mat-form-field>
-              <mat-label>姓（漢字） *</mat-label>
-              <input matInput formControlName="lastNameKanji" required>
-              <mat-error *ngIf="employeeForm.get('employeeBasicInfo.lastNameKanji')?.hasError('required')">
-                姓は必須です
-              </mat-error>
-            </mat-form-field>
+            <div class="name-block">
+              <div class="form-row">
+                <mat-form-field>
+                  <mat-label>姓（漢字） *</mat-label>
+                  <input matInput formControlName="lastNameKanji" required>
+                  <mat-error *ngIf="employeeForm.get('employeeBasicInfo.lastNameKanji')?.hasError('required')">
+                    姓は必須です
+                  </mat-error>
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>名（漢字） *</mat-label>
+                  <input matInput formControlName="firstNameKanji" required>
+                  <mat-error *ngIf="employeeForm.get('employeeBasicInfo.firstNameKanji')?.hasError('required')">
+                    名は必須です
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="name-block">
+              <div class="form-row">
+                <mat-form-field>
+                  <mat-label>姓（カナ）</mat-label>
+                  <input matInput formControlName="lastNameKana">
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>名（カナ）</mat-label>
+                  <input matInput formControlName="firstNameKana">
+                </mat-form-field>
+              </div>
+            </div>
 
-            <mat-form-field>
-              <mat-label>名（漢字） *</mat-label>
-              <input matInput formControlName="firstNameKanji" required>
-              <mat-error *ngIf="employeeForm.get('employeeBasicInfo.firstNameKanji')?.hasError('required')">
-                名は必須です
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field>
-              <mat-label>姓（カナ）</mat-label>
-              <input matInput formControlName="lastNameKana">
-            </mat-form-field>
-
-            <mat-form-field>
-              <mat-label>名（カナ）</mat-label>
-              <input matInput formControlName="firstNameKana">
-            </mat-form-field>
-
-            <mat-form-field>
-              <mat-label>生年月日 *</mat-label>
-              <input matInput [matDatepicker]="birthDatePicker" formControlName="birthDate" required>
-              <mat-datepicker-toggle matSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
-              <mat-datepicker #birthDatePicker></mat-datepicker>
-              <mat-error *ngIf="employeeForm.get('employeeBasicInfo.birthDate')?.hasError('required')">
-                生年月日は必須です
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field>
-              <mat-label>性別</mat-label>
-              <mat-select formControlName="gender">
-                <mat-option value="男性">男性</mat-option>
-                <mat-option value="女性">女性</mat-option>
-                <mat-option value="その他">その他</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="form-row">
+              <mat-form-field>
+                <mat-label>生年月日 *</mat-label>
+                <input matInput [matDatepicker]="birthDatePicker" formControlName="birthDate" required>
+                <mat-datepicker-toggle matSuffix [for]="birthDatePicker"></mat-datepicker-toggle>
+                <mat-datepicker #birthDatePicker></mat-datepicker>
+                <mat-error *ngIf="employeeForm.get('employeeBasicInfo.birthDate')?.hasError('required')">
+                  生年月日は必須です
+                </mat-error>
+                <mat-error *ngIf="employeeForm.get('employeeBasicInfo.birthDate')?.hasError('futureDate')">
+                  未来の日付は入力できません
+                </mat-error>
+              </mat-form-field>
+              <mat-form-field>
+                <mat-label>性別</mat-label>
+                <mat-select formControlName="gender">
+                  <mat-option value="男性">男性</mat-option>
+                  <mat-option value="女性">女性</mat-option>
+                  <mat-option value="その他">その他</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
 
             <mat-form-field class="full-width">
               <mat-label>住所</mat-label>
               <input matInput formControlName="address">
-            </mat-form-field>
-
-            <mat-form-field>
-              <mat-label>メールアドレス</mat-label>
-              <input matInput formControlName="email" type="email">
-              <mat-error *ngIf="employeeForm.get('employeeBasicInfo.email')?.hasError('email')">
-                有効なメールアドレスを入力してください
-              </mat-error>
             </mat-form-field>
 
             <mat-form-field>
@@ -182,14 +183,14 @@
                 <mat-option value="大学">大学</mat-option>
                 <mat-option value="高校">高校</mat-option>
                 <mat-option value="専門学校">専門学校</mat-option>
-                <mat-option value="その他学校">その他学校</mat-option>
+                <mat-option value="休学中">休学中</mat-option>
+                <mat-option value="卒業見込">卒業見込</mat-option>
               </mat-select>
             </mat-form-field>
-
-            
+          </div>
         </div>
 
-        <!-- 社会保険情報 -->
+        <!-- 社会保険情報を雇用情報の外に移動 -->
         <div class="form-section">
           <h3>社会保険情報</h3>
           <div formGroupName="insuranceStatus" class="form-grid">
@@ -199,50 +200,50 @@
               <mat-datepicker-toggle matSuffix [for]="qualificationDatePicker"></mat-datepicker-toggle>
               <mat-datepicker #qualificationDatePicker></mat-datepicker>
             </mat-form-field>
-
             <mat-form-field>
               <mat-label>保険種別</mat-label>
               <mat-select formControlName="insuranceType">
                 <mat-option value="協会けんぽ">協会けんぽ</mat-option>
-                <mat-option value="なし">なし</mat-option>
+                <mat-option value="対象外">対象外</mat-option>
               </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>健康保険等級</mat-label>
+              <mat-select formControlName="grade">
+                <mat-option *ngFor="let grade of aichiGrades | keyvalue : gradeSort" [value]="grade.key">
+                  {{grade.key}}級
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>標準報酬月額</mat-label>
+              <input matInput [value]="standardMonthlyWage ? standardMonthlyWage.toLocaleString() + '円' : ''" readonly>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>厚生年金等級</mat-label>
+              <mat-select formControlName="pensionGrade">
+                <mat-option *ngFor="let grade of pensionGrades | keyvalue : gradeSort" [value]="grade.key">
+                  {{grade.key}}級
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>標準報酬月額</mat-label>
+              <input matInput [value]="pensionMonthlyWage ? pensionMonthlyWage.toLocaleString() + '円' : ''" readonly>
             </mat-form-field>
           </div>
         </div>
-
-        <mat-form-field>
-          <mat-label>等級</mat-label>
-          <mat-select formControlName="grade">
-            <mat-option [value]="null">未設定</mat-option>
-            <mat-option *ngFor="let g of [].constructor(50); let i = index" [value]="i+1">{{i+1}}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field>
-          <mat-label>標準報酬月額</mat-label>
-          <input matInput [value]="standardMonthlyWage ? standardMonthlyWage : ''" readonly>
-        </mat-form-field>
-        <mat-form-field>
-          <mat-label>報酬月額（通貨）</mat-label>
-          <input matInput [value]="(employeeForm.get('employmentInfo.baseSalary')?.value || 0) + (employeeForm.get('employmentInfo.allowances')?.value || 0)" readonly>
-        </mat-form-field>
-        <mat-form-field>
-          <mat-label>うち通勤手当</mat-label>
-          <input matInput [value]="employeeForm.get('employmentInfo.commutingAllowance')?.value || 0" readonly>
-        </mat-form-field>
-      </div>
 
         <!-- 扶養者情報 -->
         <div class="form-section">
           <div class="section-header">
             <h3>扶養者情報</h3>
-            <button mat-raised-button color="primary" type="button" (click)="addDependent()">
+            <button mat-raised-button color="primary" type="button" (click)="addDependent()" *ngIf="dependents.length === 0">
               <mat-icon>add</mat-icon>
               扶養者追加
             </button>
           </div>
-
-          <div formArrayName="dependents">
+          <div formArrayName="dependents" *ngIf="dependents.length > 0">
             <div *ngFor="let dependent of dependents.controls; let i = index" [formGroupName]="i" class="dependent-form">
               <div class="dependent-header">
                 <h4>扶養者 {{i + 1}}</h4>
@@ -250,27 +251,33 @@
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
-
               <div class="form-grid">
                 <mat-form-field>
                   <mat-label>姓</mat-label>
                   <input matInput formControlName="lastName">
+                  <mat-error *ngIf="dependent.get('lastName')?.hasError('required')">姓は必須です</mat-error>
                 </mat-form-field>
                 <mat-form-field>
                   <mat-label>名</mat-label>
                   <input matInput formControlName="firstName">
+                  <mat-error *ngIf="dependent.get('firstName')?.hasError('required')">名は必須です</mat-error>
                 </mat-form-field>
                 <mat-form-field>
                   <mat-label>姓カナ</mat-label>
                   <input matInput formControlName="lastNameKana">
+                  <mat-error *ngIf="dependent.get('lastNameKana')?.hasError('required')">姓カナは必須です</mat-error>
+                  <mat-error *ngIf="dependent.get('lastNameKana')?.hasError('pattern')">全角カタカナで入力してください</mat-error>
                 </mat-form-field>
                 <mat-form-field>
                   <mat-label>名カナ</mat-label>
                   <input matInput formControlName="firstNameKana">
+                  <mat-error *ngIf="dependent.get('firstNameKana')?.hasError('required')">名カナは必須です</mat-error>
+                  <mat-error *ngIf="dependent.get('firstNameKana')?.hasError('pattern')">全角カタカナで入力してください</mat-error>
                 </mat-form-field>
                 <mat-form-field>
                   <mat-label>マイナンバー</mat-label>
                   <input matInput formControlName="myNumber">
+                  <mat-error *ngIf="dependent.get('myNumber')?.hasError('pattern')">12桁の数字を入力してください</mat-error>
                 </mat-form-field>
                 <mat-form-field>
                   <mat-label>続柄</mat-label>
@@ -292,6 +299,7 @@
                   <mat-form-field>
                     <mat-label>その他（具体的に）</mat-label>
                     <input matInput formControlName="relationshipOther">
+                    <mat-error *ngIf="dependent.get('relationshipOther')?.hasError('required')">具体的な続柄を入力してください</mat-error>
                   </mat-form-field>
                 </div>
                 <mat-form-field>
@@ -299,10 +307,14 @@
                   <input matInput [matDatepicker]="depBirthDatePicker" formControlName="birthDate">
                   <mat-datepicker-toggle matSuffix [for]="depBirthDatePicker"></mat-datepicker-toggle>
                   <mat-datepicker #depBirthDatePicker></mat-datepicker>
+                  <mat-error *ngIf="dependent.get('birthDate')?.hasError('required')">生年月日は必須です</mat-error>
+                  <mat-error *ngIf="dependent.get('birthDate')?.hasError('futureDate')">未来の日付は入力できません</mat-error>
                 </mat-form-field>
                 <mat-form-field>
                   <mat-label>年収（円）</mat-label>
                   <input matInput type="number" formControlName="income">
+                  <mat-error *ngIf="dependent.get('income')?.hasError('required')">年収は必須です</mat-error>
+                  <mat-error *ngIf="dependent.get('income')?.hasError('min')">0円以上を入力してください</mat-error>
                 </mat-form-field>
                 <mat-form-field>
                   <mat-label>居住地</mat-label>
@@ -310,6 +322,7 @@
                     <mat-option value="国内">国内</mat-option>
                     <mat-option value="海外">海外</mat-option>
                   </mat-select>
+                  <mat-error *ngIf="dependent.get('residency')?.hasError('required')">居住地は必須です</mat-error>
                 </mat-form-field>
                 <mat-form-field>
                   <mat-label>同居・別居</mat-label>
@@ -317,13 +330,37 @@
                     <mat-option value="同居">同居</mat-option>
                     <mat-option value="別居">別居</mat-option>
                   </mat-select>
+                  <mat-error *ngIf="dependent.get('cohabitation')?.hasError('required')">同居・別居は必須です</mat-error>
                 </mat-form-field>
                 <mat-form-field>
                   <mat-label>職業</mat-label>
-                  <input matInput formControlName="occupation">
+                  <mat-select formControlName="occupation">
+                    <mat-option value="無職">無職</mat-option>
+                    <mat-option value="パート">パート</mat-option>
+                    <mat-option value="年金受給者">年金受給者</mat-option>
+                    <mat-option value="小・中学生以下">小・中学生以下</mat-option>
+                    <mat-option value="高・大学生">高・大学生</mat-option>
+                    <mat-option value="その他">その他</mat-option>
+                  </mat-select>
                 </mat-form-field>
+                <div *ngIf="dependent.get('occupation')?.value === '高・大学生'" style="margin-bottom: 8px;">
+                  <mat-form-field>
+                    <mat-label>学年（例：3年生）</mat-label>
+                    <input matInput formControlName="schoolGrade">
+                  </mat-form-field>
+                </div>
+                <div *ngIf="dependent.get('occupation')?.value === 'その他'" style="margin-bottom: 8px;">
+                  <mat-form-field>
+                    <mat-label>その他（具体的に）</mat-label>
+                    <input matInput formControlName="occupationOther">
+                  </mat-form-field>
+                </div>
               </div>
             </div>
+            <button mat-raised-button color="primary" type="button" (click)="addDependent()">
+              <mat-icon>add</mat-icon>
+              扶養者追加
+            </button>
           </div>
         </div>
 
