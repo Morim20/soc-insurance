@@ -67,6 +67,7 @@ export class InsuranceEditComponent implements OnInit {
   @Input() companySummaryTable: any;
   @Input() companyBonusSummaryTable: any;
   @Input() hasBonus: boolean = false;
+  insuranceEligibilityResult: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -97,7 +98,7 @@ export class InsuranceEditComponent implements OnInit {
     this.form.valueChanges.subscribe(() => {
       this.calculateStandardMonthlyRemuneration();
       // 育休・産休中は賞与も0円
-      if (this.isChildCareLeave) {
+      if (this.isExemptedByFourteenDayRule) {
         this.bonusInsuranceResult = {
           healthInsuranceEmployee: 0,
           healthInsuranceEmployer: 0,
@@ -388,6 +389,15 @@ export class InsuranceEditComponent implements OnInit {
 
     // isBonusMonthの状態に応じてbonusAmountコントロールを制御
     this.toggleBonusAmountControl();
+
+    // 保険判定サービスから免除月情報を取得
+    if (this.employeeId) {
+      const employee = await this.employeeService.getEmployee(this.employeeId);
+      if (employee) {
+        const eligibilityService = new (await import('../../services/insurance-eligibility.service')).InsuranceEligibilityService(this.firestore);
+        this.insuranceEligibilityResult = await eligibilityService.getInsuranceEligibility(employee).toPromise();
+      }
+    }
   }
 
   // isBonusMonthの変化に応じてbonusAmountコントロールを制御するメソッドを追加
@@ -475,7 +485,7 @@ export class InsuranceEditComponent implements OnInit {
 
     // 育休・産休・介護休暇中なら備考自動セット
     let noteText = this.form.value.notes || '';
-    if (this.isChildCareLeave) {
+    if (this.isExemptedByFourteenDayRule) {
       if (this.specialAttributes?.leaveType === '介護休業') {
         noteText = '介護休暇中';
       } else if (this.specialAttributes?.leaveType === '育児休業' || this.specialAttributes?.leaveType === '産前産後休業') {
@@ -487,7 +497,7 @@ export class InsuranceEditComponent implements OnInit {
 
     // 育休・産休中なら保険料を0に
     let saveValue;
-    if (this.isChildCareLeave) {
+    if (this.isExemptedByFourteenDayRule) {
       saveValue = {
         baseSalary,
         allowances,
@@ -525,7 +535,7 @@ export class InsuranceEditComponent implements OnInit {
         isNursingInsuranceEligible
       };
     } else {
-      // 端数処理前（2分割直後）の値を保存
+      // 通常計算値を必ず保存
       const bonusRaw = this.bonusInsuranceResult || {};
       saveValue = result ? {
         baseSalary,
@@ -810,87 +820,61 @@ export class InsuranceEditComponent implements OnInit {
     if (birthDate) {
       age = this.calculateAge(birthDate);
     }
-    console.log('保険料再計算: 都道府県=', this.companyPrefecture, '年齢=', age, '基本給=', baseSalary, '手当=', allowances, '通勤手当=', commutingAllowance);
+
+    // 等級が未設定の場合は自動決定
+    let grade = typeof this.insuranceStatus?.grade === 'number' ? this.insuranceStatus.grade : 0;
+    if (!grade) {
+      const total = baseSalary + allowances + commutingAllowance;
+      grade = this.insuranceCalculationService.determineGrade(total, this.companyPrefecture);
+    }
+
+    console.log('保険料再計算: 都道府県=', this.companyPrefecture, '年齢=', age, '等級=', grade);
 
     // 保険料計算
     const result = this.insuranceCalculationService.calculateInsurance({
       prefecture: this.companyPrefecture,
-      grade: typeof this.insuranceStatus?.grade === 'number' ? this.insuranceStatus.grade : 0,
+      grade,
       age,
       hasChildren: false
     });
 
+    if (!result) {
+      console.error('保険料計算に失敗しました');
+      this.snackBar.open('保険料計算に失敗しました。都道府県・等級・標準報酬月額を確認してください。', '閉じる', { duration: 5000 });
+      return;
+    }
+
     // 結果をdataに反映
     if (this.data) {
-      this.data.healthInsuranceEmployee = result ? result.healthInsurance.employee : 0;
-      this.data.healthInsuranceEmployer = result ? result.healthInsurance.employer : 0;
-      this.data.nursingInsuranceEmployee = result ? result.nursingInsurance.employee : 0;
-      this.data.nursingInsuranceEmployer = result ? result.nursingInsurance.employer : 0;
-      this.data.pensionInsuranceEmployee = result ? result.pensionInsurance.employee : 0;
-      this.data.pensionInsuranceEmployer = result ? result.pensionInsurance.employer : 0;
-      this.data.childContribution = result ? result.childContribution : 0;
+      this.data.healthInsuranceEmployee = result.healthInsurance.employee;
+      this.data.healthInsuranceEmployer = result.healthInsurance.employer;
+      this.data.nursingInsuranceEmployee = result.nursingInsurance.employee;
+      this.data.nursingInsuranceEmployer = result.nursingInsurance.employer;
+      this.data.pensionInsuranceEmployee = result.pensionInsurance.employee;
+      this.data.pensionInsuranceEmployer = result.pensionInsurance.employer;
+      this.data.childContribution = result.childContribution;
       // 従業員負担分の合計は端数処理を適用
-      this.data.employeeTotalDeduction = result ? this.calculateEmployeeTotalInsurance(
+      this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsurance(
         result.healthInsurance.employee,
         result.nursingInsurance.employee,
         result.pensionInsurance.employee
-      ) : 0;
+      );
       // 会社負担分の合計は端数処理なし
-      this.data.employerTotalDeduction = result ? this.calculateEmployerTotalInsurance(
+      this.data.employerTotalDeduction = this.calculateEmployerTotalInsurance(
         result.healthInsurance.employer,
         result.nursingInsurance.employer,
         result.pensionInsurance.employer
-      ) : 0;
+      );
     }
   }
 
-  get isChildCareLeave(): boolean {
-    if (!this.specialAttributes) return false;
-    const leaveType = this.specialAttributes.leaveType;
-    const leaveStart = this.specialAttributes.leaveStartDate;
-    const leaveEnd = this.specialAttributes.leaveEndDate;
-    if (leaveType && (leaveType === '育児休業' || leaveType === '産前産後休業') && leaveStart) {
-      const today = new Date();
-      const start = new Date(leaveStart);
-      const end = leaveEnd ? new Date(leaveEnd) : null;
-      return today >= start && (!end || today <= end);
-    }
-    return false;
-  }
-
-  // 賞与分：従業員負担分の合計（各保険料ごとに端数処理→合算）
-  calculateBonusEmployeeTotalInsurance(health: number, nursing: number, pension: number): number {
-    const healthRounded = this.roundAmount(health);
-    const nursingRounded = this.roundAmount(nursing);
-    const pensionRounded = this.roundAmount(pension);
-    return healthRounded + nursingRounded + pensionRounded;
-  }
-
-  // 賞与分：会社負担分の合計（従業員分の端数処理結果に応じて切り上げ/切り捨て）
-  calculateBonusEmployerTotalInsurance(healthEmp: number, nursingEmp: number, pensionEmp: number, healthCom: number, nursingCom: number, pensionCom: number): number {
-    const healthRounded = this.roundAmount(healthEmp);
-    const nursingRounded = this.roundAmount(nursingEmp);
-    const pensionRounded = this.roundAmount(pensionEmp);
-    const empTotal = healthRounded + nursingRounded + pensionRounded;
-    const comTotalRaw = healthCom + nursingCom + pensionCom;
-    // 元の合計値の端数
-    const empSumDecimal = (healthEmp + nursingEmp + pensionEmp) - Math.floor(healthEmp + nursingEmp + pensionEmp);
-    const wasEmpRoundedUp = empSumDecimal > 0.5;
-    return wasEmpRoundedUp ? Math.floor(comTotalRaw) : Math.ceil(comTotalRaw);
-  }
-
-  get displayBonusInsuranceResult() {
-    if (this.isChildCareLeave) {
-      return {
-        healthInsuranceEmployee: 0,
-        healthInsuranceEmployer: 0,
-        nursingInsuranceEmployee: 0,
-        nursingInsuranceEmployer: 0,
-        pensionInsuranceEmployee: 0,
-        pensionInsuranceEmployer: 0,
-        childContribution: 0
-      };
-    }
-    return this.bonusInsuranceResult || {};
+  get isExemptedByFourteenDayRule(): boolean {
+    if (!this.specialAttributes || !this.data?.period || !this.insuranceEligibilityResult) return false;
+    const ym = `${this.data.period.year}-${String(this.data.period.month).padStart(2, '0')}`;
+    return (
+      (this.specialAttributes.leaveType === '育児休業' || this.specialAttributes.leaveType === '産前産後休業') &&
+      Array.isArray(this.insuranceEligibilityResult.insuranceExemptionFourteenDayRuleMonths) &&
+      this.insuranceEligibilityResult.insuranceExemptionFourteenDayRuleMonths.includes(ym)
+    );
   }
 } 

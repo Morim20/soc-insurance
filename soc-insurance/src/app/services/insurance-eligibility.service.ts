@@ -59,7 +59,10 @@ export class InsuranceEligibilityService {
   isFullTimeEmployee(employee: EmployeeFullInfo): boolean {
     const weeklyHours = employee.employmentInfo.weeklyHours;
     const monthlyWorkDays = employee.employmentInfo.monthlyWorkDays;
-    const monthlyWage = Number(employee.employmentInfo.baseSalary);
+    const monthlyWage =
+      (Number(employee.employmentInfo.baseSalary) || 0) +
+      (Number(employee.employmentInfo.allowances) || 0) +
+      (Number(employee.employmentInfo.commutingAllowance) || 0);
 
     // 正社員の場合
     if (employee.employmentInfo.employmentType === '正社員') {
@@ -84,7 +87,10 @@ export class InsuranceEligibilityService {
   isStudentEligibleForInsurance(employee: EmployeeFullInfo): boolean {
     const weeklyHours = employee.employmentInfo.weeklyHours;
     const monthlyWorkDays = employee.employmentInfo.monthlyWorkDays;
-    const monthlyWage = Number(employee.employmentInfo.baseSalary);
+    const monthlyWage =
+      (Number(employee.employmentInfo.baseSalary) || 0) +
+      (Number(employee.employmentInfo.allowances) || 0) +
+      (Number(employee.employmentInfo.commutingAllowance) || 0);
     const studentType = employee.employmentInfo.studentType;
     const age = this.calculateAge(employee.employeeBasicInfo.birthDate);
 
@@ -108,7 +114,10 @@ export class InsuranceEligibilityService {
 
   isShortTimeWorker(employee: EmployeeFullInfo): boolean {
     const weeklyHours = Number(employee.employmentInfo.weeklyHours);
-    const monthlyWage = Number(employee.employmentInfo.baseSalary);
+    const monthlyWage =
+      (Number(employee.employmentInfo.baseSalary) || 0) +
+      (Number(employee.employmentInfo.allowances) || 0) +
+      (Number(employee.employmentInfo.commutingAllowance) || 0);
     const expectedEmploymentMonths = Number(employee.employmentInfo.expectedEmploymentMonths);
     const isStudent = this.isStudent(employee);
 
@@ -234,7 +243,10 @@ export class InsuranceEligibilityService {
 
     const weeklyHours = Number(employee.employmentInfo.weeklyHours) || 0;
     const monthlyWorkDays = Number(employee.employmentInfo.monthlyWorkDays) || 0;
-    const monthlyWage = Number(employee.employmentInfo.baseSalary) || 0;
+    const monthlyWage =
+      (Number(employee.employmentInfo.baseSalary) || 0) +
+      (Number(employee.employmentInfo.allowances) || 0) +
+      (Number(employee.employmentInfo.commutingAllowance) || 0);
     const expectedEmploymentMonths = Number(employee.employmentInfo.expectedEmploymentMonths);
 
     // 介護保険の開始・終了月を計算

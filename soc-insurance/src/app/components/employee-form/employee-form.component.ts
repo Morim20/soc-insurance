@@ -145,24 +145,7 @@ export class EmployeeFormComponent implements OnInit {
         leaveStartDate: [''],
         leaveEndDate: ['']
       }),
-      dependents: this.fb.array([
-        this.fb.group({
-          lastName: ['', Validators.required],
-          firstName: ['', Validators.required],
-          lastNameKana: ['', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
-          firstNameKana: ['', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
-          myNumber: ['', [Validators.pattern(/^[0-9]{12}$/)]],
-          birthDate: [null, [Validators.required, this.futureDateValidator]],
-          relationship: ['', Validators.required],
-          relationshipOther: [''],
-          income: [null, [Validators.required, Validators.min(0)]],
-          residency: ['', Validators.required],
-          cohabitation: ['', Validators.required],
-          occupation: [''],
-          schoolGrade: [''],
-          occupationOther: ['']
-        }, { validators: this.relationshipOtherRequiredValidator })
-      ])
+      dependents: this.fb.array([])
     });
 
     // 健康保険等級の変更を監視（雇用情報）

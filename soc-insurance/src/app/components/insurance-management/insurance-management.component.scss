@@ -124,4 +124,18 @@
 .company-summary {
   margin-top: 40px;
   margin-bottom: 32px;
+}
+
+.grade-unset {
+  background: #ffeaea !important;
+  color: #d32f2f !important;
+  font-weight: bold;
+}
+
+.mat-table .grade-unset,
+.mat-cell.grade-unset,
+td.grade-unset {
+  background: #ffeaea !important;
+  color: #d32f2f !important;
+  font-weight: bold !important;
 } 

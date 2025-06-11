@@ -353,7 +353,9 @@ export class InsuranceManagementComponent implements OnInit {
 
         // 保険ステータスを取得
         const insuranceStatus = await this.employeeService.getInsuranceStatus(employee.id);
-        const gradeForDisplay = insuranceStatus?.grade ?? '未設定';
+        const gradeForDisplay = (typeof insuranceStatus?.grade === 'number' && insuranceStatus.grade > 0)
+          ? insuranceStatus.grade
+          : null; // 未設定はnull
         const newGradeForDisplay = insuranceStatus?.newGrade ?? '未設定';
         const gradeForCalc = typeof insuranceStatus?.grade === 'number' ? insuranceStatus.grade : 0;
 
@@ -1082,5 +1084,9 @@ export class InsuranceManagementComponent implements OnInit {
   // 小数点第3位以下切り捨てで2位まで表示する関数
   toFixedFloor(value: number): string {
     return (Math.floor(value * 100) / 100).toFixed(2);
+  }
+
+  get hasUnconfirmedRemuneration(): boolean {
+    return this.dataSource.some(row => row.standardMonthlyRemuneration === null || row.standardMonthlyRemuneration === undefined);
   }
 }

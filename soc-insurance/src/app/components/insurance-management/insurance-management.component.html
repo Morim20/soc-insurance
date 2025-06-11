@@ -109,11 +109,11 @@
           <ng-container matColumnDef="grade">
             <th mat-header-cell *matHeaderCellDef>健康保険等級</th>
             <td mat-cell *matCellDef="let element">
-              <ng-container *ngIf="element.grade !== null && element.grade !== undefined && element.grade !== '' && element.grade !== 0; else notSet">
+              <ng-container *ngIf="element.grade != null && element.grade !== 0; else notSetGrade">
                 {{element.grade}}
               </ng-container>
-              <ng-template #notSet>
-                <span style="color: red;">従業員管理ページで等級を設定してください</span>
+              <ng-template #notSetGrade>
+                <span style="color: red;">未設定</span>
               </ng-template>
             </td>
             <td mat-footer-cell *matFooterCellDef></td>
@@ -168,7 +168,7 @@
         </table>
       </div>
 
-      <div *ngIf="!isLoading && isAllConfirmed" class="company-summary">
+      <div *ngIf="!isLoading && isAllConfirmed && !hasUnconfirmedRemuneration" class="company-summary">
         <div *ngIf="companySummaryTable.rows.length > 0; else noCompanySummary">
           <div style="display: flex; align-items: center; justify-content: flex-start;">
             <h3 style="margin: 0 8px 0 0;">会社全体の保険料明細</h3>
@@ -200,7 +200,7 @@
         </ng-template>
       </div>
 
-      <div *ngIf="!isLoading && hasBonus" class="company-bonus-summary">
+      <div *ngIf="!isLoading && hasBonus && companySummaryTable.rows.length > 0 && !hasUnconfirmedRemuneration" class="company-bonus-summary">
         <ng-container *ngIf="companyBonusSummaryTable.rows.length > 0; else noBonusSummary">
           <h3>会社全体の賞与分保険料明細</h3>
           <table class="summary-table">

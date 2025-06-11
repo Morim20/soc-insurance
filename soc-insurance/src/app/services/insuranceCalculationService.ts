@@ -195,13 +195,13 @@ interface BonusInsuranceResult {
   providedIn: 'root'
 })
 export class InsuranceCalculationService {
-  private prefectureService: PrefectureInsuranceRatesService;
-  private detailedRatesService: DetailedInsuranceRatesService;
-
   constructor() {
     this.prefectureService = PrefectureInsuranceRatesService.getInstance();
     this.detailedRatesService = DetailedInsuranceRatesService.getInstance();
   }
+
+  private prefectureService: PrefectureInsuranceRatesService;
+  private detailedRatesService: DetailedInsuranceRatesService;
 
   // 都道府県別の保険料データを取得
   private getPrefectureGradeData(prefecture: string, grade: number): PrefectureGradeData | null {
@@ -231,17 +231,23 @@ export class InsuranceCalculationService {
     return null;
   }
 
-  // 等級を判定
-  private determineGrade(standardMonthlyWage: number, prefecture: string): number {
-    // 標準報酬月額から等級を判定
-    for (const gradeInfo of (gradeMaster as GradeMasterEntry[])) {
-      // 給与額が等級の範囲内にある場合
-      if (standardMonthlyWage >= gradeInfo.lowerBound && 
-          (gradeInfo.upperBound === null || standardMonthlyWage < gradeInfo.upperBound)) {
-        return gradeInfo.grade;
+  // 等級を決定
+  public determineGrade(standardMonthlyWage: number, prefecture: string): number {
+    const prefectureRates = prefectureRatesMap[prefecture];
+    if (!prefectureRates) {
+      console.error(`都道府県「${prefecture}」の保険料率データが見つかりません`);
+      return 0;
+    }
+
+    // 等級マスターから該当する等級を探す
+    for (const entry of gradeMaster) {
+      if (standardMonthlyWage >= entry.lowerBound && (!entry.upperBound || standardMonthlyWage < entry.upperBound)) {
+        return entry.grade;
       }
     }
-    return 1;
+
+    console.error(`標準報酬月額「${standardMonthlyWage}円」に対応する等級が見つかりません（都道府県：${prefecture}）`);
+    return 0;
   }
 
   // 標準報酬月額を計算
@@ -339,12 +345,26 @@ export class InsuranceCalculationService {
     const { prefecture, grade, age } = params;
 
     // 都道府県の保険料率データを取得
-    const prefectureData = this.detailedRatesService.getRates(prefecture);
-    if (!prefectureData || !prefectureData[grade.toString()]) {
+    const prefectureRates = prefectureRatesMap[prefecture];
+    if (!prefectureRates) {
+      console.error(`都道府県「${prefecture}」の保険料率データが見つかりません`);
       return null;
     }
 
-    const gradeData = prefectureData[grade.toString()];
+    // 等級データを取得
+    const gradeData = (prefectureRates as any)[grade];
+    if (!gradeData) {
+      console.error(`都道府県「${prefecture}」の等級「${grade}」のデータが見つかりません`);
+      return null;
+    }
+
+    console.log('保険料計算パラメータ:', {
+      prefecture,
+      grade,
+      age,
+      gradeData
+    });
+
     const healthInsuranceEmployeeRaw = gradeData.healthInsuranceEmployee;
     const healthInsuranceEmployerRaw = gradeData.healthInsurance - healthInsuranceEmployeeRaw;
     
@@ -362,7 +382,7 @@ export class InsuranceCalculationService {
     const employeeTotalRaw = healthInsuranceEmployeeRaw + nursingInsuranceEmployeeRaw + pensionInsuranceEmployeeRaw + childContributionRaw;
     const employerBurdenRaw = healthInsuranceEmployerRaw + nursingInsuranceEmployerRaw + pensionInsuranceEmployerRaw;
 
-    return {
+    const result = {
       healthInsurance: {
         employee: healthInsuranceEmployeeRaw,
         employer: healthInsuranceEmployerRaw
@@ -381,6 +401,9 @@ export class InsuranceCalculationService {
         employer: employerBurdenRaw
       }
     };
+
+    console.log('保険料計算結果:', result);
+    return result;
   }
 
   // 利用可能な都道府県のリストを取得
