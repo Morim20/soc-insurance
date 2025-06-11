@@ -290,6 +290,21 @@ export class EmployeeDetailComponent implements OnInit {
       startCtrl?.updateValueAndValidity();
       endCtrl?.updateValueAndValidity();
     });
+
+    // 保険種別の変更を監視
+    this.insuranceStatusForm.get('insuranceType')?.valueChanges.subscribe(type => {
+      if (type !== '協会けんぽ') {
+        // 協会けんぽ以外の場合、等級と標準報酬月額をクリア
+        this.insuranceStatusForm.patchValue({
+          grade: null,
+          newGrade: null,
+          newStandardMonthlyWage: null,
+          standardMonthlyRevisionDate: null,
+          newRevisionDate: null
+        });
+        this.standardMonthlyWage = null;
+      }
+    });
   }
 
   // 編集開始

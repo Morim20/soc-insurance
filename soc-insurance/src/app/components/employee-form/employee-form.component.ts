@@ -49,10 +49,10 @@ export class EmployeeFormComponent implements OnInit {
   departments: string[] = [];
   employeeId: string | null = null;
   standardMonthlyWage: number | null = null;
-  pensionMonthlyWage: number | null = null;
   public aichiGrades: { [key: string]: { standardMonthlyWage: number } } = aichiGrades;
   public pensionGrades: { [key: string]: { standardMonthlyWage: number } } = pensionGrades;
   gradeSort = (a: any, b: any) => Number(a.key) - Number(b.key);
+  showDependentsSection = false;
 
   // カスタムバリデーター: relationshipが「その他」の場合はrelationshipOther必須
   relationshipOtherRequiredValidator: ValidatorFn = (group: AbstractControl) => {
@@ -115,11 +115,6 @@ export class EmployeeFormComponent implements OnInit {
           if (value === null) return null;
           return value >= 1 ? null : { min: true };
         }]],
-        pensionGrade: [null, [(control: AbstractControl) => {
-          const value = control.value;
-          if (value === null) return null;
-          return value >= 1 ? null : { min: true };
-        }]],
         baseSalary: ['', [Validators.required, Validators.min(0)]],
         isStudent: [false],
         studentType: [''],
@@ -170,21 +165,42 @@ export class EmployeeFormComponent implements OnInit {
       ])
     });
 
-    // 健康保険等級の変更を監視
+    // 健康保険等級の変更を監視（雇用情報）
     this.employeeForm.get('employmentInfo.grade')?.valueChanges.subscribe(grade => {
       if (grade && this.aichiGrades[grade]) {
         this.standardMonthlyWage = this.aichiGrades[grade].standardMonthlyWage;
       } else {
         this.standardMonthlyWage = null;
       }
+      // 雇用情報の等級変更時、社会保険情報にも同期
+      this.employeeForm.get('insuranceStatus.grade')?.setValue(grade, { emitEvent: false });
     });
-
-    // 厚生年金等級の変更を監視
-    this.employeeForm.get('employmentInfo.pensionGrade')?.valueChanges.subscribe(grade => {
-      if (grade && this.pensionGrades[grade]) {
-        this.pensionMonthlyWage = this.pensionGrades[grade].standardMonthlyWage;
+    // 健康保険等級の変更を監視（社会保険情報）
+    this.employeeForm.get('insuranceStatus.grade')?.valueChanges.subscribe(grade => {
+      if (grade && this.aichiGrades[grade]) {
+        this.standardMonthlyWage = this.aichiGrades[grade].standardMonthlyWage;
       } else {
-        this.pensionMonthlyWage = null;
+        this.standardMonthlyWage = null;
+      }
+      // 社会保険情報の等級変更時、雇用情報にも同期
+      this.employeeForm.get('employmentInfo.grade')?.setValue(grade, { emitEvent: false });
+    });
+    // 保険種別の変更を監視
+    this.employeeForm.get('insuranceStatus.insuranceType')?.valueChanges.subscribe(type => {
+      if (type !== '協会けんぽ') {
+        // 等級と標準報酬月額をクリア
+        this.employeeForm.get('insuranceStatus.grade')?.setValue(null);
+        this.employeeForm.get('insuranceStatus.newGrade')?.setValue(null);
+        this.standardMonthlyWage = null;
+        this.employeeForm.get('insuranceStatus.newStandardMonthlyWage')?.setValue(null);
+      }
+    });
+    // 厚生年金等級の変更を監視（社会保険情報）
+    this.employeeForm.get('insuranceStatus.newGrade')?.valueChanges.subscribe(grade => {
+      if (grade && this.pensionGrades[grade]) {
+        this.employeeForm.get('insuranceStatus.newStandardMonthlyWage')?.setValue(this.pensionGrades[grade].standardMonthlyWage, { emitEvent: false });
+      } else {
+        this.employeeForm.get('insuranceStatus.newStandardMonthlyWage')?.setValue(null, { emitEvent: false });
       }
     });
   }
@@ -204,23 +220,10 @@ export class EmployeeFormComponent implements OnInit {
         this.standardMonthlyWage = null;
       }
     });
-    // 厚生年金等級変更時に標準報酬月額を自動反映
-    this.employeeForm.get('employmentInfo.pensionGrade')?.valueChanges.subscribe((grade) => {
-      const key = String(grade);
-      if (grade && pensionGrades[key]) {
-        this.pensionMonthlyWage = pensionGrades[key].standardMonthlyWage;
-      } else {
-        this.pensionMonthlyWage = null;
-      }
-    });
     // 初期値セット時も反映
     const initialGrade = this.employeeForm.get('employmentInfo.grade')?.value;
     if (initialGrade && aichiGrades[String(initialGrade)]) {
       this.standardMonthlyWage = aichiGrades[String(initialGrade)].standardMonthlyWage;
-    }
-    const initialPensionGrade = this.employeeForm.get('employmentInfo.pensionGrade')?.value;
-    if (initialPensionGrade && pensionGrades[String(initialPensionGrade)]) {
-      this.pensionMonthlyWage = pensionGrades[String(initialPensionGrade)].standardMonthlyWage;
     }
   }
 
@@ -403,6 +406,9 @@ export class EmployeeFormComponent implements OnInit {
         // 等級に対応した標準報酬月額をセット
         const grade = processedData.insuranceStatus.grade;
         processedData.insuranceStatus.standardMonthlyWage = (grade && aichiGrades[String(grade)]) ? aichiGrades[String(grade)].standardMonthlyWage : null;
+        // 厚生年金等級に対応した標準報酬月額もセット
+        const newGrade = processedData.insuranceStatus.newGrade;
+        processedData.insuranceStatus.newStandardMonthlyWage = (newGrade && pensionGrades[String(newGrade)]) ? pensionGrades[String(newGrade)].standardMonthlyWage : null;
 
         // メタデータの追加
         const employeeData: EmployeeFullInfo = {
@@ -440,5 +446,10 @@ export class EmployeeFormComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/admin/employees']);
+  }
+
+  // ダミーのsaveDependentsメソッド（現状は何もしない）
+  saveDependents() {
+    // 必要に応じて実装
   }
 } 

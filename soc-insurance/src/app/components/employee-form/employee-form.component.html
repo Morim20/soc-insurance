@@ -207,7 +207,7 @@
                 <mat-option value="対象外">対象外</mat-option>
               </mat-select>
             </mat-form-field>
-            <mat-form-field>
+            <mat-form-field *ngIf="employeeForm.get('insuranceStatus.insuranceType')?.value === '協会けんぽ'">
               <mat-label>健康保険等級</mat-label>
               <mat-select formControlName="grade">
                 <mat-option *ngFor="let grade of aichiGrades | keyvalue : gradeSort" [value]="grade.key">
@@ -215,152 +215,153 @@
                 </mat-option>
               </mat-select>
             </mat-form-field>
-            <mat-form-field>
+            <mat-form-field *ngIf="employeeForm.get('insuranceStatus.insuranceType')?.value === '協会けんぽ'">
               <mat-label>標準報酬月額</mat-label>
               <input matInput [value]="standardMonthlyWage ? standardMonthlyWage.toLocaleString() + '円' : ''" readonly>
             </mat-form-field>
-            <mat-form-field>
+            <mat-form-field *ngIf="employeeForm.get('insuranceStatus.insuranceType')?.value === '協会けんぽ'">
               <mat-label>厚生年金等級</mat-label>
-              <mat-select formControlName="pensionGrade">
+              <mat-select formControlName="newGrade">
                 <mat-option *ngFor="let grade of pensionGrades | keyvalue : gradeSort" [value]="grade.key">
                   {{grade.key}}級
                 </mat-option>
               </mat-select>
             </mat-form-field>
-            <mat-form-field>
+            <mat-form-field *ngIf="employeeForm.get('insuranceStatus.insuranceType')?.value === '協会けんぽ'">
               <mat-label>標準報酬月額</mat-label>
-              <input matInput [value]="pensionMonthlyWage ? pensionMonthlyWage.toLocaleString() + '円' : ''" readonly>
+              <input matInput [value]="employeeForm.get('insuranceStatus.newStandardMonthlyWage')?.value ? employeeForm.get('insuranceStatus.newStandardMonthlyWage')?.value.toLocaleString() + '円' : ''" readonly>
             </mat-form-field>
           </div>
         </div>
 
         <!-- 扶養者情報 -->
         <div class="form-section">
-          <div class="section-header">
-            <h3>扶養者情報</h3>
-            <button mat-raised-button color="primary" type="button" (click)="addDependent()" *ngIf="dependents.length === 0">
-              <mat-icon>add</mat-icon>
-              扶養者追加
-            </button>
-          </div>
-          <div formArrayName="dependents" *ngIf="dependents.length > 0">
-            <div *ngFor="let dependent of dependents.controls; let i = index" [formGroupName]="i" class="dependent-form">
-              <div class="dependent-header">
-                <h4>扶養者 {{i + 1}}</h4>
-                <button mat-icon-button color="warn" type="button" (click)="removeDependent(i)">
-                  <mat-icon>delete</mat-icon>
-                </button>
+          <h3>
+            扶養者情報
+            <button mat-button color="primary" *ngIf="!showDependentsSection" (click)="showDependentsSection = true" type="button">扶養者情報を追加</button>
+          </h3>
+          <div *ngIf="showDependentsSection">
+            <form [formGroup]="employeeForm" class="basic-info-form">
+              <div formArrayName="dependents">
+                <div *ngFor="let dependent of dependents.controls; let i = index" [formGroupName]="i">
+                  <div class="dependent-header">
+                    <h4>扶養者 {{i + 1}}</h4>
+                    <button mat-icon-button color="warn" type="button" (click)="removeDependent(i)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                  <div class="form-grid">
+                    <mat-form-field>
+                      <mat-label>姓</mat-label>
+                      <input matInput formControlName="lastName">
+                      <mat-error *ngIf="dependent.get('lastName')?.hasError('required')">姓は必須です</mat-error>
+                    </mat-form-field>
+                    <mat-form-field>
+                      <mat-label>名</mat-label>
+                      <input matInput formControlName="firstName">
+                      <mat-error *ngIf="dependent.get('firstName')?.hasError('required')">名は必須です</mat-error>
+                    </mat-form-field>
+                    <mat-form-field>
+                      <mat-label>姓カナ</mat-label>
+                      <input matInput formControlName="lastNameKana">
+                      <mat-error *ngIf="dependent.get('lastNameKana')?.hasError('required')">姓カナは必須です</mat-error>
+                      <mat-error *ngIf="dependent.get('lastNameKana')?.hasError('pattern')">全角カタカナで入力してください</mat-error>
+                    </mat-form-field>
+                    <mat-form-field>
+                      <mat-label>名カナ</mat-label>
+                      <input matInput formControlName="firstNameKana">
+                      <mat-error *ngIf="dependent.get('firstNameKana')?.hasError('required')">名カナは必須です</mat-error>
+                      <mat-error *ngIf="dependent.get('firstNameKana')?.hasError('pattern')">全角カタカナで入力してください</mat-error>
+                    </mat-form-field>
+                    <mat-form-field>
+                      <mat-label>マイナンバー</mat-label>
+                      <input matInput formControlName="myNumber">
+                      <mat-error *ngIf="dependent.get('myNumber')?.hasError('pattern')">12桁の数字を入力してください</mat-error>
+                    </mat-form-field>
+                    <mat-form-field>
+                      <mat-label>続柄</mat-label>
+                      <mat-select formControlName="relationship">
+                        <mat-option value="配偶者">配偶者</mat-option>
+                        <mat-option value="実子・養子">実子・養子</mat-option>
+                        <mat-option value="1以外の子">1以外の子</mat-option>
+                        <mat-option value="父母・養父母">父母・養父母</mat-option>
+                        <mat-option value="義父母">義父母</mat-option>
+                        <mat-option value="弟妹">弟妹</mat-option>
+                        <mat-option value="兄姉">兄姉</mat-option>
+                        <mat-option value="祖父母">祖父母</mat-option>
+                        <mat-option value="曽祖父母">曽祖父母</mat-option>
+                        <mat-option value="孫">孫</mat-option>
+                        <mat-option value="その他">その他</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    <div *ngIf="dependent.get('relationship')?.value === 'その他'">
+                      <mat-form-field>
+                        <mat-label>その他（具体的に）</mat-label>
+                        <input matInput formControlName="relationshipOther">
+                        <mat-error *ngIf="dependent.get('relationshipOther')?.hasError('required')">具体的な続柄を入力してください</mat-error>
+                      </mat-form-field>
+                    </div>
+                    <mat-form-field>
+                      <mat-label>生年月日</mat-label>
+                      <input matInput [matDatepicker]="depBirthDatePicker" formControlName="birthDate">
+                      <mat-datepicker-toggle matSuffix [for]="depBirthDatePicker"></mat-datepicker-toggle>
+                      <mat-datepicker #depBirthDatePicker></mat-datepicker>
+                      <mat-error *ngIf="dependent.get('birthDate')?.hasError('required')">生年月日は必須です</mat-error>
+                      <mat-error *ngIf="dependent.get('birthDate')?.hasError('futureDate')">未来の日付は入力できません</mat-error>
+                    </mat-form-field>
+                    <mat-form-field>
+                      <mat-label>年収（円）</mat-label>
+                      <input matInput type="number" formControlName="income">
+                      <mat-error *ngIf="dependent.get('income')?.hasError('required')">年収は必須です</mat-error>
+                      <mat-error *ngIf="dependent.get('income')?.hasError('min')">0円以上を入力してください</mat-error>
+                    </mat-form-field>
+                    <mat-form-field>
+                      <mat-label>居住地</mat-label>
+                      <mat-select formControlName="residency">
+                        <mat-option value="国内">国内</mat-option>
+                        <mat-option value="海外">海外</mat-option>
+                      </mat-select>
+                      <mat-error *ngIf="dependent.get('residency')?.hasError('required')">居住地は必須です</mat-error>
+                    </mat-form-field>
+                    <mat-form-field>
+                      <mat-label>同居・別居</mat-label>
+                      <mat-select formControlName="cohabitation">
+                        <mat-option value="同居">同居</mat-option>
+                        <mat-option value="別居">別居</mat-option>
+                      </mat-select>
+                      <mat-error *ngIf="dependent.get('cohabitation')?.hasError('required')">同居・別居は必須です</mat-error>
+                    </mat-form-field>
+                    <mat-form-field>
+                      <mat-label>職業</mat-label>
+                      <mat-select formControlName="occupation">
+                        <mat-option value="無職">無職</mat-option>
+                        <mat-option value="パート">パート</mat-option>
+                        <mat-option value="年金受給者">年金受給者</mat-option>
+                        <mat-option value="小・中学生以下">小・中学生以下</mat-option>
+                        <mat-option value="高・大学生">高・大学生</mat-option>
+                        <mat-option value="その他">その他</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    <div *ngIf="dependent.get('occupation')?.value === '高・大学生'" style="margin-bottom: 8px;">
+                      <mat-form-field>
+                        <mat-label>学年（例：3年生）</mat-label>
+                        <input matInput formControlName="schoolGrade">
+                      </mat-form-field>
+                    </div>
+                    <div *ngIf="dependent.get('occupation')?.value === 'その他'" style="margin-bottom: 8px;">
+                      <mat-form-field>
+                        <mat-label>その他（具体的に）</mat-label>
+                        <input matInput formControlName="occupationOther">
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="form-grid">
-                <mat-form-field>
-                  <mat-label>姓</mat-label>
-                  <input matInput formControlName="lastName">
-                  <mat-error *ngIf="dependent.get('lastName')?.hasError('required')">姓は必須です</mat-error>
-                </mat-form-field>
-                <mat-form-field>
-                  <mat-label>名</mat-label>
-                  <input matInput formControlName="firstName">
-                  <mat-error *ngIf="dependent.get('firstName')?.hasError('required')">名は必須です</mat-error>
-                </mat-form-field>
-                <mat-form-field>
-                  <mat-label>姓カナ</mat-label>
-                  <input matInput formControlName="lastNameKana">
-                  <mat-error *ngIf="dependent.get('lastNameKana')?.hasError('required')">姓カナは必須です</mat-error>
-                  <mat-error *ngIf="dependent.get('lastNameKana')?.hasError('pattern')">全角カタカナで入力してください</mat-error>
-                </mat-form-field>
-                <mat-form-field>
-                  <mat-label>名カナ</mat-label>
-                  <input matInput formControlName="firstNameKana">
-                  <mat-error *ngIf="dependent.get('firstNameKana')?.hasError('required')">名カナは必須です</mat-error>
-                  <mat-error *ngIf="dependent.get('firstNameKana')?.hasError('pattern')">全角カタカナで入力してください</mat-error>
-                </mat-form-field>
-                <mat-form-field>
-                  <mat-label>マイナンバー</mat-label>
-                  <input matInput formControlName="myNumber">
-                  <mat-error *ngIf="dependent.get('myNumber')?.hasError('pattern')">12桁の数字を入力してください</mat-error>
-                </mat-form-field>
-                <mat-form-field>
-                  <mat-label>続柄</mat-label>
-                  <mat-select formControlName="relationship">
-                    <mat-option value="配偶者">配偶者</mat-option>
-                    <mat-option value="実子・養子">実子・養子</mat-option>
-                    <mat-option value="1以外の子">1以外の子</mat-option>
-                    <mat-option value="父母・養父母">父母・養父母</mat-option>
-                    <mat-option value="義父母">義父母</mat-option>
-                    <mat-option value="弟妹">弟妹</mat-option>
-                    <mat-option value="兄姉">兄姉</mat-option>
-                    <mat-option value="祖父母">祖父母</mat-option>
-                    <mat-option value="曽祖父母">曽祖父母</mat-option>
-                    <mat-option value="孫">孫</mat-option>
-                    <mat-option value="その他">その他</mat-option>
-                  </mat-select>
-                </mat-form-field>
-                <div *ngIf="dependent.get('relationship')?.value === 'その他'">
-                  <mat-form-field>
-                    <mat-label>その他（具体的に）</mat-label>
-                    <input matInput formControlName="relationshipOther">
-                    <mat-error *ngIf="dependent.get('relationshipOther')?.hasError('required')">具体的な続柄を入力してください</mat-error>
-                  </mat-form-field>
-                </div>
-                <mat-form-field>
-                  <mat-label>生年月日</mat-label>
-                  <input matInput [matDatepicker]="depBirthDatePicker" formControlName="birthDate">
-                  <mat-datepicker-toggle matSuffix [for]="depBirthDatePicker"></mat-datepicker-toggle>
-                  <mat-datepicker #depBirthDatePicker></mat-datepicker>
-                  <mat-error *ngIf="dependent.get('birthDate')?.hasError('required')">生年月日は必須です</mat-error>
-                  <mat-error *ngIf="dependent.get('birthDate')?.hasError('futureDate')">未来の日付は入力できません</mat-error>
-                </mat-form-field>
-                <mat-form-field>
-                  <mat-label>年収（円）</mat-label>
-                  <input matInput type="number" formControlName="income">
-                  <mat-error *ngIf="dependent.get('income')?.hasError('required')">年収は必須です</mat-error>
-                  <mat-error *ngIf="dependent.get('income')?.hasError('min')">0円以上を入力してください</mat-error>
-                </mat-form-field>
-                <mat-form-field>
-                  <mat-label>居住地</mat-label>
-                  <mat-select formControlName="residency">
-                    <mat-option value="国内">国内</mat-option>
-                    <mat-option value="海外">海外</mat-option>
-                  </mat-select>
-                  <mat-error *ngIf="dependent.get('residency')?.hasError('required')">居住地は必須です</mat-error>
-                </mat-form-field>
-                <mat-form-field>
-                  <mat-label>同居・別居</mat-label>
-                  <mat-select formControlName="cohabitation">
-                    <mat-option value="同居">同居</mat-option>
-                    <mat-option value="別居">別居</mat-option>
-                  </mat-select>
-                  <mat-error *ngIf="dependent.get('cohabitation')?.hasError('required')">同居・別居は必須です</mat-error>
-                </mat-form-field>
-                <mat-form-field>
-                  <mat-label>職業</mat-label>
-                  <mat-select formControlName="occupation">
-                    <mat-option value="無職">無職</mat-option>
-                    <mat-option value="パート">パート</mat-option>
-                    <mat-option value="年金受給者">年金受給者</mat-option>
-                    <mat-option value="小・中学生以下">小・中学生以下</mat-option>
-                    <mat-option value="高・大学生">高・大学生</mat-option>
-                    <mat-option value="その他">その他</mat-option>
-                  </mat-select>
-                </mat-form-field>
-                <div *ngIf="dependent.get('occupation')?.value === '高・大学生'" style="margin-bottom: 8px;">
-                  <mat-form-field>
-                    <mat-label>学年（例：3年生）</mat-label>
-                    <input matInput formControlName="schoolGrade">
-                  </mat-form-field>
-                </div>
-                <div *ngIf="dependent.get('occupation')?.value === 'その他'" style="margin-bottom: 8px;">
-                  <mat-form-field>
-                    <mat-label>その他（具体的に）</mat-label>
-                    <input matInput formControlName="occupationOther">
-                  </mat-form-field>
-                </div>
+              <button mat-button (click)="addDependent()" type="button">扶養者を追加</button>
+              <div style="margin-top: 16px;">
+                <button mat-raised-button color="primary" (click)="saveDependents()" type="button">保存</button>
               </div>
-            </div>
-            <button mat-raised-button color="primary" type="button" (click)="addDependent()">
-              <mat-icon>add</mat-icon>
-              扶養者追加
-            </button>
+            </form>
           </div>
         </div>
 

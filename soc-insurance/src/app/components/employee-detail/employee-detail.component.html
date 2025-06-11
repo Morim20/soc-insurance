@@ -198,15 +198,15 @@
         <p>厚生年金: {{ (insuranceEligibility$ | async)?.pensionInsurance ? '加入' : '未加入' }}</p>
         <p>資格取得日: {{ employee.insuranceStatus.qualificationAcquisitionDate | date:'yyyy/MM/dd' }}</p>
         <p>保険種別: {{ employee.insuranceStatus.insuranceType }}</p>
-        <p>健康保険等級: {{ employee.insuranceStatus.grade !== null && employee.insuranceStatus.grade !== undefined ? employee.insuranceStatus.grade + '級' : 'なし' }}</p>
-        <p>健康保険報酬月額: {{ employee.insuranceStatus.grade && aichiGrades[employee.insuranceStatus.grade] ? aichiGrades[employee.insuranceStatus.grade].standardMonthlyWage : '未設定' }}</p>
-        
-        <p>健康保険の標準報酬月額の改定年月日: {{ employee.employmentInfo.standardMonthlyRevisionDate | date:'yyyy/MM/dd' }}</p>
-        <!-- 新しい等級・報酬月額・改定年月日 -->
-        <p>厚生年金等級: {{ employee.insuranceStatus.newGrade || '未設定' }}</p>
-        <p>厚生年金標準報酬月額: {{ employee.insuranceStatus.newStandardMonthlyWage || '未設定' }}</p>
-        <p>厚生年金標準報酬月額の改定年月日: {{ employee.insuranceStatus.newRevisionDate | date:'yyyy/MM/dd' }}</p>
-
+        <ng-container *ngIf="employee.insuranceStatus.insuranceType === '協会けんぽ'">
+          <p>健康保険等級: {{ employee.insuranceStatus.grade !== null && employee.insuranceStatus.grade !== undefined ? employee.insuranceStatus.grade + '級' : 'なし' }}</p>
+          <p>健康保険報酬月額: {{ employee.insuranceStatus.grade && aichiGrades[employee.insuranceStatus.grade] ? aichiGrades[employee.insuranceStatus.grade].standardMonthlyWage : '未設定' }}</p>
+          <p>健康保険の標準報酬月額の改定年月日: {{ employee.employmentInfo.standardMonthlyRevisionDate | date:'yyyy/MM/dd' }}</p>
+          <!-- 新しい等級・報酬月額・改定年月日 -->
+          <p>厚生年金等級: {{ employee.insuranceStatus.newGrade || '未設定' }}</p>
+          <p>厚生年金標準報酬月額: {{ employee.insuranceStatus.newStandardMonthlyWage || '未設定' }}</p>
+          <p>厚生年金標準報酬月額の改定年月日: {{ employee.insuranceStatus.newRevisionDate | date:'yyyy/MM/dd' }}</p>
+        </ng-container>
       </div>
       <form *ngIf="editingSection['insuranceStatus']" [formGroup]="insuranceStatusForm" class="basic-info-form">
         <div class="form-grid">
@@ -220,39 +220,39 @@
             <mat-label>保険種別</mat-label>
             <mat-select formControlName="insuranceType">
               <mat-option value="協会けんぽ">協会けんぽ</mat-option>
-              <mat-option value="なし">なし</mat-option>
+              <mat-option value="対象外">対象外</mat-option>
             </mat-select>
           </mat-form-field>
-          <mat-form-field appearance="outline" class="large-form-field">
+          <mat-form-field appearance="outline" class="large-form-field" *ngIf="insuranceStatusForm.get('insuranceType')?.value === '協会けんぽ'">
             <mat-label>健康保険等級</mat-label>
             <mat-select formControlName="grade">
               <mat-option [value]="null">未設定</mat-option>
               <mat-option *ngFor="let g of [].constructor(50); let i = index" [value]="i+1">{{i+1}}</mat-option>
             </mat-select>
           </mat-form-field>
-          <mat-form-field appearance="outline" class="large-form-field">
+          <mat-form-field appearance="outline" class="large-form-field" *ngIf="insuranceStatusForm.get('insuranceType')?.value === '協会けんぽ'">
             <mat-label>健康保険報酬月額</mat-label>
             <input matInput [value]="standardMonthlyWage ? standardMonthlyWage : ''" readonly>
           </mat-form-field>
-          <mat-form-field appearance="outline" class="large-form-field">
+          <mat-form-field appearance="outline" class="large-form-field" *ngIf="insuranceStatusForm.get('insuranceType')?.value === '協会けんぽ'">
             <mat-label>健康保険の標準報酬月額の改定年月日</mat-label>
             <input matInput [matDatepicker]="revisionDatePicker" formControlName="standardMonthlyRevisionDate">
             <mat-datepicker-toggle matSuffix [for]="revisionDatePicker"></mat-datepicker-toggle>
             <mat-datepicker #revisionDatePicker></mat-datepicker>
           </mat-form-field>
           <!-- 新しい等級・報酬月額・改定年月日 -->
-          <mat-form-field appearance="outline" class="large-form-field">
+          <mat-form-field appearance="outline" class="large-form-field" *ngIf="insuranceStatusForm.get('insuranceType')?.value === '協会けんぽ'">
             <mat-label>厚生年金の等級</mat-label>
             <mat-select formControlName="newGrade">
               <mat-option [value]="null">未設定</mat-option>
               <mat-option *ngFor="let g of [].constructor(32); let i = index" [value]="i+1">{{i+1}}級</mat-option>
             </mat-select>
           </mat-form-field>
-          <mat-form-field appearance="outline" class="large-form-field">
+          <mat-form-field appearance="outline" class="large-form-field" *ngIf="insuranceStatusForm.get('insuranceType')?.value === '協会けんぽ'">
             <mat-label>厚生年金の報酬月額</mat-label>
             <input matInput type="number" formControlName="newStandardMonthlyWage">
           </mat-form-field>
-          <mat-form-field appearance="outline" class="large-form-field">
+          <mat-form-field appearance="outline" class="large-form-field" *ngIf="insuranceStatusForm.get('insuranceType')?.value === '協会けんぽ'">
             <mat-label>厚生年金の標準報酬月額の改定年月日</mat-label>
             <input matInput [matDatepicker]="newRevisionDatePicker" formControlName="newRevisionDate">
             <mat-datepicker-toggle matSuffix [for]="newRevisionDatePicker"></mat-datepicker-toggle>
