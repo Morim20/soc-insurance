@@ -343,25 +343,49 @@ export class InsuranceCalculationService {
   // 保険料を計算
   calculateInsurance(params: InsuranceCalculationParams): InsuranceCalculationResult | null {
     const { prefecture, grade, age } = params;
+    
+    // 等級の型変換とバリデーション強化
+    const gradeNumber = Number(grade);
+    if (!gradeNumber || isNaN(gradeNumber) || gradeNumber <= 0) {
+      console.error('等級が無効です:', { 
+        originalGrade: grade, 
+        convertedGrade: gradeNumber, 
+        type: typeof grade 
+      });
+      throw new Error('等級が無効です。1以上の有効な等級を指定してください。');
+    }
 
     // 都道府県の保険料率データを取得
     const prefectureRates = prefectureRatesMap[prefecture];
+    console.log('DEBUG: 都道府県コード:', prefecture);
+    console.log('DEBUG: 都道府県の保険料率データ:', prefectureRates);
+    console.log('DEBUG: 等級:', gradeNumber, typeof gradeNumber);
+    
     if (!prefectureRates) {
       console.error(`都道府県「${prefecture}」の保険料率データが見つかりません`);
-      return null;
+      throw new Error(`都道府県「${prefecture}」の保険料率データが見つかりません`);
     }
 
     // 等級データを取得
-    const gradeData = (prefectureRates as any)[grade];
+    const gradeData = (prefectureRates as any)[String(gradeNumber)];
+    console.log('DEBUG: 等級データ:', gradeData);
+    
     if (!gradeData) {
-      console.error(`都道府県「${prefecture}」の等級「${grade}」のデータが見つかりません`);
-      return null;
+      console.error(`都道府県「${prefecture}」の等級「${gradeNumber}」のデータが見つかりません`);
+      throw new Error(`都道府県「${prefecture}」の等級「${gradeNumber}」のデータが見つかりません`);
+    }
+
+    // 標準報酬月額のバリデーション
+    if (!gradeData.standardMonthlyWage || isNaN(gradeData.standardMonthlyWage)) {
+      console.error('標準報酬月額が無効です:', gradeData.standardMonthlyWage);
+      throw new Error('標準報酬月額が無効です');
     }
 
     console.log('保険料計算パラメータ:', {
       prefecture,
-      grade,
+      grade: gradeNumber,
       age,
+      standardMonthlyWage: gradeData.standardMonthlyWage,
       gradeData
     });
 
