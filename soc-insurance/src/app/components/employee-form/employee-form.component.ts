@@ -435,4 +435,44 @@ export class EmployeeFormComponent implements OnInit {
   saveDependents() {
     // 必要に応じて実装
   }
+
+  async saveInsuranceStatus() {
+    if (this.employeeForm.valid) {
+      try {
+        const formValue = this.employeeForm.value;
+        const insuranceStatusForm = this.employeeForm.get('insuranceStatus');
+        
+        if (!insuranceStatusForm) {
+          throw new Error('保険情報フォームが見つかりません');
+        }
+        
+        // 等級情報を厳密に保存
+        const insuranceStatus: InsuranceStatus = {
+          healthInsurance: formValue.insuranceStatus.healthInsurance,
+          nursingInsurance: formValue.insuranceStatus.nursingInsurance,
+          pensionInsurance: formValue.insuranceStatus.pensionInsurance,
+          qualificationAcquisitionDate: formValue.insuranceStatus.qualificationAcquisitionDate,
+          insuranceType: formValue.insuranceStatus.insuranceType,
+          remunerationCurrency: formValue.insuranceStatus.remunerationCurrency,
+          remunerationInKind: formValue.insuranceStatus.remunerationInKind,
+          standardMonthlyRevisionDate: formValue.insuranceStatus.standardMonthlyRevisionDate,
+          insuranceQualificationDate: formValue.insuranceStatus.insuranceQualificationDate,
+          qualificationLossDate: formValue.insuranceStatus.qualificationLossDate,
+          grade: formValue.insuranceStatus.grade ? Number(formValue.insuranceStatus.grade) : null,
+          newGrade: formValue.insuranceStatus.newGrade ? Number(formValue.insuranceStatus.newGrade) : null,
+          newStandardMonthlyWage: formValue.insuranceStatus.newStandardMonthlyWage ? Number(formValue.insuranceStatus.newStandardMonthlyWage) : null,
+          newRevisionDate: formValue.insuranceStatus.newRevisionDate,
+          standardMonthlyWage: formValue.insuranceStatus.grade ? this.aichiGrades[formValue.insuranceStatus.grade]?.standardMonthlyWage : null
+        };
+
+        // 従業員情報に反映
+        insuranceStatusForm.setValue(insuranceStatus);
+        
+        this.snackBar.open('保険情報を保存しました', '閉じる', { duration: 3000 });
+      } catch (error) {
+        console.error('保険情報の保存に失敗:', error);
+        this.snackBar.open('保険情報の保存に失敗しました', '閉じる', { duration: 5000 });
+      }
+    }
+  }
 } 

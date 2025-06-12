@@ -32,6 +32,7 @@
         <th>雇用形態</th>
         <th>部署</th>
         <th>入社年月日</th>
+        <th>社会保険加入</th>
       </tr>
     </thead>
     <tbody>
@@ -41,8 +42,19 @@
         <td>{{ emp.employmentType || '-' }}</td>
         <td>{{ emp.department || '-' }}</td>
         <td>{{ emp.startDate ? (emp.startDate | date:'yyyy/MM/dd') : '-' }}</td>
+        <td>
+          <span [ngStyle]="{color: emp.insuranceEligible ? 'green' : 'red', 'font-weight': 'bold'}">
+            {{ emp.insuranceEligible ? '○' : '×' }}
+          </span>
+          <span *ngIf="emp.insuranceEligible && emp.gradeSetCount !== 2" style="color: green; font-size: 0.95em; margin-left: 8px;">
+            等級を設定してください
+          </span>
+        </td>
       </tr>
     </tbody>
   </table>
   <div *ngIf="!isLoading && employeesFiltered.length === 0">従業員が登録されていません。</div>
+  <div *ngIf="!isLoading && employees.length === 0" class="info-message" style="color: #1976d2; font-weight: bold; margin: 32px 0;">
+    まずは設定で部署など会社情報を登録してください
+  </div>
 </div>

@@ -73,8 +73,28 @@ export class EmployeeService {
     await setDoc(subRef, employmentInfo);
   }
   async setInsuranceStatus(employeeId: string, insuranceStatus: InsuranceStatus): Promise<void> {
-    const subRef = doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/insuranceStatus/info`);
-    await setDoc(subRef, insuranceStatus, { merge: true });
+    try {
+      // 等級情報を厳密に保存
+      const insuranceStatusData = {
+        ...insuranceStatus,
+        grade: insuranceStatus.grade ? Number(insuranceStatus.grade) : null,
+        newGrade: insuranceStatus.newGrade ? Number(insuranceStatus.newGrade) : null,
+        newStandardMonthlyWage: insuranceStatus.newStandardMonthlyWage ? Number(insuranceStatus.newStandardMonthlyWage) : null,
+        standardMonthlyWage: insuranceStatus.standardMonthlyWage ? Number(insuranceStatus.standardMonthlyWage) : null,
+        qualificationAcquisitionDate: insuranceStatus.qualificationAcquisitionDate ? new Date(insuranceStatus.qualificationAcquisitionDate) : null,
+        qualificationLossDate: insuranceStatus.qualificationLossDate ? new Date(insuranceStatus.qualificationLossDate) : null,
+        standardMonthlyRevisionDate: insuranceStatus.standardMonthlyRevisionDate ? new Date(insuranceStatus.standardMonthlyRevisionDate) : null,
+        insuranceQualificationDate: insuranceStatus.insuranceQualificationDate ? new Date(insuranceStatus.insuranceQualificationDate) : null,
+        newRevisionDate: insuranceStatus.newRevisionDate ? new Date(insuranceStatus.newRevisionDate) : null
+      };
+
+      // Firestoreに保存
+      const docRef = doc(this.firestore, this.COLLECTION_NAME, employeeId, 'insuranceStatus', 'info');
+      await setDoc(docRef, insuranceStatusData, { merge: true });
+    } catch (error) {
+      console.error('保険情報の保存に失敗:', error);
+      throw error;
+    }
   }
   async setSpecialAttributes(employeeId: string, specialAttributes: SpecialAttributes): Promise<void> {
     const subRef = doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/specialAttributes/info`);

@@ -319,21 +319,28 @@ export class EmployeeDetailComponent implements OnInit {
       this.employmentInfoForm.patchValue({
         ...this.employee.employmentInfo,
         startDate: this.employee.employmentInfo.startDate ? this.formatDateInput(this.employee.employmentInfo.startDate) : '',
-        monthlyWorkDays: this.employee.employmentInfo.monthlyWorkDays || ''
+        monthlyWorkDays: this.employee.employmentInfo.monthlyWorkDays || '',
+        grade: this.employee.employmentInfo.grade || null
       });
     }
     if (section === 'insuranceStatus' && this.employee) {
+      const insuranceStatus = this.employee.insuranceStatus;
       this.insuranceStatusForm.patchValue({
-        ...this.employee.insuranceStatus,
-        qualificationAcquisitionDate: this.employee.insuranceStatus.qualificationAcquisitionDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationAcquisitionDate) : '',
-        standardMonthlyRevisionDate: this.employee.insuranceStatus.standardMonthlyRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.standardMonthlyRevisionDate) : '',
-        insuranceQualificationDate: this.employee.insuranceStatus.insuranceQualificationDate ? this.formatDateInput(this.employee.insuranceStatus.insuranceQualificationDate) : '',
-        qualificationLossDate: this.employee.insuranceStatus.qualificationLossDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationLossDate) : '',
-        grade: this.employee.insuranceStatus.grade ?? null,
-        newGrade: this.employee.insuranceStatus.newGrade ?? null,
-        newStandardMonthlyWage: this.employee.insuranceStatus.newStandardMonthlyWage ?? null,
-        newRevisionDate: this.employee.insuranceStatus.newRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.newRevisionDate) : null
+        ...insuranceStatus,
+        qualificationAcquisitionDate: insuranceStatus.qualificationAcquisitionDate ? this.formatDateInput(insuranceStatus.qualificationAcquisitionDate) : '',
+        standardMonthlyRevisionDate: insuranceStatus.standardMonthlyRevisionDate ? this.formatDateInput(insuranceStatus.standardMonthlyRevisionDate) : '',
+        insuranceQualificationDate: insuranceStatus.insuranceQualificationDate ? this.formatDateInput(insuranceStatus.insuranceQualificationDate) : '',
+        qualificationLossDate: insuranceStatus.qualificationLossDate ? this.formatDateInput(insuranceStatus.qualificationLossDate) : '',
+        grade: insuranceStatus.grade ? Number(insuranceStatus.grade) : null,
+        newGrade: insuranceStatus.newGrade ? Number(insuranceStatus.newGrade) : null,
+        newStandardMonthlyWage: insuranceStatus.newStandardMonthlyWage ? Number(insuranceStatus.newStandardMonthlyWage) : null,
+        newRevisionDate: insuranceStatus.newRevisionDate ? this.formatDateInput(insuranceStatus.newRevisionDate) : null
       });
+
+      // 標準報酬月額を設定
+      if (insuranceStatus.grade && this.aichiGrades[String(insuranceStatus.grade)]) {
+        this.standardMonthlyWage = this.aichiGrades[String(insuranceStatus.grade)].standardMonthlyWage;
+      }
     }
     if (section === 'specialAttributes' && this.employee) {
       this.specialAttributesForm.patchValue({
@@ -422,28 +429,7 @@ export class EmployeeDetailComponent implements OnInit {
               this.employee.employmentInfo = updatedEmploymentInfo;
               break;
             case 'insuranceStatus':
-              const insuranceStatusValue = this.insuranceStatusForm.value;
-              // 日付型の変換（他項目と同様）
-              if (insuranceStatusValue.qualificationAcquisitionDate instanceof Date) {
-                insuranceStatusValue.qualificationAcquisitionDate = insuranceStatusValue.qualificationAcquisitionDate;
-              }
-              if (insuranceStatusValue.standardMonthlyRevisionDate instanceof Date) {
-                insuranceStatusValue.standardMonthlyRevisionDate = insuranceStatusValue.standardMonthlyRevisionDate;
-              }
-              if (insuranceStatusValue.newRevisionDate instanceof Date) {
-                insuranceStatusValue.newRevisionDate = insuranceStatusValue.newRevisionDate;
-              }
-              // 保存
-              this.employee.insuranceStatus = {
-                ...this.employee.insuranceStatus,
-                ...insuranceStatusValue
-              };
-              // 保存前に内容を出力
-              console.log('保存するinsuranceStatus:', this.employee.insuranceStatus);
-              // サブコレクションにも保存（employee.idを使う）
-              await this.employeeService.setInsuranceStatus(this.employee.id, this.employee.insuranceStatus);
-              this.editingSection['insuranceStatus'] = false;
-              this.snackBar.open('社会保険情報を更新しました', '閉じる', { duration: 3000 });
+              await this.saveInsuranceStatus();
               break;
             case 'specialAttributes':
               const updatedSpecialAttributes: SpecialAttributes = {
@@ -543,5 +529,54 @@ export class EmployeeDetailComponent implements OnInit {
   onLogout() {
     this.authService.logout();
     this.router.navigate(['/home']);
+  }
+
+  async saveInsuranceStatus() {
+    if (this.insuranceStatusForm.valid && this.employee) {
+      try {
+        const formValue = this.insuranceStatusForm.value;
+        
+        // 等級情報を厳密に保存
+        const insuranceStatus: InsuranceStatus = {
+          healthInsurance: formValue.healthInsurance,
+          nursingInsurance: formValue.nursingInsurance,
+          pensionInsurance: formValue.pensionInsurance,
+          qualificationAcquisitionDate: formValue.qualificationAcquisitionDate ? new Date(formValue.qualificationAcquisitionDate) : null,
+          insuranceType: formValue.insuranceType,
+          remunerationCurrency: formValue.remunerationCurrency,
+          remunerationInKind: formValue.remunerationInKind,
+          standardMonthlyRevisionDate: formValue.standardMonthlyRevisionDate ? new Date(formValue.standardMonthlyRevisionDate) : null,
+          insuranceQualificationDate: formValue.insuranceQualificationDate ? new Date(formValue.insuranceQualificationDate) : null,
+          qualificationLossDate: formValue.qualificationLossDate ? new Date(formValue.qualificationLossDate) : null,
+          grade: formValue.grade ? Number(formValue.grade) : null,
+          newGrade: formValue.newGrade ? Number(formValue.newGrade) : null,
+          newStandardMonthlyWage: formValue.newStandardMonthlyWage ? Number(formValue.newStandardMonthlyWage) : null,
+          newRevisionDate: formValue.newRevisionDate ? new Date(formValue.newRevisionDate) : null,
+          standardMonthlyWage: formValue.grade ? this.aichiGrades[String(formValue.grade)]?.standardMonthlyWage : null
+        };
+
+        // Firestoreに保存
+        await this.employeeService.setInsuranceStatus(this.employee.id, insuranceStatus);
+        
+        // 保存後に最新データを再取得
+        this.employee = await this.employeeService.getEmployee(this.employee.id);
+        if (this.employee) {
+          this.insuranceStatusForm.patchValue({
+            ...this.employee.insuranceStatus,
+            qualificationAcquisitionDate: this.employee.insuranceStatus.qualificationAcquisitionDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationAcquisitionDate) : '',
+            standardMonthlyRevisionDate: this.employee.insuranceStatus.standardMonthlyRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.standardMonthlyRevisionDate) : '',
+            insuranceQualificationDate: this.employee.insuranceStatus.insuranceQualificationDate ? this.formatDateInput(this.employee.insuranceStatus.insuranceQualificationDate) : '',
+            qualificationLossDate: this.employee.insuranceStatus.qualificationLossDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationLossDate) : '',
+            newRevisionDate: this.employee.insuranceStatus.newRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.newRevisionDate) : null
+          });
+        }
+        
+        this.snackBar.open('保険情報を保存しました', '閉じる', { duration: 3000 });
+        this.editingSection['insuranceStatus'] = false;
+      } catch (error) {
+        console.error('保険情報の保存に失敗:', error);
+        this.snackBar.open('保険情報の保存に失敗しました', '閉じる', { duration: 5000 });
+      }
+    }
   }
 }

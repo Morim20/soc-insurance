@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { InsuranceEligibilityService } from '../../services/insurance-eligibility.service';
 
 interface EmployeeListItem {
   id?: string;
@@ -14,6 +15,8 @@ interface EmployeeListItem {
   department?: string; // 部署（現状空欄）
   startDate?: Date;    // 入社年月日
   employmentType?: string; // 雇用形態を追加
+  insuranceEligible?: boolean; // 社会保険加入判定
+  gradeSetCount?: number; // 等級が何個設定されているか
 }
 
 @Component({
@@ -35,20 +38,35 @@ export class EmployeesListComponent implements OnInit {
   employmentTypeOptions: string[] = [];
   departmentOptions: string[] = [];
 
-  constructor(private employeeService: EmployeeService, public router: Router) {}
+  constructor(private employeeService: EmployeeService, public router: Router, private insuranceEligibilityService: InsuranceEligibilityService) {}
 
   async ngOnInit() {
     try {
       const employees = await this.employeeService.getAllEmployees();
+      // 社会保険判定を並列で取得
+      const eligibilityResults = await Promise.all(
+        employees.map(emp => this.insuranceEligibilityService.getInsuranceEligibility(emp).toPromise())
+      );
       this.employees = employees
-        .map(emp => ({
-          id: emp.id,
-          employeeId: emp.employeeBasicInfo.employeeId,
-          fullName: `${emp.employeeBasicInfo.lastNameKanji} ${emp.employeeBasicInfo.firstNameKanji}`,
-          department: emp.employmentInfo.department,
-          startDate: emp.employmentInfo.startDate || undefined,
-          employmentType: emp.employmentInfo.employmentType
-        }))
+        .map((emp, idx) => {
+          const grade = emp.insuranceStatus && emp.insuranceStatus.grade;
+          const newGrade = emp.insuranceStatus && emp.insuranceStatus.newGrade;
+          let count = 0;
+          if (typeof grade === 'number' && grade > 0) count++;
+          if (typeof grade === 'string' && grade !== '' && grade !== '未設定') count++;
+          if (typeof newGrade === 'number' && newGrade > 0) count++;
+          if (typeof newGrade === 'string' && newGrade !== '' && newGrade !== '未設定') count++;
+          return {
+            id: emp.id,
+            employeeId: emp.employeeBasicInfo.employeeId,
+            fullName: `${emp.employeeBasicInfo.lastNameKanji} ${emp.employeeBasicInfo.firstNameKanji}`,
+            department: emp.employmentInfo.department,
+            startDate: emp.employmentInfo.startDate || undefined,
+            employmentType: emp.employmentInfo.employmentType,
+            insuranceEligible: eligibilityResults[idx]?.healthInsurance || eligibilityResults[idx]?.pensionInsurance || false,
+            gradeSetCount: count
+          };
+        })
         .sort((a, b) => {
           // 社員番号が未設定の場合は最後に表示
           if (!a.employeeId) return 1;

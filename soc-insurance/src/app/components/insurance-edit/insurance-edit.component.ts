@@ -199,6 +199,14 @@ export class InsuranceEditComponent implements OnInit {
       this.insuranceStatus = await this.employeeService.getInsuranceStatus(id);
       this.specialAttributes = await this.employeeService.getSpecialAttributes(id);
 
+      // 健康保険と厚生年金の等級の組み合わせをチェック
+      const healthGrade = Number(this.insuranceStatus?.grade);
+      const pensionGrade = Number(this.insuranceStatus?.newGrade);
+      
+      if (healthGrade && pensionGrade && !this.checkGradeCombination(healthGrade, pensionGrade)) {
+        this.snackBar.open('健康保険等級と厚生年金等級の組み合わせが正しくありません。従業員詳細画面で正しい組み合わせを設定してください。', '閉じる', { duration: 5000 });
+      }
+
       // Firestoreから必ず取得
       let insuranceDetail = null;
       if (this.data?.period) {
@@ -325,7 +333,7 @@ export class InsuranceEditComponent implements OnInit {
             this.data.childContribution = 0;
             this.data.employeeTotalDeduction = 0;
             this.data.employerTotalDeduction = 0;
-            this.form.patchValue({ notes: `育児休暇中のため${periodText ? '（' + periodText + '）' : ''}` });
+            this.form.patchValue({ notes: `育児休暇${periodText ? '（' + periodText + '）' : ''}` });
           }
         }
       }
@@ -436,7 +444,27 @@ export class InsuranceEditComponent implements OnInit {
     const pensionGrade = this.insuranceStatus?.newGrade;
     const hasHealth = healthGrade !== null && healthGrade !== undefined && healthGrade !== '' && healthGrade !== 0 && healthGrade !== '未設定';
     const hasPension = pensionGrade !== null && pensionGrade !== undefined && pensionGrade !== '' && pensionGrade !== 0 && pensionGrade !== '未設定';
+    
+    // 等級が設定されていても、組み合わせが正しくない場合はfalse
+    if (hasHealth && hasPension) {
+      return this.checkGradeCombination(Number(healthGrade), Number(pensionGrade));
+    }
+    
     return hasHealth && hasPension;
+  }
+
+  // 健康保険と厚生年金の等級の組み合わせをチェックする関数
+  private checkGradeCombination(healthGrade: number, pensionGrade: number): boolean {
+    // 厚生年金等級が1の場合、健康保険等級は1～4のみOK
+    if (pensionGrade === 1) {
+      return healthGrade >= 1 && healthGrade <= 4;
+    }
+    // 厚生年金等級が32の場合、健康保険等級は35～50のみOK
+    if (pensionGrade === 32) {
+      return healthGrade >= 35 && healthGrade <= 50;
+    }
+    // それ以外は従来通りtrue（または今後の拡張用にfalseでもOK）
+    return true;
   }
 
   async onSave() {
@@ -444,6 +472,16 @@ export class InsuranceEditComponent implements OnInit {
       this.snackBar.open('健康保険等級と厚生年金等級の両方を設定してください', '閉じる', { duration: 3000 });
       return;
     }
+
+    // 健康保険と厚生年金の等級の組み合わせをチェック
+    const healthGrade = Number(this.insuranceStatus?.grade);
+    const pensionGrade = Number(this.insuranceStatus?.newGrade);
+    
+    if (!this.checkGradeCombination(healthGrade, pensionGrade)) {
+      this.snackBar.open('健康保険等級と厚生年金等級の組み合わせが正しくありません。正しい組み合わせを設定してください。', '閉じる', { duration: 5000 });
+      return;
+    }
+
     if (!this.employeeId || !this.data?.period) {
       this.snackBar.open('保存に必要な情報が不足しています', '閉じる', { duration: 3000 });
       return;
@@ -489,7 +527,7 @@ export class InsuranceEditComponent implements OnInit {
       if (this.specialAttributes?.leaveType === '介護休業') {
         noteText = '介護休暇中';
       } else if (this.specialAttributes?.leaveType === '育児休業' || this.specialAttributes?.leaveType === '産前産後休業') {
-        noteText = '育児休暇中のため';
+        noteText = '育児休暇';
       }
     }
     // 備考欄にも即時反映
@@ -630,7 +668,12 @@ export class InsuranceEditComponent implements OnInit {
       }
 
       this.snackBar.open('保存が完了しました', '閉じる', { duration: 2000 });
-      this.router.navigate(['/admin/insurance']);
+      this.router.navigate(['/admin/insurance'], {
+        state: {
+          year: this.data?.period?.year,
+          month: this.data?.period?.month
+        }
+      });
     } catch (e: any) {
       console.error('保存エラー:', e);
       this.snackBar.open('保存に失敗しました: ' + (e?.message || e), '閉じる', { duration: 3000 });
@@ -638,7 +681,12 @@ export class InsuranceEditComponent implements OnInit {
   }
 
   onBack() {
-    this.router.navigate(['/admin/insurance']);
+    this.router.navigate(['/admin/insurance'], {
+      state: {
+        year: this.data?.period?.year,
+        month: this.data?.period?.month
+      }
+    });
   }
 
   async downloadPdf() {

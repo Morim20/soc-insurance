@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -44,7 +44,7 @@ import { InsuranceEligibilityService } from '../../services/insurance-eligibilit
   templateUrl: './insurance-management.component.html',
   styleUrls: ['./insurance-management.component.scss']
 })
-export class InsuranceManagementComponent implements OnInit {
+export class InsuranceManagementComponent implements OnInit, AfterViewInit {
   @ViewChild('pdfContent', { static: false }) pdfContent?: ElementRef;
   displayedColumns: string[] = [
     'fullName',
@@ -106,6 +106,13 @@ export class InsuranceManagementComponent implements OnInit {
     if (currentDept !== 'all' && !this.departments.includes(currentDept)) {
       this.filterForm.patchValue({ department: 'all' });
     }
+    // URLやstateから年月を復元
+    const nav = window.history.state;
+    if (nav && nav.year && nav.month) {
+      this.filterForm.patchValue({ year: nav.year, month: nav.month });
+      this.selectedYear = nav.year;
+      this.selectedMonth = nav.month;
+    }
     this.filterForm.valueChanges.subscribe(values => {
       this.showEmployeeId = values.showEmployeeId;
       this.selectedYear = values.year;
@@ -117,6 +124,19 @@ export class InsuranceManagementComponent implements OnInit {
     this.selectedYear = this.filterForm.get('year')?.value;
     this.selectedMonth = this.filterForm.get('month')?.value;
     this.loadData();
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      const nav = window.history.state;
+      if (nav && nav.year && nav.month) {
+        const formYear = this.filterForm.get('year')?.value;
+        const formMonth = this.filterForm.get('month')?.value;
+        if (formYear !== nav.year || formMonth !== nav.month) {
+          this.filterForm.patchValue({ year: nav.year, month: nav.month });
+        }
+      }
+    }, 0);
   }
 
   private updateDisplayedColumns(): void {
@@ -163,12 +183,24 @@ export class InsuranceManagementComponent implements OnInit {
       console.error('Error loading insurance data:', error);
       this.error = 'データの読み込み中にエラーが発生しました。';
     } finally {
+      // 社員番号（employeeId）で昇順ソート
+      this.insuranceData.sort((a, b) => a.employeeId - b.employeeId);
       this.isLoading = false;
     }
   }
 
   onEdit(insuranceData: InsuranceData): void {
-    this.router.navigate(['/admin/insurance', insuranceData.id, 'edit'], { state: { data: insuranceData } });
+    this.router.navigate([
+      '/admin/insurance',
+      insuranceData.id,
+      'edit'
+    ], {
+      state: {
+        data: insuranceData,
+        year: this.selectedYear,
+        month: this.selectedMonth
+      }
+    });
   }
 
   get totalStandardMonthlyRemuneration(): number {
@@ -353,34 +385,18 @@ export class InsuranceManagementComponent implements OnInit {
 
         // 保険ステータスを取得
         const insuranceStatus = await this.employeeService.getInsuranceStatus(employee.id);
-        const gradeForDisplay = (typeof insuranceStatus?.grade === 'number' && insuranceStatus.grade > 0)
-          ? insuranceStatus.grade
-          : null; // 未設定はnull
-        const newGradeForDisplay = insuranceStatus?.newGrade ?? '未設定';
-        const gradeForCalc = typeof insuranceStatus?.grade === 'number' ? insuranceStatus.grade : 0;
-
-        // 育休・産休中判定
-        const leaveType = employee.specialAttributes?.leaveType;
-        const leaveStart = employee.specialAttributes?.leaveStartDate;
-        const leaveEnd = employee.specialAttributes?.leaveEndDate;
-        let isOnLeave = false;
-        if (leaveType && (leaveType === '育児休業' || leaveType === '産前産後休業') && leaveStart) {
-          const today = new Date();
-          const start = new Date(leaveStart);
-          const end = leaveEnd ? new Date(leaveEnd) : null;
-          isOnLeave = today >= start && (!end || today <= end);
-        }
-
+        const period = { year: this.selectedYear, month: this.selectedMonth };
         const birthDate = employee.employeeBasicInfo.birthDate;
         const age = birthDate ? this.calculateAge(birthDate) : 0;
-        const period = { year: this.selectedYear, month: this.selectedMonth };
-        let standardMonthlyRemuneration: number | null = null;
-        let baseSalary: number | null = null;
-
         // FirestoreからinsuranceDetailsを取得
         const insuranceDetail = await this.employeeService.getInsuranceDetail(employee.id, period);
         // データがなければ未確定・未設定で埋める
         if (!insuranceDetail) {
+          // insuranceStatusのgradeを厳密に判定
+          const gradeValue = Number(insuranceStatus?.grade);
+          const gradeForDisplay = (Number.isFinite(gradeValue) && gradeValue > 0) ? gradeValue : '未設定';
+          const newGradeValue = Number(insuranceStatus?.newGrade);
+          const newGradeForDisplay = (Number.isFinite(newGradeValue) && newGradeValue > 0) ? newGradeValue : '未設定';
           this.insuranceData.push({
             id: employee.id,
             employeeId: employee.employeeBasicInfo.employeeId,
@@ -416,6 +432,27 @@ export class InsuranceManagementComponent implements OnInit {
           });
           continue;
         }
+        // データがある場合はinsuranceDetailのgradeを優先
+        const gradeValue = Number(insuranceDetail.grade);
+        const gradeForDisplay = (Number.isFinite(gradeValue) && gradeValue > 0) ? gradeValue : '未設定';
+        const newGradeValue = Number(insuranceDetail.newGrade);
+        const newGradeForDisplay = (Number.isFinite(newGradeValue) && newGradeValue > 0) ? newGradeValue : '未設定';
+        const gradeForCalc = typeof insuranceStatus?.grade === 'number' ? insuranceStatus.grade : 0;
+
+        // 育休・産休中判定
+        const leaveType = employee.specialAttributes?.leaveType;
+        const leaveStart = employee.specialAttributes?.leaveStartDate;
+        const leaveEnd = employee.specialAttributes?.leaveEndDate;
+        let isOnLeave = false;
+        if (leaveType && (leaveType === '育児休業' || leaveType === '産前産後休業') && leaveStart) {
+          const today = new Date();
+          const start = new Date(leaveStart);
+          const end = leaveEnd ? new Date(leaveEnd) : null;
+          isOnLeave = today >= start && (!end || today <= end);
+        }
+
+        let standardMonthlyRemuneration: number | null = null;
+        let baseSalary: number | null = null;
 
         // データがある場合は従来通り
         standardMonthlyRemuneration = insuranceDetail.standardMonthlyRemuneration ?? null;
@@ -546,6 +583,8 @@ export class InsuranceManagementComponent implements OnInit {
     } catch (error) {
       console.error('保険料データの読み込みに失敗しました:', error);
     } finally {
+      // 社員番号（employeeId）で昇順ソート
+      this.insuranceData.sort((a, b) => a.employeeId - b.employeeId);
       this.isLoading = false;
     }
   }
