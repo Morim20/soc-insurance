@@ -18,6 +18,7 @@ import { InsuranceData } from '../../models/insurance.model';
 import aichiGradesData from '../../services/23aichi_insurance_grades.json';
 import { SettingsService } from '../../services/settings.service';
 import { InsuranceSummaryService } from '../../services/insurance-summary.service';
+import { InsuranceEligibilityService } from '../../services/insurance-eligibility.service';
 
 @Component({
   selector: 'app-insurance-edit',
@@ -77,7 +78,8 @@ export class InsuranceEditComponent implements OnInit {
     private snackBar: MatSnackBar,
     private firestore: Firestore,
     private settingsService: SettingsService,
-    private insuranceSummaryService: InsuranceSummaryService
+    private insuranceSummaryService: InsuranceSummaryService,
+    private insuranceEligibilityService: InsuranceEligibilityService
   ) {
     this.form = this.fb.group({
       month: [''],
@@ -891,6 +893,15 @@ export class InsuranceEditComponent implements OnInit {
       this.snackBar.open('保険料計算に失敗しました。都道府県・等級・標準報酬月額を確認してください。', '閉じる', { duration: 5000 });
       return;
     }
+
+    // 社会保険加入判定を実行
+    this.insuranceEligibilityService.getInsuranceEligibility(this.basicInfo).subscribe(eligibilityResult => {
+      console.log('社会保険加入判定結果:', eligibilityResult);
+      // 判定結果をdataに反映
+      if (this.data) {
+        this.data.eligibilityResult = eligibilityResult;
+      }
+    });
 
     // 結果をdataに反映
     if (this.data) {

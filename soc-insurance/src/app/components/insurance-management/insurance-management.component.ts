@@ -61,7 +61,7 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
   filterForm: FormGroup;
   showEmployeeId = true;
   dataSource: InsuranceData[] = [];
-  isLoading = false;
+  isLoading = true;
   error: string | null = null;
   currentYear: number;
   currentMonth: number;

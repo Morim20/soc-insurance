@@ -231,6 +231,60 @@ export class InsuranceEligibilityService {
     return result;
   }
 
+  /**
+   * 指定年月時点で介護保険の対象かどうかを判定
+   */
+  private isNursingInsuranceEligibleAt(birthDate: Date | string | null, year: number, month: number): boolean {
+    if (!birthDate) return false;
+    const birth = new Date(birthDate);
+    // 介護保険の開始月
+    let startYear = birth.getFullYear() + 40;
+    let startMonth = birth.getMonth() + 1;
+    if (birth.getDate() === 1) {
+      startMonth -= 1;
+      if (startMonth === 0) {
+        startYear -= 1;
+        startMonth = 12;
+      }
+    }
+    // 終了月（65歳到達月の前月まで）
+    let endYear = birth.getFullYear() + 65;
+    let endMonth = birth.getMonth();
+    if (birth.getDate() === 1) {
+      endMonth -= 1;
+      if (endMonth === 0) {
+        endYear -= 1;
+        endMonth = 12;
+      }
+    }
+    // 対象年月
+    const ym = year * 100 + month;
+    const startYm = startYear * 100 + startMonth;
+    const endYm = endYear * 100 + endMonth;
+    return ym >= startYm && ym <= endYm;
+  }
+
+  /**
+   * 指定年月時点で厚生年金の対象かどうかを判定
+   */
+  private isPensionInsuranceEligibleAt(birthDate: Date | string | null, year: number, month: number): boolean {
+    if (!birthDate) return false;
+    const birth = new Date(birthDate);
+    // 終了月（70歳到達月の前月分まで）
+    let endYear = birth.getFullYear() + 70;
+    let endMonth = birth.getMonth();
+    if (birth.getDate() === 1) {
+      endMonth -= 1;
+      if (endMonth === 0) {
+        endYear -= 1;
+        endMonth = 12;
+      }
+    }
+    const ym = year * 100 + month;
+    const endYm = endYear * 100 + endMonth;
+    return ym <= endYm;
+  }
+
   getInsuranceEligibility(employee: EmployeeFullInfo): Observable<InsuranceEligibilityResult> {
     const age = this.calculateAge(employee.employeeBasicInfo.birthDate);
     const isFullTime = this.isFullTimeEmployee(employee);

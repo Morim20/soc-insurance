@@ -168,7 +168,7 @@
         </table>
       </div>
 
-      <div *ngIf="!isLoading && isAllConfirmed && !hasUnconfirmedRemuneration" class="company-summary">
+      <div *ngIf="!isLoading && isAllConfirmed && !hasUnconfirmedRemuneration && companySummaryTable.rows.length > 0" class="company-summary">
         <div *ngIf="companySummaryTable.rows.length > 0; else noCompanySummary">
           <div style="display: flex; align-items: center; justify-content: flex-start;">
             <h3 style="margin: 0 8px 0 0;">会社全体の保険料明細</h3>
@@ -200,7 +200,7 @@
         </ng-template>
       </div>
 
-      <div *ngIf="!isLoading && hasBonus && companySummaryTable.rows.length > 0 && !hasUnconfirmedRemuneration" class="company-bonus-summary">
+      <div *ngIf="!isLoading && hasBonus && companySummaryTable.rows.length > 0 && !hasUnconfirmedRemuneration && companyBonusSummaryTable.rows.length > 0" class="company-bonus-summary">
         <ng-container *ngIf="companyBonusSummaryTable.rows.length > 0; else noBonusSummary">
           <h3>会社全体の賞与分保険料明細</h3>
           <table class="summary-table">
