@@ -45,7 +45,12 @@ export class EmployeesListComponent implements OnInit {
       const employees = await this.employeeService.getAllEmployees();
       // 社会保険判定を並列で取得
       const eligibilityResults = await Promise.all(
-        employees.map(emp => this.insuranceEligibilityService.getInsuranceEligibility(emp).toPromise())
+        employees.map(emp => {
+          const today = new Date();
+          const year = today.getFullYear();
+          const month = today.getMonth() + 1;
+          return this.insuranceEligibilityService.getInsuranceEligibility(emp, year, month).toPromise();
+        })
       );
       this.employees = employees
         .map((emp, idx) => {

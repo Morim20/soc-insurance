@@ -96,7 +96,7 @@
         </table>
       </div>
       <!-- 賞与用保険料計算表（賞与支給月のみ表示） -->
-      <div *ngIf="isBonusMonth && bonusCount && bonusCount <= 3 && form.get('standardBonusAmount')?.value > 0">
+      <div *ngIf="isBonusMonth && bonusCount && bonusCount <= 3 && (form.get('standardBonusAmount')?.value > 0 || bonusInsuranceResult)">
         <h3>賞与保険料計算</h3>
         <table class="bonus-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
           <thead>

@@ -378,7 +378,10 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         if (endDate && endDate < targetMonthStart) continue;
 
         // 保険加入判定
-        const eligibility = await this.insuranceEligibilityService.getInsuranceEligibility(employee).toPromise();
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const eligibility = await this.insuranceEligibilityService.getInsuranceEligibility(employee, year, month).toPromise();
         if (!eligibility || (!eligibility.healthInsurance && !eligibility.pensionInsurance)) {
           continue; // 加入していない場合や判定失敗時はスキップ
         }

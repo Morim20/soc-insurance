@@ -238,7 +238,10 @@ export class EmployeeDetailComponent implements OnInit {
         });
         this.specialAttributesForm.patchValue(this.employee.specialAttributes);
         // 社会保険の加入判定を計算
-        this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee, year, month);
         if (this.employee.dependents) {
           const dependentsArray = this.dependentsForm.get('dependents') as FormArray;
           this.employee.dependents.forEach(dep => {
@@ -450,7 +453,10 @@ export class EmployeeDetailComponent implements OnInit {
 
         // 雇用情報または休暇情報が更新された場合、社会保険の加入判定を再計算
         if (section === 'employmentInfo' || section === 'specialAttributes') {
-          this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee);
+          const today = new Date();
+          const year = today.getFullYear();
+          const month = today.getMonth() + 1;
+          this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee, year, month);
         }
       } catch (error) {
         console.error('保存エラー:', error);
