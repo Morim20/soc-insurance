@@ -771,6 +771,18 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
       const bonusCount = (element as any).bonusCount ?? 0;
       const showBonusRow = bonusCount === 0 || bonusCount >= 4;
       const showBonusAmount = !(element.standardBonusAmount && element.standardBonusAmount > 0);
+      // Firestoreから最新のinsuranceDetailを取得
+      const period = { year: this.selectedYear, month: this.selectedMonth };
+      const insuranceDetail = await this.employeeService.getInsuranceDetail(element.id, period);
+      // insuranceDetailがあればそちらを優先
+      const baseSalary = insuranceDetail?.baseSalary ?? element.baseSalary ?? 0;
+      const standardMonthlyRemuneration = insuranceDetail?.standardMonthlyRemuneration ?? element.standardMonthlyRemuneration ?? 0;
+      const bonusAmount = insuranceDetail?.bonusAmount ?? element.bonusAmount ?? 0;
+      const standardBonusAmount = insuranceDetail?.standardBonusAmount ?? element.standardBonusAmount ?? 0;
+      const healthEmployee = (insuranceDetail?.healthInsuranceEmployee ?? element.healthInsuranceEmployee) || 0;
+      const nursingEmployee = (insuranceDetail?.nursingInsuranceEmployee ?? element.nursingInsuranceEmployee) || 0;
+      const pensionEmployee = (insuranceDetail?.pensionInsuranceEmployee ?? element.pensionInsuranceEmployee) || 0;
+      const notes = insuranceDetail?.notes ?? element.notes ?? '';
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'fixed';
       tempDiv.style.left = '-9999px';
@@ -798,20 +810,20 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
             <tr>
               <td style="border: 1px solid #888; padding: 8px; width: 40%; background: #f5f5f5;">基本給</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(element.baseSalary || 0).toLocaleString()}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(baseSalary).toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px; background: #f5f5f5;">報酬月額</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(element.standardMonthlyRemuneration || 0).toLocaleString()}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(standardMonthlyRemuneration).toLocaleString()}円</td>
             </tr>
             ${showBonusRow && showBonusAmount ? `
             <tr>
               <td style='border: 1px solid #888; padding: 8px; background: #f5f5f5;'>賞与支給額</td>
-              <td style='border: 1px solid #888; padding: 8px; text-align: right;'>${this.roundAmount(element.bonusAmount || 0).toLocaleString()}円</td>
+              <td style='border: 1px solid #888; padding: 8px; text-align: right;'>${this.roundAmount(bonusAmount).toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px; background: #f5f5f5;">報酬月額</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(bonusCount >= 4 ? (element.standardMonthlyRemuneration + (element.bonusAmount || 0)) : (element.standardMonthlyRemuneration || 0)).toLocaleString()}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(bonusCount >= 4 ? (standardMonthlyRemuneration + bonusAmount) : standardMonthlyRemuneration).toLocaleString()}円</td>
             </tr>
             ` : ''}
           </table>
@@ -820,33 +832,30 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
             <tr>
               <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 33%;">項目</th>
               <th style="border: 1px solid #888; padding: 8px; background: #f5f5f5; width: 33%;">従業員負担分</th>
-
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px;">健康保険料</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${element.healthInsuranceEmployee || 0}円</td>
-              
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${healthEmployee}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px;">介護保険料</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(element.nursingInsuranceEmployee || 0).toLocaleString()}円</td>
-             
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(nursingEmployee).toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px;">厚生年金保険料</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(element.pensionInsuranceEmployee || 0).toLocaleString()}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(pensionEmployee).toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5;">合計</td>
               <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5; text-align: right;">${this.calculateEmployeeTotalInsurance(
-                element.healthInsuranceEmployee || 0,
-                element.nursingInsuranceEmployee || 0,
-                element.pensionInsuranceEmployee || 0
+                healthEmployee,
+                nursingEmployee,
+                pensionEmployee
               ).toLocaleString()}円</td>
             </tr>
           </table>
           <div style="margin-bottom: 20px; font-size: 14px;">
-            <strong>備考：</strong>${element.notes || ''}
+            <strong>備考：</strong>${notes}
           </div>
           <div style="margin-top: 30px; font-size: 12px; text-align: right;">
             <p>出力日時: ${new Date().toLocaleString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
@@ -881,17 +890,7 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
       const bonusCount = (element as any).bonusCount ?? 0;
       const showBonusRow = bonusCount === 0 || bonusCount >= 4;
       const yearMonth = `${this.selectedYear}年${this.selectedMonth}月`;
-      const healthEmployee = element.healthInsuranceEmployee || 0;
-      const nursingEmployee = element.nursingInsuranceEmployee || 0;
-      const pensionEmployee = element.pensionInsuranceEmployee || 0;
-      const employeeTotal = healthEmployee + nursingEmployee + pensionEmployee;
-      // 賞与分
-      const bonusHealthEmployee = element.bonusHealthInsuranceEmployee || 0;
-      const bonusNursingEmployee = element.bonusNursingInsuranceEmployee || 0;
-      const bonusPensionEmployee = element.bonusPensionInsuranceEmployee || 0;
-      const bonusEmployeeTotal = bonusHealthEmployee + bonusNursingEmployee + bonusPensionEmployee;
-
-      // 手当、通勤手当、報酬月額を取得
+      // Firestoreから最新のinsuranceDetailを取得
       const period = { year: this.selectedYear, month: this.selectedMonth };
       const insuranceDetail = await this.employeeService.getInsuranceDetail(element.id, period);
       console.log('insuranceDetail:', insuranceDetail); // デバッグ用
@@ -900,6 +899,16 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
       const commutingAllowance = insuranceDetail?.commutingAllowance ?? '';
       const variableWage = insuranceDetail?.variableWage ?? '';
       const standardMonthlyRemuneration = insuranceDetail?.standardMonthlyRemuneration ?? '';
+      // 保険料本体もFirestore優先で取得
+      const healthEmployee = (insuranceDetail?.healthInsuranceEmployee ?? element.healthInsuranceEmployee) || 0;
+      const nursingEmployee = (insuranceDetail?.nursingInsuranceEmployee ?? element.nursingInsuranceEmployee) || 0;
+      const pensionEmployee = (insuranceDetail?.pensionInsuranceEmployee ?? element.pensionInsuranceEmployee) || 0;
+      const employeeTotal = healthEmployee + nursingEmployee + pensionEmployee;
+      // 賞与分もFirestore優先で取得
+      const bonusHealthEmployee = (insuranceDetail?.bonusHealthInsuranceEmployee ?? element.bonusHealthInsuranceEmployee) || 0;
+      const bonusNursingEmployee = (insuranceDetail?.bonusNursingInsuranceEmployee ?? element.bonusNursingInsuranceEmployee) || 0;
+      const bonusPensionEmployee = (insuranceDetail?.bonusPensionInsuranceEmployee ?? element.bonusPensionInsuranceEmployee) || 0;
+      const bonusEmployeeTotal = bonusHealthEmployee + bonusNursingEmployee + bonusPensionEmployee;
 
       // ヘッダー（タブ区切り、指定順）
       const headers = [
