@@ -565,8 +565,15 @@ export class InsuranceEligibilityService {
         if (qualificationLossDate) {
           const lossYear = qualificationLossDate.getFullYear();
           const lossMonth = qualificationLossDate.getMonth() + 1;
-          if (targetYear > lossYear || (targetYear === lossYear && targetMonth >= lossMonth)) {
+          if (targetYear > lossYear || (targetYear === lossYear && targetMonth > lossMonth)) {
             result.reason = '退職または雇用見込み期間満了により資格を喪失しています';
+            observer.next(result);
+            observer.complete();
+            return;
+          }
+          // 今月が喪失月
+          if (targetYear === lossYear && targetMonth === lossMonth) {
+            result.reason = '退職または雇用見込み期間満了により今月資格喪失';
             observer.next(result);
             observer.complete();
             return;
