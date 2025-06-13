@@ -178,7 +178,7 @@ export class InsuranceEligibilityService {
     if (!birthDate) return null;
     const birth = new Date(birthDate);
     if (isNaN(birth.getTime())) return null;
-    const targetYear = birth.getFullYear() + targetAge;
+    let targetYear = birth.getFullYear() + targetAge;
     const targetMonth = birth.getMonth() + 1; // 1-based month
     // 1日生まれの場合は前月から開始
     if (birth.getDate() === 1) {
@@ -204,20 +204,24 @@ export class InsuranceEligibilityService {
     if (isNaN(birth.getTime())) return null;
     const targetYear = birth.getFullYear() + 65;
     const targetMonth = birth.getMonth() + 1; // 1-based month
-    // 65歳到達月の前月まで
+
+    // 1日生まれの場合、前月末日が資格喪失日
     if (birth.getDate() === 1) {
-      // 1日生まれの場合、65歳到達は前月なので、その前月（つまり2ヶ月前）まで
-      if (targetMonth <= 2) {
-        return `${targetYear - 1}-${String(targetMonth + 10).padStart(2, '0')}`;
-      } else {
-        return `${targetYear}-${String(targetMonth - 2).padStart(2, '0')}`;
-      }
-    } else {
-      // 1日以外の場合、65歳到達月の前月まで
       if (targetMonth === 1) {
         return `${targetYear - 1}-12`;
       } else {
         return `${targetYear}-${String(targetMonth - 1).padStart(2, '0')}`;
+      }
+    } else {
+      // 1日以外の場合、誕生日の前日が属する月
+      if (birth.getDate() === 2) {
+        if (targetMonth === 1) {
+          return `${targetYear - 1}-12`;
+        } else {
+          return `${targetYear}-${String(targetMonth - 1).padStart(2, '0')}`;
+        }
+      } else {
+        return `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
       }
     }
   }
@@ -233,20 +237,24 @@ export class InsuranceEligibilityService {
     if (isNaN(birth.getTime())) return null;
     const targetYear = birth.getFullYear() + 70;
     const targetMonth = birth.getMonth() + 1; // 1-based month
-    // 70歳到達月の前月まで
+
+    // 1日生まれの場合、前月末日が資格喪失日
     if (birth.getDate() === 1) {
-      // 1日生まれの場合、70歳到達は前月なので、その前月（つまり2ヶ月前）まで
-      if (targetMonth <= 2) {
-        return `${targetYear - 1}-${String(targetMonth + 10).padStart(2, '0')}`;
-      } else {
-        return `${targetYear}-${String(targetMonth - 2).padStart(2, '0')}`;
-      }
-    } else {
-      // 1日以外の場合、70歳到達月の前月まで
       if (targetMonth === 1) {
         return `${targetYear - 1}-12`;
       } else {
         return `${targetYear}-${String(targetMonth - 1).padStart(2, '0')}`;
+      }
+    } else {
+      // 1日以外の場合、誕生日の前日が属する月
+      if (birth.getDate() === 2) {
+        if (targetMonth === 1) {
+          return `${targetYear - 1}-12`;
+        } else {
+          return `${targetYear}-${String(targetMonth - 1).padStart(2, '0')}`;
+        }
+      } else {
+        return `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
       }
     }
   }
@@ -296,31 +304,40 @@ export class InsuranceEligibilityService {
   public isNursingInsuranceEligibleAt(birthDate: Date | string | null, year: number, month: number): boolean {
     if (!birthDate) return false;
     const birth = new Date(birthDate);
-    // 介護保険の開始月
+    if (isNaN(birth.getTime())) return false;
+
+    // 介護保険開始月の計算
     let startYear = birth.getFullYear() + 40;
     let startMonth = birth.getMonth() + 1;
-    if (birth.getDate() === 1) {
+    const day = birth.getDate();
+    if (day === 1) {
+      // 1日生まれは前月
       startMonth -= 1;
       if (startMonth === 0) {
-        startYear -= 1;
         startMonth = 12;
+        startYear -= 1;
       }
     }
-    // 終了月（65歳到達月の前月まで）
+    // 終了月（65歳到達月の前月）
     let endYear = birth.getFullYear() + 65;
-    let endMonth = birth.getMonth();
-    if (birth.getDate() === 1) {
+    let endMonth = birth.getMonth() + 1;
+    if (day === 1) {
+      endMonth -= 2;
+      if (endMonth <= 0) {
+        endMonth += 12;
+        endYear -= 1;
+      }
+    } else {
       endMonth -= 1;
       if (endMonth === 0) {
-        endYear -= 1;
         endMonth = 12;
+        endYear -= 1;
       }
     }
-    // 対象年月
-    const ym = year * 100 + month;
+    const currentYm = year * 100 + month;
     const startYm = startYear * 100 + startMonth;
     const endYm = endYear * 100 + endMonth;
-    return ym >= startYm && ym <= endYm;
+    return currentYm >= startYm && currentYm <= endYm;
   }
 
   /**
@@ -329,66 +346,136 @@ export class InsuranceEligibilityService {
   private isPensionInsuranceEligibleAt(birthDate: Date | string | null, year: number, month: number): boolean {
     if (!birthDate) return false;
     const birth = new Date(birthDate);
-    // 終了月（70歳到達月の前月分まで）
-    let endYear = birth.getFullYear() + 70;
-    let endMonth = birth.getMonth();
+    if (isNaN(birth.getTime())) return false;
+
+    const targetYear = birth.getFullYear() + 70;
+    const targetMonth = birth.getMonth() + 1; // 1-based month
+
+    // 1日生まれの場合、前月末日が資格喪失日
     if (birth.getDate() === 1) {
-      endMonth -= 1;
-      if (endMonth === 0) {
-        endYear -= 1;
-        endMonth = 12;
+      if (targetMonth === 1) {
+        return year < targetYear - 1 || (year === targetYear - 1 && month <= 12);
+      } else {
+        return year < targetYear || (year === targetYear && month < targetMonth);
+      }
+    } else {
+      // 1日以外の場合、誕生日の前日が属する月
+      if (birth.getDate() === 2) {
+        if (targetMonth === 1) {
+          return year < targetYear - 1 || (year === targetYear - 1 && month <= 12);
+        } else {
+          return year < targetYear || (year === targetYear && month < targetMonth);
+        }
+      } else {
+        return year < targetYear || (year === targetYear && month <= targetMonth);
       }
     }
-    const ym = year * 100 + month;
-    const endYm = endYear * 100 + endMonth;
-    return ym <= endYm;
   }
 
   // 年齢による保険適用判定を厳密化
   private checkInsuranceEligibilityByAge(employee: EmployeeFullInfo, age: number): { healthInsurance: boolean, nursingInsurance: boolean, pensionInsurance: boolean, reason: string } | null {
     const birthDate = employee.employeeBasicInfo.birthDate;
+    if (!birthDate) return null;
+    
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth() + 1;
-    // 75歳以上は健康保険も対象外
-    if (age >= 75) {
+    const birth = new Date(birthDate);
+    const birthDay = birth.getDate();
+
+    // 75歳到達判定（誕生日当日で喪失）
+    const is75YearsOld = age >= 75;
+    const is75thBirthday = age === 74 && 
+      currentYear === birth.getFullYear() + 75 && 
+      currentMonth === birth.getMonth() + 1 && 
+      today.getDate() >= birthDay;
+
+    if (is75YearsOld || is75thBirthday) {
       return {
         healthInsurance: false,
         nursingInsurance: false,
         pensionInsurance: false,
-        reason: '75歳到達時に健康保険の資格を喪失します（後期高齢者医療制度へ移行）'
+        reason: '75歳到達により健康保険の資格を喪失します（後期高齢者医療制度へ移行）'
       };
     }
+
     // 70歳以上75歳未満の判定
     if (age >= 70) {
-      // 厚生年金は70歳到達月から対象外
+      // 厚生年金は70歳到達月の前月末日で喪失
       const pensionEligible = this.isPensionInsuranceEligibleAt(birthDate, currentYear, currentMonth);
       return {
         healthInsurance: true,
         nursingInsurance: false, // 65歳で介護保険は終了
         pensionInsurance: pensionEligible,
         reason: pensionEligible ?
-          '70歳以上75歳未満は健康保険・厚生年金加入対象（介護保険は65歳で終了、厚生年金は70歳到達月まで）' :
+          '70歳以上75歳未満は健康保険・厚生年金加入対象（介護保険は65歳で終了、厚生年金は70歳到達月の前月末日まで）' :
           '70歳到達により厚生年金資格喪失。健康保険のみ加入対象（介護保険は65歳で終了済み）'
       };
     }
+
     // 65歳以上70歳未満の判定
     if (age >= 65) {
       return {
         healthInsurance: true,
         nursingInsurance: false, // 65歳で介護保険は終了
         pensionInsurance: true,
-        reason: '65歳以上70歳未満は健康保険・厚生年金加入対象（介護保険は65歳到達月で終了）'
+        reason: '65歳以上70歳未満は健康保険・厚生年金加入対象（介護保険は65歳到達月の前月末日で終了）'
       };
     }
     return null; // 65歳未満は通常の判定を継続
   }
 
-  getInsuranceEligibility(employee: EmployeeFullInfo, year: number, month: number): Observable<InsuranceEligibilityResult> {
+  private isHealthInsuranceEligibleAt(birthDate: Date | string | null, year: number, month: number): boolean {
+    if (!birthDate) return false;
+    const birth = new Date(birthDate);
+    if (isNaN(birth.getTime())) return false;
+
+    const targetYear = birth.getFullYear() + 75;
+    const targetMonth = birth.getMonth() + 1; // 1-based month
+    const birthDay = birth.getDate();
+
+    // 75歳到達判定（誕生日当日で喪失）
+    if (year > targetYear) {
+      return false;
+    }
+    if (year === targetYear) {
+      if (month > targetMonth) {
+        return false;
+      }
+      if (month === targetMonth) {
+        // 誕生日当日で喪失
+        const currentDate = new Date(year, month - 1, birthDay);
+        const targetDate = new Date(targetYear, targetMonth - 1, birthDay);
+        return currentDate < targetDate;
+      }
+    }
+
+    return true;
+  }
+
+  getInsuranceEligibility(employee: EmployeeFullInfo, targetYear: number, targetMonth: number): Observable<InsuranceEligibilityResult> {
     const age = this.calculateAge(employee.employeeBasicInfo.birthDate);
-    // 介護保険の開始・終了月を正しく計算
+    const isFullTime = this.isFullTimeEmployee(employee);
+    const isShortTime = this.isShortTimeWorker(employee);
+    const isStudent = this.isStudent(employee);
+    const isStudentEligible = this.isStudentEligibleForInsurance(employee);
+    const isOnLeave = this.isOnLeave(employee);
+    const isOnMaternityOrChildcareLeave = this.isOnMaternityOrChildcareLeave(employee);
+    const isOnCareLeave = this.isOnCareLeave(employee);
+
+    const weeklyHours = Number(employee.employmentInfo.weeklyHours) || 0;
+    const monthlyWorkDays = Number(employee.employmentInfo.monthlyWorkDays) || 0;
+    const monthlyWage =
+      (Number(employee.employmentInfo.baseSalary) || 0) +
+      (Number(employee.employmentInfo.allowances) || 0) +
+      (Number(employee.employmentInfo.commutingAllowance) || 0);
+    const expectedEmploymentMonths = Number(employee.employmentInfo.expectedEmploymentMonths);
+    const studentType = employee.employmentInfo.studentType || '';
+
+    // 介護保険の開始・終了月を計算
     const nursingInsuranceStartMonth = this.calculateAgeReachMonth(employee.employeeBasicInfo.birthDate, 40);
-    const nursingInsuranceEndMonth = this.calculateNursingInsuranceEndMonth(employee.employeeBasicInfo.birthDate);
+    const nursingInsuranceEndMonth = this.calculateAgeReachMonth(employee.employeeBasicInfo.birthDate, 65);
+
     return this.fetchOfficeEmployeeCount().pipe(
       map(officeEmployeeCount => {
         const result: InsuranceEligibilityResult = {
@@ -399,45 +486,218 @@ export class InsuranceEligibilityService {
           nursingInsuranceStartMonth,
           nursingInsuranceEndMonth
         };
-        // 年齢による判定を最初に実行
-        const ageBasedEligibility = this.checkInsuranceEligibilityByAge(employee, age);
-        if (ageBasedEligibility) {
-          return { ...result, ...ageBasedEligibility };
+
+        // 退職日の判定
+        if (employee.employmentInfo.endDate) {
+          const endDate = new Date(employee.employmentInfo.endDate);
+          const targetDate = new Date(targetYear, targetMonth - 1, 1);
+          const endOfMonth = new Date(targetYear, targetMonth, 0);
+
+          // 1日退職の特殊ケース
+          if (endDate.getDate() === 1) {
+            // 退職日の前月が対象月の場合、その月は資格喪失
+            const previousMonth = new Date(endDate);
+            previousMonth.setMonth(previousMonth.getMonth() - 1);
+            if (previousMonth.getFullYear() === targetYear && previousMonth.getMonth() + 1 === targetMonth) {
+              result.reason = '1日退職のため前月で資格喪失';
+              return result;
+            }
+          }
+
+          // 退職月の判定
+          if (endDate.getFullYear() === targetYear && endDate.getMonth() + 1 === targetMonth) {
+            // 退職月は在籍月として扱う（1日退職を除く）
+            result.healthInsurance = true;
+            result.nursingInsurance = this.isEligibleForNursingInsurance(employee, age);
+            result.pensionInsurance = true;
+            result.reason = `${targetYear}年${targetMonth}月は在籍月のため保険料発生（退職日: ${endDate.getFullYear()}/${endDate.getMonth() + 1}/${endDate.getDate()}）`;
+            return result;
+          }
+
+          // 退職日の翌月以降は資格喪失
+          const nextMonth = new Date(endDate);
+          nextMonth.setMonth(nextMonth.getMonth() + 1);
+          if (nextMonth.getFullYear() === targetYear && nextMonth.getMonth() + 1 === targetMonth) {
+            result.reason = `${targetYear}年${targetMonth}月は退職翌月のため資格喪失（退職日: ${endDate.getFullYear()}/${endDate.getMonth() + 1}/${endDate.getDate()}）`;
+            return result;
+          }
         }
-        // 65歳未満の場合は従来のロジックを復元
-        const isFullTime = this.isFullTimeEmployee(employee);
-        const isShortTime = this.isShortTimeWorker(employee);
-        const isStudent = this.isStudent(employee);
-        const isStudentEligible = this.isStudentEligibleForInsurance(employee);
-        const weeklyHours = Number(employee.employmentInfo.weeklyHours) || 0;
-        const monthlyWorkDays = Number(employee.employmentInfo.monthlyWorkDays) || 0;
-        const monthlyWage =
-          (Number(employee.employmentInfo.baseSalary) || 0) +
-          (Number(employee.employmentInfo.allowances) || 0) +
-          (Number(employee.employmentInfo.commutingAllowance) || 0);
-        const expectedEmploymentMonths = Number(employee.employmentInfo.expectedEmploymentMonths);
+
+        // 見込み雇用期間の判定
+        if (employee.employmentInfo.expectedEmploymentMonths && employee.employmentInfo.startDate) {
+          const startDate = new Date(employee.employmentInfo.startDate);
+          const expectedEndDate = new Date(startDate);
+          expectedEndDate.setMonth(expectedEndDate.getMonth() + employee.employmentInfo.expectedEmploymentMonths);
+          
+          // 見込み雇用期間が対象月の末日以前の場合、資格喪失
+          if (expectedEndDate <= new Date(targetYear, targetMonth, 0)) {
+            result.reason = `${targetYear}年${targetMonth}月は見込み雇用期間終了により資格喪失`;
+            return result;
+          }
+
+          // 見込み雇用期間が2か月以下の場合、加入対象外
+          if (employee.employmentInfo.expectedEmploymentMonths <= 2) {
+            result.reason = '見込み雇用期間が2か月以下のため加入対象外';
+            return result;
+          }
+        }
+
+        // 1. 年齢による除外
+        const birthDate = employee.employeeBasicInfo.birthDate;
+        if (birthDate) {
+          const isHealthInsuranceEligible = this.isHealthInsuranceEligibleAt(birthDate, targetYear, targetMonth);
+          if (!isHealthInsuranceEligible) {
+            result.reason = '75歳到達時に健康保険の資格を喪失します（後期高齢者医療制度へ移行）';
+            return result;
+          }
+        }
+
+        if (age >= 70) {
+          result.healthInsurance = true;
+          result.pensionInsurance = false;
+          result.nursingInsurance = false;
+          result.reason = '70歳以上75歳未満は健康保険のみ加入対象（厚生年金は70歳で資格喪失）';
+          return result;
+        }
+        if (age >= 65) {
+          result.healthInsurance = true;
+          result.pensionInsurance = true;
+          result.nursingInsurance = false;
+          result.reason = '65歳以上70歳未満は健康保険・厚生年金加入対象（介護保険は65歳で終了）';
+          return result;
+        }
+
+        // 2. 適用除外（優先判定）
+        if (officeEmployeeCount < 5) {
+          result.reason = '従業員が5人未満のため、社会保険（健康保険・厚生年金・介護保険）の加入義務はありません（任意適用事業所を除く）';
+          return result;
+        }
+
+        // ★育休・産休の判定を最優先に
+        if (isOnMaternityOrChildcareLeave) {
+          // 免除期間の自動判定
+          const leaveStart = employee.specialAttributes?.leaveStartDate ? new Date(employee.specialAttributes.leaveStartDate) : null;
+          const leaveEnd = employee.specialAttributes?.leaveEndDate ? new Date(employee.specialAttributes.leaveEndDate) : null;
+          let exemptionStartMonth = null;
+          let exemptionEndMonth = null;
+          let fourteenDayRuleMonths: string[] = [];
+          if (leaveStart) {
+            exemptionStartMonth = `${leaveStart.getFullYear()}-${String(leaveStart.getMonth() + 1).padStart(2, '0')}`;
+          }
+          if (leaveEnd) {
+            exemptionEndMonth = `${leaveEnd.getFullYear()}-${String(leaveEnd.getMonth() + 1).padStart(2, '0')}`;
+          }
+          // 月をまたぐ14日ルール自動判定
+          if (leaveStart && leaveEnd) {
+            let current = new Date(leaveStart);
+            current.setHours(0,0,0,0);
+            const end = new Date(leaveEnd);
+            end.setHours(0,0,0,0);
+            while (current <= end) {
+              const year = current.getFullYear();
+              const month = current.getMonth();
+              // その月の1日と末日
+              const monthStart = new Date(year, month, 1);
+              const monthEnd = new Date(year, month + 1, 0);
+              // 休業期間とその月の重なり部分
+              const overlapStart = current > monthStart ? current : monthStart;
+              const overlapEnd = end < monthEnd ? end : monthEnd;
+              const days = Math.floor((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+              if (days >= 14) {
+                fourteenDayRuleMonths.push(`${year}-${String(month + 1).padStart(2, '0')}`);
+              }
+              // 次の月へ
+              current = new Date(year, month + 1, 1);
+            }
+          }
+
+          result.healthInsurance = true;
+          result.nursingInsurance = this.isEligibleForNursingInsurance(employee, age);
+          result.pensionInsurance = true;
+          result.reason = '育児・産前産後休業中は被保険者資格継続（事業主申請により本人・会社負担分とも全額免除）。\n' +
+            '休業開始月から終了日の翌月前月まで社会保険料（健康・年金・介護）が免除されます。\n' +
+            '育休は各月ごとに14日以上取得すればその月全体が免除対象です（令和4年10月〜）。\n' +
+            (fourteenDayRuleMonths.length > 0 ? `【14日ルール自動判定】${fourteenDayRuleMonths.join(', ')}は14日以上取得のため月全体が免除対象です。\n` : '') +
+            '賞与支払月が休業期間に該当すれば賞与も免除されます。\n' +
+            '給与天引きの免除反映は制度上1か月遅れます。';
+          // 必要に応じて免除期間情報も返却
+          (result as any).insuranceExemptionStartMonth = exemptionStartMonth;
+          (result as any).insuranceExemptionEndMonth = exemptionEndMonth;
+          if (fourteenDayRuleMonths.length > 0) {
+            (result as any).insuranceExemptionFourteenDayRuleMonths = fourteenDayRuleMonths;
+          }
+
+          // 賞与免除月の判定例（画面やAPIから賞与支給日配列を受け取る想定）
+          const bonusPaymentDates: Date[] = (employee.specialAttributes?.bonusPaymentDates || []).map((d: string) => new Date(d));
+          let bonusExemptionMonths: string[] = [];
+          if (bonusPaymentDates.length > 0 && leaveStart && leaveEnd) {
+            bonusExemptionMonths = this.getBonusExemptionMonths(bonusPaymentDates, leaveStart, leaveEnd);
+          }
+          result.reason += (bonusExemptionMonths.length > 0
+            ? `賞与支給月（${bonusExemptionMonths.join(', ')}）の末日が1か月を超える連続した休業期間に含まれているため、当月の賞与も社会保険料免除対象です。\n`
+            : '賞与支給月の末日が休業期間外、または休業期間が1か月以内のため、当月の賞与は社会保険料免除対象外です。\n');
+          if (bonusExemptionMonths.length > 0) {
+            (result as any).insuranceExemptionBonusMonths = bonusExemptionMonths;
+          }
+          return result;
+        }
+
+        // 3. 学生の判定（優先度を上げる）
+        if (isStudent) {
+          // 昼間学生の場合
+          if (['大学', '高校', '専門学校', 'その他学校'].includes(studentType)) {
+            if (isFullTime) {
+              result.healthInsurance = true;
+              result.nursingInsurance = this.isEligibleForNursingInsurance(employee, age);
+              result.pensionInsurance = true;
+              result.reason = '昼間学生ですが、週所定労働時間・月労働日数が正社員の4分の3以上のため社会保険加入義務があります（健康保険法第3条第9項ハ但書）';
+              return result;
+            } else {
+              result.reason = '昼間学生（大学・高校・専門学校・その他学校）は原則社会保険適用除外です（健康保険法第3条第9項ハ）。給与からの控除も不要です。';
+              return result;
+            }
+          }
+
+          // 夜間学生・休学中・通信制の場合
+          if (['夜間学生', '休学中', '通信制'].includes(studentType)) {
+            if (weeklyHours >= 20 && monthlyWage >= 88000) {
+              result.healthInsurance = true;
+              result.nursingInsurance = this.isEligibleForNursingInsurance(employee, age);
+              result.pensionInsurance = true;
+              result.reason = '夜間学生・休学中・通信制で、週20時間以上かつ月給8.8万円以上のため社会保険加入対象です';
+              return result;
+            } else {
+              result.reason = '夜間学生・休学中・通信制ですが、週20時間未満または月給8.8万円未満のため社会保険適用除外です';
+              return result;
+            }
+          }
+        }
+
+        // 4. 休業中の判定
+        if (isOnCareLeave) {
+          result.healthInsurance = true;
+          result.nursingInsurance = this.isEligibleForNursingInsurance(employee, age);
+          result.pensionInsurance = true;
+          result.reason = '介護休業中は被保険者資格継続（保険料免除なし）。休業中も通常どおり保険料が発生します（給与が無くても支払義務あり）';
+          return result;
+        }
+
+        // 5. フルタイム（正社員・4分の3要件パート）
+        if (isFullTime) {
+          result.healthInsurance = true;
+          result.nursingInsurance = this.isEligibleForNursingInsurance(employee, age);
+          result.pensionInsurance = true;
+          result.reason = 'フルタイム従業員（または4分の3要件を満たすパート）として社会保険加入対象です';
+          return result;
+        }
+
+        // 6. パート・短時間労働者の5要件判定
         const isPartOrArubaito = ['パート', 'アルバイト'].includes(employee.employmentInfo.employmentType);
-        const studentType = employee.employmentInfo.studentType || '';
-        const isDaytimeStudent = ['大学', '高校', '専門学校', 'その他学校'].includes(studentType);
         const hasEnoughWeeklyHours = weeklyHours >= 20;
         const hasEnoughWage = monthlyWage >= 88000;
         const hasLongTermEmployment = isNaN(expectedEmploymentMonths) || expectedEmploymentMonths > 2;
         const hasEnoughEmployeeCount = officeEmployeeCount >= 51;
-        // 介護保険の判定は引数の年月で
-        const nursingInsuranceEligible = this.isNursingInsuranceEligibleAt(
-          employee.employeeBasicInfo.birthDate,
-          year,
-          month
-        );
-        // フルタイム（正社員・4分の3要件パート）
-        if (isFullTime) {
-          result.healthInsurance = true;
-          result.pensionInsurance = true;
-          result.nursingInsurance = nursingInsuranceEligible;
-          result.reason = 'フルタイム従業員（または4分の3要件を満たすパート）として社会保険加入対象です';
-          return result;
-        }
-        // パート・短時間労働者の5要件判定
+
         if (
           isPartOrArubaito &&
           hasEnoughWeeklyHours &&
@@ -445,45 +705,34 @@ export class InsuranceEligibilityService {
           hasLongTermEmployment &&
           hasEnoughEmployeeCount
         ) {
-          if (isDaytimeStudent) {
-            result.reason = '昼間学生（大学・高校・専門学校・その他学校）は短時間労働者の社会保険適用拡大の対象外です';
-            return result;
-          } else {
             result.healthInsurance = true;
+          result.nursingInsurance = this.isEligibleForNursingInsurance(employee, age);
             result.pensionInsurance = true;
-            result.nursingInsurance = nursingInsuranceEligible;
-            result.reason = 'パート・短時間労働者（夜間学校・休学中・卒業見込含む）で5要件（週20時間以上・月給8.8万円以上・雇用見込み2ヶ月超・従業員51人以上）をすべて満たすため社会保険加入対象です';
+          result.reason = 'パート・短時間労働者で5要件（週20時間以上・月給8.8万円以上・雇用見込み2ヶ月超・従業員51人以上）をすべて満たすため社会保険加入対象です';
             return result;
           }
-        }
-        // 学生（昼間学生）で適用除外（ただし4分の3要件を満たす場合は加入対象）
-        if (isDaytimeStudent) {
-          if (isFullTime) {
-            result.healthInsurance = true;
-            result.pensionInsurance = true;
-            result.nursingInsurance = nursingInsuranceEligible;
-            result.reason = '昼間学生ですが、週所定労働時間・月労働日数が正社員の4分の3以上のため社会保険加入義務があります（健康保険法第3条第9項ハ但書）';
-            return result;
-          } else {
-            result.reason = '昼間学生（大学・高校・専門学校・その他学校）は原則社会保険適用除外です（健康保険法第3条第9項ハ）。給与からの控除も不要です。';
-            return result;
-          }
-        }
-        // 2ヶ月以内契約の適用除外判定
+
+        // 7. 2ヶ月以内契約の適用除外判定
         if (expectedEmploymentMonths === 1 || expectedEmploymentMonths === 2) {
-          return {
-            healthInsurance: false,
-            nursingInsurance: false,
-            pensionInsurance: false,
-            reason: '2ヶ月以内契約（雇用見込み期間が1または2ヶ月）のため社会保険適用除外です（更新予定・実績があれば要再判定）',
-            nursingInsuranceStartMonth,
-            nursingInsuranceEndMonth
-          };
+          result.reason = '2ヶ月以内契約（雇用見込み期間が1または2ヶ月）のため社会保険適用除外です（更新予定・実績があれば要再判定）';
+          return result;
         }
-        // その他
+
+        // 8. その他
         result.reason = '社会保険の適用要件（週20時間以上・月給8.8万円以上・雇用見込み2ヶ月超・従業員51人以上）を満たさないため対象外です';
         return result;
+      }),
+      catchError(error => {
+        console.error('社会保険加入判定エラー:', error);
+        return of({
+          healthInsurance: false,
+          nursingInsurance: false,
+          pensionInsurance: false,
+          reason: '判定処理中にエラーが発生しました',
+          nursingInsuranceStartMonth: nursingInsuranceStartMonth ?? undefined,
+          nursingInsuranceEndMonth: nursingInsuranceEndMonth ?? undefined
+        });
       })
     );
   }
-} 
+}
