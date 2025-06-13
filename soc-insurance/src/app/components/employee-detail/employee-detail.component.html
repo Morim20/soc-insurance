@@ -203,14 +203,14 @@
       </h3>
       <div *ngIf="!editingSection['insuranceStatus']">
         <p>加入判定: {{ (insuranceEligibility$ | async)?.reason }}</p>
-        <p>健康保険: {{ (insuranceEligibility$ | async)?.healthInsurance ? '加入' : '未加入' }}</p>
-        <p>介護保険: 
+        <p>健康保険料: {{ (insuranceEligibility$ | async)?.healthInsurance ? '支払い対象' : '支払い対象外' }}</p>
+        <p>介護保険料: 
           <span *ngIf="insuranceEligibility$ | async as eligibility">
-            <span *ngIf="isActuallyNursingInsuranceEligible(eligibility)">加入</span>
-            <span *ngIf="!isActuallyNursingInsuranceEligible(eligibility)">未加入</span>
+            <span *ngIf="isActuallyNursingInsuranceEligible(eligibility)">支払い対象</span>
+            <span *ngIf="!isActuallyNursingInsuranceEligible(eligibility)">支払い対象外</span>
           </span>
         </p>
-        <p>厚生年金: {{ (insuranceEligibility$ | async)?.pensionInsurance ? '加入' : '未加入' }}</p>
+        <p>厚生年金料: {{ (insuranceEligibility$ | async)?.pensionInsurance ? '支払い対象' : '支払い対象外' }}</p>
         <p>資格取得日: {{ employee.insuranceStatus.qualificationAcquisitionDate | date:'yyyy/MM/dd' }}</p>
         <p>保険種別: {{ employee.insuranceStatus.insuranceType }}</p>
         <ng-container *ngIf="employee.insuranceStatus.insuranceType === '協会けんぽ'">
@@ -222,6 +222,10 @@
           <p>厚生年金標準報酬月額: {{ employee.insuranceStatus.newStandardMonthlyWage || '未設定' }}</p>
           <p>厚生年金標準報酬月額の改定年月日: {{ employee.insuranceStatus.newRevisionDate | date:'yyyy/MM/dd' }}</p>
         </ng-container>
+        <!-- 退職日関連のメッセージ -->
+        <p *ngIf="employee.employmentInfo?.endDate" class="retirement-message" [style.color]="'#e65100'">
+          {{ getInsuranceStatusMessage() }}
+        </p>
       </div>
       <form *ngIf="editingSection['insuranceStatus']" [formGroup]="insuranceStatusForm" class="basic-info-form">
         <div class="form-grid">

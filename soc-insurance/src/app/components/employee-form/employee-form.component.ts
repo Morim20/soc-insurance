@@ -429,6 +429,7 @@ export class EmployeeFormComponent implements OnInit {
           });
         }
         this.router.navigate(['/admin/employees']);
+        this.employeeService.notifyEmployeeUpdated();
       } catch (error) {
         console.error('保存エラー:', error);
         this.snackBar.open('保存に失敗しました', '閉じる', {

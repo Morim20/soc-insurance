@@ -117,11 +117,8 @@ export class InsuranceEligibilityService {
     const expectedEmploymentMonths = Number(employee.employmentInfo.expectedEmploymentMonths);
     const isStudent = this.isStudent(employee);
 
-    console.log('[isShortTimeWorker] weeklyHours:', weeklyHours, 'monthlyWage:', monthlyWage, 'expectedEmploymentMonths:', expectedEmploymentMonths, 'isStudent:', isStudent);
-
     // 学生の場合は短時間労働者としての判定対象外
     if (isStudent) {
-      console.log('[isShortTimeWorker] 学生のため対象外');
       return false;
     }
 
@@ -129,7 +126,6 @@ export class InsuranceEligibilityService {
     const hasEnoughWage = monthlyWage >= 88000;
     const hasLongTermEmployment = isNaN(expectedEmploymentMonths) || expectedEmploymentMonths > 2;
 
-    console.log('[isShortTimeWorker] hasEnoughHours:', hasEnoughHours, 'hasEnoughWage:', hasEnoughWage, 'hasLongTermEmployment:', hasLongTermEmployment);
 
     return hasEnoughHours && hasEnoughWage && hasLongTermEmployment;
   }

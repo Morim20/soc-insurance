@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, where, serverTimestamp } from '@angular/fire/firestore';
 import { Employee, EmployeeBasicInfo, EmploymentInfo, InsuranceStatus, Dependent, SpecialAttributes, EmployeeFullInfo } from '../models/employee.model';
-import { Observable, from, map } from 'rxjs';
+import { Observable, from, map, Subject } from 'rxjs';
 import { Timestamp } from '@angular/fire/firestore';
 
 @Injectable({
@@ -10,6 +10,8 @@ import { Timestamp } from '@angular/fire/firestore';
 export class EmployeeService {
   private readonly COLLECTION_NAME = 'employees';
   private firestore = inject(Firestore);
+  private employeeUpdatedSource = new Subject<void>();
+  employeeUpdated$ = this.employeeUpdatedSource.asObservable();
 
   constructor() {}
 
@@ -330,5 +332,9 @@ export class EmployeeService {
       nursingInsuranceEmployer: detail.nursingInsuranceEmployer || 0
     };
     await setDoc(ref, saveData);
+  }
+
+  notifyEmployeeUpdated() {
+    this.employeeUpdatedSource.next();
   }
 } 

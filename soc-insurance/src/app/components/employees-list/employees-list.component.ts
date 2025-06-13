@@ -89,12 +89,15 @@ export class EmployeesListComponent implements OnInit {
           let insuranceEligible = eligibilityResults[idx]?.healthInsurance || eligibilityResults[idx]?.pensionInsurance || false;
 
           // 退職日が今月の場合は在籍月として保険料発生
-          if (endDate && endDate.getFullYear() === today.getFullYear() && endDate.getMonth() === today.getMonth()) {
-            insuranceEligible = true;
-          }
-          // 退職日が過去なら未加入
-          if (endDate && endDate < today) {
-            insuranceEligible = false;
+          if (endDate) {
+            // 退職日の翌日から未加入
+            const endDatePlus1 = new Date(endDate);
+            endDatePlus1.setDate(endDatePlus1.getDate() + 1);
+            if (endDatePlus1 <= today) {
+              insuranceEligible = false;
+            } else {
+              insuranceEligible = true;
+            }
           }
 
           return {
@@ -144,19 +147,24 @@ export class EmployeesListComponent implements OnInit {
     if (!emp.insuranceEligible) {
       return '×';
     }
-
     const today = new Date();
     if (emp.endDate) {
       const endDate = new Date(emp.endDate);
-      if (endDate < today) {
+      const endDatePlus1 = new Date(endDate);
+      endDatePlus1.setDate(endDatePlus1.getDate() + 1);
+      if (endDatePlus1 <= today) {
         return '退職済み';
+      }
+      if (endDate.getFullYear() === today.getFullYear() && 
+          endDate.getMonth() === today.getMonth() &&
+          endDate.getDate() === today.getDate()) {
+        return `本日退職`; // 退職当日は特別表示
       }
       if (endDate.getFullYear() === today.getFullYear() && 
           endDate.getMonth() === today.getMonth()) {
         return `今月${endDate.getDate()}日退職予定`;
       }
     }
-
     return '○';
   }
 

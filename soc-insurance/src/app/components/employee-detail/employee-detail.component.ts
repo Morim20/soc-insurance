@@ -467,6 +467,7 @@ export class EmployeeDetailComponent implements OnInit {
               };
               await this.employeeService.setBasicInfo(this.employee.id, updatedBasicInfo);
               this.employee.employeeBasicInfo = updatedBasicInfo;
+              this.employeeService.notifyEmployeeUpdated();
               break;
             case 'employmentInfo':
               const updatedEmploymentInfo: EmploymentInfo = {
@@ -480,9 +481,11 @@ export class EmployeeDetailComponent implements OnInit {
               }
               await this.employeeService.setEmploymentInfo(this.employee.id, updatedEmploymentInfo);
               this.employee.employmentInfo = updatedEmploymentInfo;
+              this.employeeService.notifyEmployeeUpdated();
               break;
             case 'insuranceStatus':
               await this.saveInsuranceStatus();
+              this.employeeService.notifyEmployeeUpdated();
               break;
             case 'specialAttributes':
               const updatedSpecialAttributes: SpecialAttributes = {
@@ -492,6 +495,7 @@ export class EmployeeDetailComponent implements OnInit {
               };
               await this.employeeService.setSpecialAttributes(this.employee.id, updatedSpecialAttributes);
               this.employee.specialAttributes = updatedSpecialAttributes;
+              this.employeeService.notifyEmployeeUpdated();
               break;
           }
         }
@@ -656,5 +660,35 @@ export class EmployeeDetailComponent implements OnInit {
 
   public isActuallyNursingInsuranceEligible(eligibility: any): boolean {
     return this.insuranceEligibilityService.isActuallyNursingInsuranceEligible(eligibility);
+  }
+
+  getInsuranceStatusMessage(): string {
+    if (!this.employee) return '';
+
+    const today = new Date();
+    const endDate = this.employee.employmentInfo?.endDate ? new Date(this.employee.employmentInfo.endDate) : null;
+
+    if (endDate) {
+      const endDatePlus1 = new Date(endDate);
+      endDatePlus1.setDate(endDatePlus1.getDate() + 1);
+
+      if (endDatePlus1 <= today) {
+        return '退職済みのため、社会保険の加入対象外です。';
+      }
+
+      if (endDate.getFullYear() === today.getFullYear() &&
+          endDate.getMonth() === today.getMonth() &&
+          endDate.getDate() === today.getDate()) {
+        return '本日退職のため、本日まで社会保険の加入対象です。';
+      }
+
+      if (endDate.getFullYear() === today.getFullYear() &&
+          endDate.getMonth() === today.getMonth()) {
+        return `${endDate.getDate()}日退職予定のため、${endDate.getDate()}日まで社会保険の加入対象です。`;
+      }
+    }
+
+    // 退職日以外は空文字を返す
+    return '';
   }
 }

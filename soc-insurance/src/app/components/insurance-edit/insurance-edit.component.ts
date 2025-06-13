@@ -119,7 +119,6 @@ export class InsuranceEditComponent implements OnInit {
       const settingsDoc = await getDoc(doc(this.firestore, 'settings', 'office'));
       if (settingsDoc.exists()) {
         this.companyPrefecture = settingsDoc.data()['prefecture'];
-        console.log('会社の所在地を取得:', this.companyPrefecture);
       } else {
         console.error('会社設定が見つかりません');
         this.snackBar.open('会社設定が見つかりません。会社設定画面で確認してください。', '閉じる', { duration: 5000 });
@@ -225,7 +224,6 @@ export class InsuranceEditComponent implements OnInit {
           pensionInsuranceEmployer: insuranceDetail.bonusPensionInsuranceEmployer ?? 0,
             childContribution: insuranceDetail.bonusChildContribution ?? 0
           };
-          console.log('DEBUG: Firestoreから取得した賞与保険料計算結果:', this.bonusInsuranceResult);
         }
       }
       // employeeFullInfoを取得
@@ -332,14 +330,7 @@ export class InsuranceEditComponent implements OnInit {
         if (birthDate && periodYear && periodMonth) {
           isNursingInsuranceEligible = this.insuranceEligibilityService.isNursingInsuranceEligibleAt(birthDate, periodYear, periodMonth);
           isPensionInsuranceEligible = this.isPensionInsuranceEligible(birthDate, periodYear, periodMonth);
-          console.log('DEBUG: 賞与の保険料判定:', {
-            birthDate,
-            periodYear,
-            periodMonth,
-            isNursingInsuranceEligible,
-            isPensionInsuranceEligible,
-            eligibilityResult: this.insuranceEligibilityResult
-          });
+
         }
 
         this.bonusInsuranceResult = this.insuranceCalculationService.calculateBonusInsurance({
@@ -379,13 +370,6 @@ export class InsuranceEditComponent implements OnInit {
             this.bonusInsuranceResult.childContribution = 0;
           }
 
-          console.log('DEBUG: 賞与の保険料計算結果:', {
-            bonusAmount: val,
-            bonusInsuranceResult: this.bonusInsuranceResult,
-            eligibilityResult,
-            isNursingInsuranceEligible,
-            isPensionInsuranceEligible
-          });
         }
 
         const stdBonus = Math.floor((val || 0) / 1000) * 1000;
@@ -421,11 +405,9 @@ export class InsuranceEditComponent implements OnInit {
                 this.basicInfo.birthDate, this.data.period.year, this.data.period.month
               );
             }
-            console.log('介護保険判定:', { isNursingInsuranceEligible, eligibilityResult });
             if (eligibilityResult.healthInsurance || eligibilityResult.pensionInsurance) {
               // 保険料計算を実行
               if (!this.companyPrefecture) {
-                console.error('会社の所在地（都道府県）が設定されていません');
                 this.snackBar.open('会社の所在地（都道府県）が設定されていません。会社設定画面で確認してください。', '閉じる', { duration: 5000 });
                 return;
               }
@@ -444,9 +426,7 @@ export class InsuranceEditComponent implements OnInit {
                 ageForInsurance = isNursingInsuranceEligible ? 40 : this.calculateAgeAt(birthDate, periodYear, periodMonth);
                 // 厚生年金終了判定
                 isPensionInsuranceEligible = this.isPensionInsuranceEligible(birthDate, periodYear, periodMonth);
-                console.log('DEBUG: 控除開始年月:', startYear, startMonth, '今月:', periodYear, periodMonth, 'isNursingInsuranceEligible:', isNursingInsuranceEligible, 'isPensionInsuranceEligible:', isPensionInsuranceEligible);
               }
-              console.log('DEBUG: age for insurance calculation (控除開始月ロジック適用):', ageForInsurance);
 
               const insuranceResult = this.insuranceCalculationService.calculateInsurance({
                 prefecture: this.companyPrefecture,
@@ -454,7 +434,6 @@ export class InsuranceEditComponent implements OnInit {
                 age: ageForInsurance,
                 hasChildren: false
               });
-              console.log('DEBUG: insuranceResult:', insuranceResult);
               if (insuranceResult == null) {
                 console.error('保険料計算失敗時の詳細:', {
                   prefecture: this.companyPrefecture,
@@ -488,13 +467,7 @@ export class InsuranceEditComponent implements OnInit {
                   this.data.nursingInsuranceEmployer,
                   this.data.pensionInsuranceEmployer
                 );
-                console.log('保険料計算結果:', {
-                  health: { employee: this.data.healthInsuranceEmployee, employer: this.data.healthInsuranceEmployer },
-                  nursing: { employee: this.data.nursingInsuranceEmployee, employer: this.data.nursingInsuranceEmployer },
-                  pension: { employee: this.data.pensionInsuranceEmployee, employer: this.data.pensionInsuranceEmployer },
-                  total: { employee: this.data.employeeTotalDeduction, employer: this.data.employerTotalDeduction },
-                  eligibilityResult: this.insuranceEligibilityResult
-                });
+
               } else {
                 this.data.healthInsuranceEmployee = 0;
                 this.data.healthInsuranceEmployer = 0;
@@ -642,7 +615,6 @@ export class InsuranceEditComponent implements OnInit {
       age = this.calculateAgeAt(this.basicInfo.birthDate, this.data.period.year, this.data.period.month);
       // 介護保険が加入なら40歳固定、未加入なら実年齢
       ageForInsurance = this.insuranceEligibilityResult?.nursingInsurance ? 40 : age;
-      console.log('保存時の年齢計算:', { birthDate: this.basicInfo.birthDate, age, ageForInsurance, nursingInsurance: this.insuranceEligibilityResult?.nursingInsurance });
     }
 
     // 保険料を計算
@@ -1019,13 +991,6 @@ export class InsuranceEditComponent implements OnInit {
     }
     // 2日以降は誕生月から開始（そのまま）
 
-    console.log('DEBUG: 介護保険開始月計算:', {
-      birthDate,
-      birthDay,
-      startYear,
-      startMonth
-    });
-
     return { year: startYear, month: startMonth };
   }
 
@@ -1052,12 +1017,7 @@ export class InsuranceEditComponent implements OnInit {
       }
     }
 
-    console.log('DEBUG: 介護保険終了月計算:', {
-      birthDate,
-      birthDay,
-      endYear,
-      endMonth
-    });
+
 
     return { year: endYear, month: endMonth };
   }
@@ -1104,11 +1064,6 @@ export class InsuranceEditComponent implements OnInit {
       return;
     }
 
-    // デバッグログを追加
-    console.log('DEBUG: insuranceStatus:', this.insuranceStatus);
-    console.log('DEBUG: grade type:', typeof this.insuranceStatus?.grade);
-    console.log('DEBUG: grade value:', this.insuranceStatus?.grade);
-
     // 氏名・社員番号・所属
     this.data.fullName = `${this.employeeFullInfo.employeeBasicInfo.lastNameKanji ?? ''} ${this.employeeFullInfo.employeeBasicInfo.firstNameKanji ?? ''}`.trim();
     this.data.employeeId = this.employeeFullInfo.employeeBasicInfo.employeeId ?? '';
@@ -1126,13 +1081,7 @@ export class InsuranceEditComponent implements OnInit {
       } else {
         ageForInsurance = this.calculateAgeAt(birthDate, periodYear, periodMonth);
       }
-      console.log('DEBUG: 保険料計算判定:', {
-        birthDate,
-        periodYear,
-        periodMonth,
-        ageForInsurance,
-        eligibilityResult: this.insuranceEligibilityResult
-      });
+      
     }
 
     // gradeの取得と型チェックを強化
@@ -1149,7 +1098,6 @@ export class InsuranceEditComponent implements OnInit {
       age: ageForInsurance,
       hasChildren: false
     });
-    console.log('DEBUG: insuranceResult:', insuranceResult);
     if (insuranceResult == null) {
       console.error('保険料計算失敗時の詳細:', {
         prefecture: this.companyPrefecture,
@@ -1183,13 +1131,6 @@ export class InsuranceEditComponent implements OnInit {
         this.data.nursingInsuranceEmployer,
         this.data.pensionInsuranceEmployer
       );
-      console.log('保険料計算結果:', {
-        health: { employee: this.data.healthInsuranceEmployee, employer: this.data.healthInsuranceEmployer },
-        nursing: { employee: this.data.nursingInsuranceEmployee, employer: this.data.nursingInsuranceEmployer },
-        pension: { employee: this.data.pensionInsuranceEmployee, employer: this.data.pensionInsuranceEmployer },
-        total: { employee: this.data.employeeTotalDeduction, employer: this.data.employerTotalDeduction },
-        eligibilityResult: this.insuranceEligibilityResult
-      });
     } else {
       this.data.healthInsuranceEmployee = 0;
       this.data.healthInsuranceEmployer = 0;

@@ -357,9 +357,6 @@ export class InsuranceCalculationService {
 
     // 都道府県の保険料率データを取得
     const prefectureRates = prefectureRatesMap[prefecture];
-    console.log('DEBUG: 都道府県コード:', prefecture);
-    console.log('DEBUG: 都道府県の保険料率データ:', prefectureRates);
-    console.log('DEBUG: 等級:', gradeNumber, typeof gradeNumber);
     
     if (!prefectureRates) {
       console.error(`都道府県「${prefecture}」の保険料率データが見つかりません`);
@@ -368,7 +365,6 @@ export class InsuranceCalculationService {
 
     // 等級データを取得
     const gradeData = (prefectureRates as any)[String(gradeNumber)];
-    console.log('DEBUG: 等級データ:', gradeData);
     
     if (!gradeData) {
       console.error(`都道府県「${prefecture}」の等級「${gradeNumber}」のデータが見つかりません`);
@@ -380,14 +376,6 @@ export class InsuranceCalculationService {
       console.error('標準報酬月額が無効です:', gradeData.standardMonthlyWage);
       throw new Error('標準報酬月額が無効です');
     }
-
-    console.log('保険料計算パラメータ:', {
-      prefecture,
-      grade: gradeNumber,
-      age,
-      standardMonthlyWage: gradeData.standardMonthlyWage,
-      gradeData
-    });
 
     const healthInsuranceEmployeeRaw = gradeData.healthInsuranceEmployee;
     const healthInsuranceEmployerRaw = gradeData.healthInsurance - healthInsuranceEmployeeRaw;
@@ -426,7 +414,6 @@ export class InsuranceCalculationService {
       }
     };
 
-    console.log('保険料計算結果:', result);
     return result;
   }
 

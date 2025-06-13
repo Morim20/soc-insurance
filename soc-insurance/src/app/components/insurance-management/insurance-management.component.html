@@ -6,227 +6,234 @@
     </mat-card-header>
 
     <mat-card-content>
-      <form [formGroup]="filterForm" class="filter-section">
-        <mat-form-field appearance="outline">
-          <mat-label>年</mat-label>
-          <mat-select formControlName="year">
-            <mat-option *ngFor="let year of [2025]" [value]="year">
-              {{year}}年
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+      <ng-container *ngIf="isCompanySettingAvailable; else noCompanySetting">
+        <form [formGroup]="filterForm" class="filter-section">
+          <mat-form-field appearance="outline">
+            <mat-label>年</mat-label>
+            <mat-select formControlName="year">
+              <mat-option *ngFor="let year of [2025]" [value]="year">
+                {{year}}年
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>月</mat-label>
-          <mat-select formControlName="month">
-            <mat-option *ngFor="let month of [3,4,5,6,7]" [value]="month">
-              {{month}}月
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>月</mat-label>
+            <mat-select formControlName="month">
+              <mat-option *ngFor="let month of [3,4,5,6,7]" [value]="month">
+                {{month}}月
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>部署</mat-label>
-          <mat-select formControlName="department">
-            <mat-option value="all">全て</mat-option>
-            <mat-option *ngFor="let dept of departments" [value]="dept">{{dept}}</mat-option>
-          </mat-select>
-        </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>部署</mat-label>
+            <mat-select formControlName="department">
+              <mat-option value="all">全て</mat-option>
+              <mat-option *ngFor="let dept of departments" [value]="dept">{{dept}}</mat-option>
+            </mat-select>
+          </mat-form-field>
 
-      </form>
+        </form>
 
-      <div *ngIf="error" class="error-message">
-        {{ error }}
-      </div>
-
-      <div *ngIf="isLoading" class="loading-spinner">
-        <mat-spinner diameter="40"></mat-spinner>
-      </div>
-
-      <div class="table-container" *ngIf="!isLoading">
-
-
-        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-          <!-- 氏名 -->
-          <ng-container matColumnDef="fullName">
-            <th mat-header-cell *matHeaderCellDef>氏名</th>
-            <td mat-cell *matCellDef="let element">{{element.fullName}}</td>
-            <td mat-footer-cell *matFooterCellDef>合計</td>
-          </ng-container>
-
-          <!-- 社員番号 -->
-          <ng-container matColumnDef="employeeId">
-            <th mat-header-cell *matHeaderCellDef>社員番号</th>
-            <td mat-cell *matCellDef="let element">{{element.employeeId}}</td>
-            <td mat-footer-cell *matFooterCellDef></td>
-          </ng-container>
-
-          <!-- 所属 -->
-          <ng-container matColumnDef="department">
-            <th mat-header-cell *matHeaderCellDef>所属</th>
-            <td mat-cell *matCellDef="let element">{{element.department}}</td>
-            <td mat-footer-cell *matFooterCellDef></td>
-          </ng-container>
-
-          <!-- 基本給 -->
-          <ng-container matColumnDef="baseSalary">
-            <th mat-header-cell *matHeaderCellDef>基本給</th>
-            <td mat-cell *matCellDef="let element">{{element.baseSalary | number:'1.0-0'}}</td>
-            <td mat-footer-cell *matFooterCellDef></td>
-          </ng-container>
-
-          
-
-          <!-- 厚生年金等級 -->
-          <ng-container matColumnDef="pensionGrade">
-            <th mat-header-cell *matHeaderCellDef>厚生年金等級</th>
-            <td mat-cell *matCellDef="let element">
-              <ng-container *ngIf="element.newGrade !== null && element.newGrade !== undefined && element.newGrade !== '' && element.newGrade !== 0 && element.newGrade !== '未設定'; else notSetPension">
-                {{element.newGrade}}
-              </ng-container>
-              <ng-template #notSetPension>
-                <span style="color: red;">未設定</span>
-              </ng-template>
-            </td>
-            <td mat-footer-cell *matFooterCellDef></td>
-          </ng-container>
-
-          <!-- 報酬月額 -->
-          <ng-container matColumnDef="standardMonthlyRemuneration">
-            <th mat-header-cell *matHeaderCellDef>報酬月額</th>
-            <td mat-cell *matCellDef="let element">
-              <ng-container *ngIf="element.standardMonthlyRemuneration !== null && element.standardMonthlyRemuneration !== undefined; else notConfirmed">
-                {{element.standardMonthlyRemuneration | number:'1.0-0'}}
-              </ng-container>
-              <ng-template #notConfirmed>
-                <span style="color: red;">未登録</span>
-              </ng-template>
-            </td>
-            <td mat-footer-cell *matFooterCellDef>{{ totalStandardMonthlyRemuneration | currency:'JPY' }}</td>
-          </ng-container>
-
-          <!-- 等級 -->
-          <ng-container matColumnDef="grade">
-            <th mat-header-cell *matHeaderCellDef>健康保険等級</th>
-            <td mat-cell *matCellDef="let element">
-              <ng-container *ngIf="element.grade !== '未設定'; else notSetGrade">
-                {{element.grade}}
-              </ng-container>
-              <ng-template #notSetGrade>
-                <span style="color: red;">未設定</span>
-              </ng-template>
-            </td>
-            <td mat-footer-cell *matFooterCellDef></td>
-          </ng-container>
-
-          <!-- 備考 -->
-          <ng-container matColumnDef="note">
-            <th mat-header-cell *matHeaderCellDef>備考</th>
-            <td mat-cell *matCellDef="let element">
-              <span *ngIf="element.note" style="color: red;">{{element.note}}</span>
-            </td>
-            <td mat-footer-cell *matFooterCellDef></td>
-          </ng-container>
-
-          <!-- アクション -->
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>操作</th>
-            <td mat-cell *matCellDef="let element">
-              <button mat-icon-button color="primary" matTooltip="編集" (click)="onEdit(element)">
-                <mat-icon>edit</mat-icon>
-              </button>
-            </td>
-            <td mat-footer-cell *matFooterCellDef></td>
-          </ng-container>
-
-          <!-- 出力 -->
-          <ng-container matColumnDef="export">
-            <th mat-header-cell *matHeaderCellDef>出力</th>
-            <td mat-cell *matCellDef="let element">
-              <button mat-icon-button color="accent" matTooltip="CSV出力"
-                [disabled]="element.standardMonthlyRemuneration === null || element.standardMonthlyRemuneration === undefined"
-                (click)="downloadIndividualCsv(element)">
-                <mat-icon>table_view</mat-icon>
-              </button>
-              <button mat-icon-button color="accent" matTooltip="PDF出力"
-                [disabled]="element.standardMonthlyRemuneration === null || element.standardMonthlyRemuneration === undefined"
-                (click)="downloadIndividualPdf(element)">
-                <mat-icon>picture_as_pdf</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" matTooltip="賞与PDF出力"
-                *ngIf="element.bonusAmount && element.bonusAmount > 0 && element.standardBonusAmount && element.standardBonusAmount > 0 && bonusCount && bonusCount > 0 && bonusCount <= 3"
-                (click)="downloadIndividualBonusPdf(element)">
-                <mat-icon>picture_as_pdf</mat-icon>
-              </button>
-            </td>
-            <td mat-footer-cell *matFooterCellDef></td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          <tr mat-footer-row *matFooterRowDef="displayedColumns"></tr>
-        </table>
-      </div>
-
-      <div *ngIf="!isLoading && isAllConfirmed && !hasUnconfirmedRemuneration && companySummaryTable.rows.length > 0" class="company-summary">
-        <div *ngIf="companySummaryTable.rows.length > 0; else noCompanySummary">
-          <div style="display: flex; align-items: center; justify-content: flex-start;">
-            <h3 style="margin: 0 8px 0 0;">会社全体の保険料明細</h3>
-            <div class="button-container" *ngIf="isAllConfirmed">
-              <button mat-raised-button color="accent" (click)="downloadCsv()">CSV出力</button>
-            </div>
-          </div>
-          <table class="summary-table">
-            <thead>
-              <tr>
-                <th>保険種別</th>
-                <th>納入告知額（合計納付額）</th>
-                <th>従業員負担額合計</th>
-                <th>事業主負担額合計</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of companySummaryTable.rows; let i = index" [class.stripe]="i % 2 === 1" [class.total-row]="row.label === '合計'">
-                <td>{{ row.label }}</td>
-                <td class="right">{{ row.notice | number }}</td>
-                <td class="right">{{ row.employee | number }}</td>
-                <td class="right">{{ row.employer | number }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p style="color: #666; font-size: 12px; margin-top: 8px;">※この計算は概算です。正確な値は年金機構からの納入告知書を確認してください。</p>
+        <div *ngIf="error" class="error-message">
+          {{ error }}
         </div>
-        <ng-template #noCompanySummary>
-          <p>会社全体の保険料明細がありません。</p>
-        </ng-template>
-      </div>
 
-      <div *ngIf="!isLoading && hasBonus && companySummaryTable.rows.length > 0 && !hasUnconfirmedRemuneration && companyBonusSummaryTable.rows.length > 0" class="company-bonus-summary">
-        <ng-container *ngIf="companyBonusSummaryTable.rows.length > 0; else noBonusSummary">
-          <h3>会社全体の賞与分保険料明細</h3>
-          <table class="summary-table">
-            <thead>
-              <tr>
-                <th>保険種別</th>
-                <th>納入告知額（合計納付額）</th>
-                <th>従業員負担額合計</th>
-                <th>事業主負担額合計</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of companyBonusSummaryTable.rows; let i = index" [class.stripe]="i % 2 === 1" [class.total-row]="row.label === '合計'">
-                <td>{{ row.label }}</td>
-                <td class="right">{{ row.notice | number }}</td>
-                <td class="right">{{ row.employee | number }}</td>
-                <td class="right">{{ row.employer | number }}</td>
-              </tr>
-            </tbody>
+        <div *ngIf="isLoading" class="loading-spinner">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div class="table-container" *ngIf="!isLoading">
+
+
+          <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+            <!-- 氏名 -->
+            <ng-container matColumnDef="fullName">
+              <th mat-header-cell *matHeaderCellDef>氏名</th>
+              <td mat-cell *matCellDef="let element">{{element.fullName}}</td>
+              <td mat-footer-cell *matFooterCellDef>合計</td>
+            </ng-container>
+
+            <!-- 社員番号 -->
+            <ng-container matColumnDef="employeeId">
+              <th mat-header-cell *matHeaderCellDef>社員番号</th>
+              <td mat-cell *matCellDef="let element">{{element.employeeId}}</td>
+              <td mat-footer-cell *matFooterCellDef></td>
+            </ng-container>
+
+            <!-- 所属 -->
+            <ng-container matColumnDef="department">
+              <th mat-header-cell *matHeaderCellDef>所属</th>
+              <td mat-cell *matCellDef="let element">{{element.department}}</td>
+              <td mat-footer-cell *matFooterCellDef></td>
+            </ng-container>
+
+            <!-- 基本給 -->
+            <ng-container matColumnDef="baseSalary">
+              <th mat-header-cell *matHeaderCellDef>基本給</th>
+              <td mat-cell *matCellDef="let element">{{element.baseSalary | number:'1.0-0'}}</td>
+              <td mat-footer-cell *matFooterCellDef></td>
+            </ng-container>
+
+            
+
+            <!-- 厚生年金等級 -->
+            <ng-container matColumnDef="pensionGrade">
+              <th mat-header-cell *matHeaderCellDef>厚生年金等級</th>
+              <td mat-cell *matCellDef="let element">
+                <ng-container *ngIf="element.newGrade !== null && element.newGrade !== undefined && element.newGrade !== '' && element.newGrade !== 0 && element.newGrade !== '未設定'; else notSetPension">
+                  {{element.newGrade}}
+                </ng-container>
+                <ng-template #notSetPension>
+                  <span style="color: red;">未設定</span>
+                </ng-template>
+              </td>
+              <td mat-footer-cell *matFooterCellDef></td>
+            </ng-container>
+
+            <!-- 報酬月額 -->
+            <ng-container matColumnDef="standardMonthlyRemuneration">
+              <th mat-header-cell *matHeaderCellDef>報酬月額</th>
+              <td mat-cell *matCellDef="let element">
+                <ng-container *ngIf="element.standardMonthlyRemuneration !== null && element.standardMonthlyRemuneration !== undefined; else notConfirmed">
+                  {{element.standardMonthlyRemuneration | number:'1.0-0'}}
+                </ng-container>
+                <ng-template #notConfirmed>
+                  <span style="color: red;">未登録</span>
+                </ng-template>
+              </td>
+              <td mat-footer-cell *matFooterCellDef>{{ totalStandardMonthlyRemuneration | currency:'JPY' }}</td>
+            </ng-container>
+
+            <!-- 等級 -->
+            <ng-container matColumnDef="grade">
+              <th mat-header-cell *matHeaderCellDef>健康保険等級</th>
+              <td mat-cell *matCellDef="let element">
+                <ng-container *ngIf="element.grade !== '未設定'; else notSetGrade">
+                  {{element.grade}}
+                </ng-container>
+                <ng-template #notSetGrade>
+                  <span style="color: red;">未設定</span>
+                </ng-template>
+              </td>
+              <td mat-footer-cell *matFooterCellDef></td>
+            </ng-container>
+
+            <!-- 備考 -->
+            <ng-container matColumnDef="note">
+              <th mat-header-cell *matHeaderCellDef>備考</th>
+              <td mat-cell *matCellDef="let element">
+                <span *ngIf="element.note" style="color: red;">{{element.note}}</span>
+              </td>
+              <td mat-footer-cell *matFooterCellDef></td>
+            </ng-container>
+
+            <!-- アクション -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>操作</th>
+              <td mat-cell *matCellDef="let element">
+                <button mat-icon-button color="primary" matTooltip="編集" (click)="onEdit(element)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+              </td>
+              <td mat-footer-cell *matFooterCellDef></td>
+            </ng-container>
+
+            <!-- 出力 -->
+            <ng-container matColumnDef="export">
+              <th mat-header-cell *matHeaderCellDef>出力</th>
+              <td mat-cell *matCellDef="let element">
+                <button mat-icon-button color="accent" matTooltip="CSV出力"
+                  [disabled]="element.standardMonthlyRemuneration === null || element.standardMonthlyRemuneration === undefined"
+                  (click)="downloadIndividualCsv(element)">
+                  <mat-icon>table_view</mat-icon>
+                </button>
+                <button mat-icon-button color="accent" matTooltip="PDF出力"
+                  [disabled]="element.standardMonthlyRemuneration === null || element.standardMonthlyRemuneration === undefined"
+                  (click)="downloadIndividualPdf(element)">
+                  <mat-icon>picture_as_pdf</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" matTooltip="賞与PDF出力"
+                  *ngIf="element.bonusAmount && element.bonusAmount > 0 && element.standardBonusAmount && element.standardBonusAmount > 0 && bonusCount && bonusCount > 0 && bonusCount <= 3"
+                  (click)="downloadIndividualBonusPdf(element)">
+                  <mat-icon>picture_as_pdf</mat-icon>
+                </button>
+              </td>
+              <td mat-footer-cell *matFooterCellDef></td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            <tr mat-footer-row *matFooterRowDef="displayedColumns"></tr>
           </table>
-        </ng-container>
-        <ng-template #noBonusSummary>
-          <p>会社全体の賞与分保険料明細がありません。</p>
-        </ng-template>
-      </div>
+        </div>
+
+        <div *ngIf="!isLoading && isAllConfirmed && !hasUnconfirmedRemuneration && companySummaryTable.rows.length > 0" class="company-summary">
+          <div *ngIf="companySummaryTable.rows.length > 0; else noCompanySummary">
+            <div style="display: flex; align-items: center; justify-content: flex-start;">
+              <h3 style="margin: 0 8px 0 0;">会社全体の保険料明細</h3>
+              <div class="button-container" *ngIf="isAllConfirmed">
+                <button mat-raised-button color="accent" (click)="downloadCsv()">CSV出力</button>
+              </div>
+            </div>
+            <table class="summary-table">
+              <thead>
+                <tr>
+                  <th>保険種別</th>
+                  <th>納入告知額（合計納付額）</th>
+                  <th>従業員負担額合計</th>
+                  <th>事業主負担額合計</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of companySummaryTable.rows; let i = index" [class.stripe]="i % 2 === 1" [class.total-row]="row.label === '合計'">
+                  <td>{{ row.label }}</td>
+                  <td class="right">{{ row.notice | number }}</td>
+                  <td class="right">{{ row.employee | number }}</td>
+                  <td class="right">{{ row.employer | number }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="color: #666; font-size: 12px; margin-top: 8px;">※この計算は概算です。正確な値は年金機構からの納入告知書を確認してください。</p>
+          </div>
+          <ng-template #noCompanySummary>
+            <p>会社全体の保険料明細がありません。</p>
+          </ng-template>
+        </div>
+
+        <div *ngIf="!isLoading && hasBonus && companySummaryTable.rows.length > 0 && !hasUnconfirmedRemuneration && companyBonusSummaryTable.rows.length > 0" class="company-bonus-summary">
+          <ng-container *ngIf="companyBonusSummaryTable.rows.length > 0; else noBonusSummary">
+            <h3>会社全体の賞与分保険料明細</h3>
+            <table class="summary-table">
+              <thead>
+                <tr>
+                  <th>保険種別</th>
+                  <th>納入告知額（合計納付額）</th>
+                  <th>従業員負担額合計</th>
+                  <th>事業主負担額合計</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of companyBonusSummaryTable.rows; let i = index" [class.stripe]="i % 2 === 1" [class.total-row]="row.label === '合計'">
+                  <td>{{ row.label }}</td>
+                  <td class="right">{{ row.notice | number }}</td>
+                  <td class="right">{{ row.employee | number }}</td>
+                  <td class="right">{{ row.employer | number }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </ng-container>
+          <ng-template #noBonusSummary>
+            <p>会社全体の賞与分保険料明細がありません。</p>
+          </ng-template>
+        </div>
+      </ng-container>
+      <ng-template #noCompanySetting>
+        <div class="alert alert-warning" style="margin: 32px 0; text-align: center; color: #b71c1c; font-size: 18px;">
+          会社設定が未登録です。<br>「設定」画面から会社情報を登録してください。
+        </div>
+      </ng-template>
     </mat-card-content>
   </mat-card>
 </div>

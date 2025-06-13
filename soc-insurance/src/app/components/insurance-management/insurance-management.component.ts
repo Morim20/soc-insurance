@@ -207,19 +207,19 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
     return this.dataSource.reduce((sum, row) => sum + (row.standardMonthlyRemuneration || 0), 0);
   }
   get totalHealthInsuranceEmployee(): number {
-    return this.dataSource.reduce((sum, row) => sum + (row.healthInsuranceEmployee || 0), 0);
+    return this.dataSource.filter(row => row.hasInsuranceDetail).reduce((sum, row) => sum + (row.healthInsuranceEmployee || 0), 0);
   }
   get totalHealthInsuranceEmployer(): number {
     return this.dataSource.reduce((sum, row) => sum + (row.healthInsuranceEmployer || 0), 0);
   }
   get totalNursingInsuranceEmployee(): number {
-    return this.dataSource.reduce((sum, row) => sum + (row.nursingInsuranceEmployee || 0), 0);
+    return this.dataSource.filter(row => row.hasInsuranceDetail).reduce((sum, row) => sum + (row.nursingInsuranceEmployee || 0), 0);
   }
   get totalPensionInsuranceEmployee(): number {
-    return this.dataSource.reduce((sum, row) => sum + (row.pensionInsuranceEmployee || 0), 0);
+    return this.dataSource.filter(row => row.hasInsuranceDetail).reduce((sum, row) => sum + (row.pensionInsuranceEmployee || 0), 0);
   }
   get totalEmployeeTotalDeduction(): number {
-    return this.dataSource.reduce((sum, row) => sum + (row.employeeTotalDeduction || 0), 0);
+    return this.dataSource.filter(row => row.hasInsuranceDetail).reduce((sum, row) => sum + (row.employeeTotalDeduction || 0), 0);
   }
 
   // 会社全体の保険料明細を表示するためのプロパティ
@@ -267,37 +267,50 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
   }
 
   get companySummaryTable() {
+    // 画面に表示されている従業員のデータのみを使用
+    const displayedRows = this.dataSource.filter(row => row.employeeId && row.hasInsuranceDetail);
+
     // 健康保険＋介護保険（従業員負担）
-    const totalHealthNursingEmployeeRaw = this.dataSource.reduce((sum, row) => {
-      return sum + ((row.healthInsuranceEmployee || 0) + (row.nursingInsuranceEmployee || 0));
+    const totalHealthNursingEmployee = displayedRows.reduce((sum, row) => {
+      const healthEmployee = row.healthInsuranceEmployee || 0;
+      const nursingEmployee = row.nursingInsuranceEmployee || 0;
+      // 個人ごとに端数処理してから合計
+      return sum + this.roundAmount(healthEmployee + nursingEmployee);
     }, 0);
-    const totalHealthNursingEmployee = this.roundAmount(totalHealthNursingEmployeeRaw);
+
+
 
     // 健康保険＋介護保険（会社負担）
-    const totalHealthNursingEmployer = this.dataSource.reduce((sum, row) =>
-      sum + (row.healthInsuranceEmployer || 0) + (row.nursingInsuranceEmployer || 0), 0);
+    const totalHealthNursingEmployer = displayedRows.reduce((sum, row) => {
+      const healthEmployer = row.healthInsuranceEmployer || 0;
+      const nursingEmployer = row.nursingInsuranceEmployer || 0;
+      return sum + healthEmployer + nursingEmployer;
+    }, 0);
 
-    // 健康保険＋介護保険（納入告知額＝従業員＋会社）
-    const totalHealthNursingNotice = Math.floor(totalHealthNursingEmployee + totalHealthNursingEmployer);
+
+    // 健康保険＋介護保険（納入告知額）
+    const totalHealthNursingNotice = Math.floor(totalHealthNursingEmployer * 2);
+
 
     // 厚生年金保険（従業員負担）
-    const totalPensionEmployeeRaw = this.dataSource.reduce((sum, row) => sum + (row.pensionInsuranceEmployee || 0), 0);
-    const totalPensionEmployee = this.roundAmount(totalPensionEmployeeRaw);
+    const totalPensionEmployee = displayedRows.reduce((sum, row) =>
+      sum + this.roundAmount(row.pensionInsuranceEmployee || 0), 0);
+
+
+
     // 厚生年金保険（会社負担）
-    const totalPensionEmployer = this.dataSource.reduce((sum, row) => sum + (row.pensionInsuranceEmployer || 0), 0);
+    const totalPensionEmployer = displayedRows.reduce((sum, row) => 
+      sum + (row.pensionInsuranceEmployer || 0), 0);
+
     // 厚生年金保険（納入告知額）
-    const totalPensionNotice = Math.floor(totalPensionEmployee + totalPensionEmployer);
+    const totalPensionNotice = Math.floor(totalPensionEmployer * 2);
+
 
     // 合計納入告知額
     const totalNotice = totalHealthNursingNotice + totalPensionNotice;
     const totalEmployee = totalHealthNursingEmployee + totalPensionEmployee;
     const totalEmployer = totalNotice - totalEmployee;
 
-    // 内訳（注釈用）
-    const healthEmployee = this.dataSource.reduce((sum, row) => !this.isActuallyNursingInsuranceEligible(row.insuranceEligibility) ? sum + (row.healthInsuranceEmployee || 0) : sum, 0);
-    const healthEmployer = this.dataSource.reduce((sum, row) => !this.isActuallyNursingInsuranceEligible(row.insuranceEligibility) ? sum + (row.healthInsuranceEmployer || 0) : sum, 0);
-    const nursingEmployee = this.dataSource.reduce((sum, row) => this.isActuallyNursingInsuranceEligible(row.insuranceEligibility) ? sum + (row.nursingInsuranceEmployee || 0) : sum, 0);
-    const nursingEmployer = this.dataSource.reduce((sum, row) => this.isActuallyNursingInsuranceEligible(row.insuranceEligibility) ? sum + (row.nursingInsuranceEmployer || 0) : sum, 0);
 
     return {
       rows: [
@@ -305,11 +318,7 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
           label: '健康保険＋介護保険',
           notice: totalHealthNursingNotice,
           employee: totalHealthNursingEmployee,
-          employer: totalHealthNursingNotice - totalHealthNursingEmployee,
-          healthEmployee,
-          healthEmployer,
-          nursingEmployee,
-          nursingEmployer
+          employer: totalHealthNursingNotice - totalHealthNursingEmployee
         },
         {
           label: '厚生年金保険',
@@ -320,8 +329,8 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         {
           label: '合計',
           notice: totalNotice,
-          employee: totalHealthNursingEmployee + totalPensionEmployee,
-          employer: totalNotice - (totalHealthNursingEmployee + totalPensionEmployee)
+          employee: totalEmployee,
+          employer: totalEmployer
         }
       ]
     };
@@ -336,12 +345,10 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
       } else {
         console.error('会社設定が見つかりません');
         this.error = '会社設定が見つかりません。会社設定画面で確認してください。';
-        this.router.navigate(['/admin/settings']);
       }
     } catch (error) {
       console.error('会社設定の取得に失敗:', error);
       this.error = '会社設定の取得に失敗しました。';
-      this.router.navigate(['/admin/settings']);
     }
   }
 
@@ -395,8 +402,11 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         const period = { year: this.selectedYear, month: this.selectedMonth };
         const birthDate = employee.employeeBasicInfo.birthDate;
         const age = birthDate ? this.calculateAge(birthDate) : 0;
-        // FirestoreからinsuranceDetailsを取得
+
+        // FirestoreからinsuranceDetailを取得
         const insuranceDetail = await this.employeeService.getInsuranceDetail(employee.id, period);
+
+
         // データがなければ未確定・未設定で埋める
         if (!insuranceDetail) {
           // insuranceStatusのgradeを厳密に判定
@@ -443,10 +453,12 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
             bonusChildContribution: null,
             notes: eligibility.reason || '',
             variableWage: null,
-            insuranceEligibility: eligibility
+            insuranceEligibility: eligibility,
+            hasInsuranceDetail: false
           });
           continue;
         }
+
         // データがある場合はinsuranceDetailのgradeを優先
         const gradeForCalc = Number(insuranceDetail.grade) || 0;
         const gradeForDisplay = (Number.isFinite(gradeForCalc) && gradeForCalc > 0) ? gradeForCalc : '未設定';
@@ -464,6 +476,9 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
           const end = leaveEnd ? new Date(leaveEnd) : null;
           isOnLeave = today >= start && (!end || today <= end);
         }
+
+        // 免除フラグ（insuranceDetailにexemptionがtrueなら免除）
+        const isExempted = insuranceDetail?.exemption === true;
 
         let standardMonthlyRemuneration: number | null = null;
         let baseSalary: number | null = null;
@@ -484,7 +499,8 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         const bonusPensionInsuranceEmployer = insuranceDetail?.bonusPensionInsuranceEmployer ?? 0;
         const bonusChildContribution = insuranceDetail?.bonusChildContribution ?? 0;
 
-        if (isOnLeave) {
+        // 免除ありの場合は0円でpush（すでに対応済み）
+        if (isOnLeave && isExempted) {
           this.insuranceData.push({
             id: employee.id,
             employeeId: employee.employeeBasicInfo.employeeId,
@@ -516,20 +532,15 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
             bonusPensionInsuranceEmployee,
             bonusPensionInsuranceEmployer,
             bonusChildContribution,
-            notes: '育児休暇中のため',
-            insuranceEligibility: eligibility
+            notes: '育児休暇中（免除）',
+            insuranceEligibility: eligibility,
+            hasInsuranceDetail: true
           });
           continue;
         }
 
-        const result = this.insuranceCalculationService.calculateInsurance({
-          prefecture: this.companyPrefecture || '東京都',
-          grade: gradeForCalc,
-          age,
-          hasChildren: false
-        });
-
-        this.insuranceData.push(result ? {
+        // Firestoreの値を必ず使う（免除なし・免除あり両方）
+        this.insuranceData.push({
           id: employee.id,
           employeeId: employee.employeeBasicInfo.employeeId,
           fullName: `${employee.employeeBasicInfo.lastNameKanji} ${employee.employeeBasicInfo.firstNameKanji}`,
@@ -538,14 +549,14 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
           newGrade: newGradeForDisplay,
           baseSalary: baseSalary,
           standardMonthlyRemuneration: standardMonthlyRemuneration,
-          healthInsuranceEmployee: result.healthInsurance.employee,
-          healthInsuranceEmployer: result.healthInsurance.employer,
-          nursingInsuranceEmployee: result.nursingInsurance.employee,
-          nursingInsuranceEmployer: result.nursingInsurance.employer,
-          pensionInsuranceEmployee: result.pensionInsurance.employee,
-          pensionInsuranceEmployer: result.pensionInsurance.employer,
-          childContribution: result.childContribution,
-          employeeTotalDeduction: result.total.employee,
+          healthInsuranceEmployee: insuranceDetail.healthInsuranceEmployee ?? 0,
+          healthInsuranceEmployer: insuranceDetail.healthInsuranceEmployer ?? 0,
+          nursingInsuranceEmployee: insuranceDetail.nursingInsuranceEmployee ?? 0,
+          nursingInsuranceEmployer: insuranceDetail.nursingInsuranceEmployer ?? 0,
+          pensionInsuranceEmployee: insuranceDetail.pensionInsuranceEmployee ?? 0,
+          pensionInsuranceEmployer: insuranceDetail.pensionInsuranceEmployer ?? 0,
+          childContribution: insuranceDetail.childContribution ?? 0,
+          employeeTotalDeduction: insuranceDetail.employeeTotalDeduction ?? 0,
           period,
           age,
           isNursingInsuranceEligible: age >= 40 && age < 65,
@@ -561,42 +572,17 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
           bonusPensionInsuranceEmployer,
           bonusChildContribution,
           notes,
-          insuranceEligibility: eligibility
-        } : {
-          id: employee.id,
-          employeeId: employee.employeeBasicInfo.employeeId,
-          fullName: `${employee.employeeBasicInfo.lastNameKanji} ${employee.employeeBasicInfo.firstNameKanji}`,
-          department: employee.employmentInfo?.department || '未設定',
-          grade: gradeForDisplay,
-          newGrade: newGradeForDisplay,
-          baseSalary: baseSalary,
-          standardMonthlyRemuneration: standardMonthlyRemuneration,
-          healthInsuranceEmployee: 0,
-          healthInsuranceEmployer: 0,
-          nursingInsuranceEmployee: 0,
-          nursingInsuranceEmployer: 0,
-          pensionInsuranceEmployee: 0,
-          pensionInsuranceEmployer: 0,
-          childContribution: 0,
-          employeeTotalDeduction: 0,
-          period,
-          age,
-          isNursingInsuranceEligible: age >= 40 && age < 65,
-          standardMonthlyWage: insuranceStatus?.standardMonthlyWage || null,
-          bonusAmount,
-          standardBonusAmount,
-          variableWage,
-          bonusHealthInsuranceEmployee,
-          bonusHealthInsuranceEmployer,
-          bonusNursingInsuranceEmployee,
-          bonusNursingInsuranceEmployer,
-          bonusPensionInsuranceEmployee,
-          bonusPensionInsuranceEmployer,
-          bonusChildContribution,
-          notes,
-          insuranceEligibility: eligibility
+          insuranceEligibility: eligibility,
+          hasInsuranceDetail: true
         });
       }
+
+      // FirestoreにinsuranceDetailがあるかチェック
+      const period = { year: this.selectedYear, month: this.selectedMonth };
+      await Promise.all(this.insuranceData.map(async (row) => {
+        const insuranceDetail = await this.employeeService.getInsuranceDetail(row.id, period);
+        row.hasInsuranceDetail = !!insuranceDetail;
+      }));
     } catch (error) {
       console.error('保険料データの読み込みに失敗しました:', error);
     } finally {
@@ -907,7 +893,6 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
       // Firestoreから最新のinsuranceDetailを取得
       const period = { year: this.selectedYear, month: this.selectedMonth };
       const insuranceDetail = await this.employeeService.getInsuranceDetail(element.id, period);
-      console.log('insuranceDetail:', insuranceDetail); // デバッグ用
       const baseSalary = insuranceDetail?.baseSalary ?? '';
       const allowances = insuranceDetail?.allowances ?? '';
       const commutingAllowance = insuranceDetail?.commutingAllowance ?? '';
@@ -962,9 +947,6 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         element.notes || ''
       ].map(v => String(v));
 
-      // デバッグ用
-      console.log('CSVヘッダー:', headers);
-      console.log('CSVデータ:', row);
 
       const csvContent = [headers.join('\t'), row.join('\t')].join('\r\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1089,33 +1071,37 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
   }
 
   get companyBonusSummaryTable() {
-    const bonusRows = this.dataSource.filter(row => (row.bonusAmount || 0) > 0);
+    // 画面に表示されている従業員のデータのみを使用
+    const displayedRows = this.dataSource.filter(row => row.employeeId && row.hasInsuranceDetail);
+    const bonusRows = displayedRows.filter(row => (row.bonusAmount || 0) > 0);
+
 
     // 健康保険＋介護保険（従業員負担）
-    const totalHealthNursingEmployeeRaw = bonusRows.reduce((sum, row) => {
-      return sum
-        + (row.bonusHealthInsuranceEmployee || 0)
-        + (row.bonusNursingInsuranceEmployee || 0);
+    const totalHealthNursingEmployee = bonusRows.reduce((sum, row) => {
+      return sum + this.roundAmount((row.bonusHealthInsuranceEmployee || 0) + (row.bonusNursingInsuranceEmployee || 0));
     }, 0);
-    const totalHealthNursingEmployee = this.roundAmount(totalHealthNursingEmployeeRaw);
+
+    
 
     // 健康保険＋介護保険（会社負担）
     const totalHealthNursingEmployer = bonusRows.reduce((sum, row) => {
-      return sum
-        + (row.bonusHealthInsuranceEmployer || 0)
-        + (row.bonusNursingInsuranceEmployer || 0);
+      return sum + (row.bonusHealthInsuranceEmployer || 0) + (row.bonusNursingInsuranceEmployer || 0);
     }, 0);
 
     // 健康保険＋介護保険（納入告知額）
-    const totalHealthNursingNotice = Math.floor(totalHealthNursingEmployee + totalHealthNursingEmployer);
+    const totalHealthNursingNotice = Math.floor(totalHealthNursingEmployer * 2);
 
     // 厚生年金保険（従業員負担）
-    const totalPensionEmployeeRaw = bonusRows.reduce((sum, row) => sum + (row.bonusPensionInsuranceEmployee || 0), 0);
-    const totalPensionEmployee = this.roundAmount(totalPensionEmployeeRaw);
+    const totalPensionEmployee = bonusRows.reduce((sum, row) =>
+      sum + this.roundAmount(row.bonusPensionInsuranceEmployee || 0), 0);
+
+
     // 厚生年金保険（会社負担）
-    const totalPensionEmployer = bonusRows.reduce((sum, row) => sum + (row.bonusPensionInsuranceEmployer || 0), 0);
+    const totalPensionEmployer = bonusRows.reduce((sum, row) => 
+      sum + (row.bonusPensionInsuranceEmployer || 0), 0);
+
     // 厚生年金保険（納入告知額）
-    const totalPensionNotice = Math.floor(totalPensionEmployee + totalPensionEmployer);
+    const totalPensionNotice = Math.floor(totalPensionEmployer * 2);
 
     // 合計
     const totalNotice = totalHealthNursingNotice + totalPensionNotice;
@@ -1166,5 +1152,11 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
       return officeDoc.data()['actualEmployeeCount'] || 0;
     }
     return 0;
+  }
+
+  // 画面の表示制御用プロパティを追加
+  get isCompanySettingAvailable(): boolean {
+    // 会社名や所在地など、最低限必要な設定が未登録ならfalseを返す
+    return !!this.companyName && !!this.companyPrefecture;
   }
 }
