@@ -294,10 +294,10 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
     const totalEmployer = totalNotice - totalEmployee;
 
     // 内訳（注釈用）
-    const healthEmployee = this.dataSource.reduce((sum, row) => !row.isNursingInsuranceEligible ? sum + (row.healthInsuranceEmployee || 0) : sum, 0);
-    const healthEmployer = this.dataSource.reduce((sum, row) => !row.isNursingInsuranceEligible ? sum + (row.healthInsuranceEmployer || 0) : sum, 0);
-    const nursingEmployee = this.dataSource.reduce((sum, row) => row.isNursingInsuranceEligible ? sum + (row.nursingInsuranceEmployee || 0) : sum, 0);
-    const nursingEmployer = this.dataSource.reduce((sum, row) => row.isNursingInsuranceEligible ? sum + (row.nursingInsuranceEmployer || 0) : sum, 0);
+    const healthEmployee = this.dataSource.reduce((sum, row) => !this.isActuallyNursingInsuranceEligible(row.insuranceEligibility) ? sum + (row.healthInsuranceEmployee || 0) : sum, 0);
+    const healthEmployer = this.dataSource.reduce((sum, row) => !this.isActuallyNursingInsuranceEligible(row.insuranceEligibility) ? sum + (row.healthInsuranceEmployer || 0) : sum, 0);
+    const nursingEmployee = this.dataSource.reduce((sum, row) => this.isActuallyNursingInsuranceEligible(row.insuranceEligibility) ? sum + (row.nursingInsuranceEmployee || 0) : sum, 0);
+    const nursingEmployer = this.dataSource.reduce((sum, row) => this.isActuallyNursingInsuranceEligible(row.insuranceEligibility) ? sum + (row.nursingInsuranceEmployer || 0) : sum, 0);
 
     return {
       rows: [
@@ -377,11 +377,15 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         // 退職日が選択された月より前の場合は除外
         if (endDate && endDate < targetMonthStart) continue;
 
-        // 保険加入判定
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = today.getMonth() + 1;
-        const eligibility = await this.insuranceEligibilityService.getInsuranceEligibility(employee, year, month).toPromise();
+        // 保険加入判定（選択された年月で判定）
+        const officeEmployeeCount = await this.getOfficeEmployeeCount();
+        const eligibility = await this.insuranceEligibilityService.getInsuranceEligibility(
+          employee,
+          this.selectedYear,
+          this.selectedMonth,
+          officeEmployeeCount
+        ).toPromise();
+
         if (!eligibility || (!eligibility.healthInsurance && !eligibility.pensionInsurance)) {
           continue; // 加入していない場合や判定失敗時はスキップ
         }
@@ -396,10 +400,17 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         // データがなければ未確定・未設定で埋める
         if (!insuranceDetail) {
           // insuranceStatusのgradeを厳密に判定
-          const gradeValue = Number(insuranceStatus?.grade);
-          const gradeForDisplay = (Number.isFinite(gradeValue) && gradeValue > 0) ? gradeValue : '未設定';
-          const newGradeValue = Number(insuranceStatus?.newGrade);
-          const newGradeForDisplay = (Number.isFinite(newGradeValue) && newGradeValue > 0) ? newGradeValue : '未設定';
+          const gradeForCalc = Number(insuranceStatus?.grade) || 0;
+          const gradeForDisplay = insuranceStatus?.grade || '未設定';
+          const newGradeForCalc = Number(insuranceStatus?.newGrade) || 0;
+          const newGradeForDisplay = insuranceStatus?.newGrade || '未設定';
+
+          // 等級が無効な場合はスキップ
+          if (!gradeForCalc || gradeForCalc <= 0) {
+            console.warn(`従業員 ${employee.employeeBasicInfo.employeeId} の等級が無効です:`, gradeForCalc);
+            continue;
+          }
+
           this.insuranceData.push({
             id: employee.id,
             employeeId: employee.employeeBasicInfo.employeeId,
@@ -409,17 +420,17 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
             newGrade: newGradeForDisplay,
             baseSalary: employee.employmentInfo?.baseSalary ?? null,
             standardMonthlyRemuneration: null,
-            healthInsuranceEmployee: null,
-            healthInsuranceEmployer: null,
-            nursingInsuranceEmployee: null,
-            nursingInsuranceEmployer: null,
-            pensionInsuranceEmployee: null,
-            pensionInsuranceEmployer: null,
+            healthInsuranceEmployee: eligibility.healthInsurance ? null : 0,
+            healthInsuranceEmployer: eligibility.healthInsurance ? null : 0,
+            nursingInsuranceEmployee: eligibility.nursingInsurance ? null : 0,
+            nursingInsuranceEmployer: eligibility.nursingInsurance ? null : 0,
+            pensionInsuranceEmployee: eligibility.pensionInsurance ? null : 0,
+            pensionInsuranceEmployer: eligibility.pensionInsurance ? null : 0,
             childContribution: null,
             employeeTotalDeduction: null,
             period,
             age,
-            isNursingInsuranceEligible: age >= 40 && age < 65,
+            isNursingInsuranceEligible: eligibility.nursingInsurance,
             standardMonthlyWage: insuranceStatus?.standardMonthlyWage || null,
             bonusAmount: null,
             standardBonusAmount: null,
@@ -430,17 +441,17 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
             bonusPensionInsuranceEmployee: null,
             bonusPensionInsuranceEmployer: null,
             bonusChildContribution: null,
-            notes: '',
-            variableWage: null
+            notes: eligibility.reason || '',
+            variableWage: null,
+            insuranceEligibility: eligibility
           });
           continue;
         }
         // データがある場合はinsuranceDetailのgradeを優先
-        const gradeValue = Number(insuranceDetail.grade);
-        const gradeForDisplay = (Number.isFinite(gradeValue) && gradeValue > 0) ? gradeValue : '未設定';
-        const newGradeValue = Number(insuranceDetail.newGrade);
-        const newGradeForDisplay = (Number.isFinite(newGradeValue) && newGradeValue > 0) ? newGradeValue : '未設定';
-        const gradeForCalc = typeof insuranceStatus?.grade === 'number' ? insuranceStatus.grade : 0;
+        const gradeForCalc = Number(insuranceDetail.grade) || 0;
+        const gradeForDisplay = (Number.isFinite(gradeForCalc) && gradeForCalc > 0) ? gradeForCalc : '未設定';
+        const newGradeForCalc = Number(insuranceDetail.newGrade) || 0;
+        const newGradeForDisplay = (Number.isFinite(newGradeForCalc) && newGradeForCalc > 0) ? newGradeForCalc : '未設定';
 
         // 育休・産休中判定
         const leaveType = employee.specialAttributes?.leaveType;
@@ -505,7 +516,8 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
             bonusPensionInsuranceEmployee,
             bonusPensionInsuranceEmployer,
             bonusChildContribution,
-            notes: '育児休暇中のため'
+            notes: '育児休暇中のため',
+            insuranceEligibility: eligibility
           });
           continue;
         }
@@ -548,7 +560,8 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
           bonusPensionInsuranceEmployee,
           bonusPensionInsuranceEmployer,
           bonusChildContribution,
-          notes
+          notes,
+          insuranceEligibility: eligibility
         } : {
           id: employee.id,
           employeeId: employee.employeeBasicInfo.employeeId,
@@ -580,7 +593,8 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
           bonusPensionInsuranceEmployee,
           bonusPensionInsuranceEmployer,
           bonusChildContribution,
-          notes
+          notes,
+          insuranceEligibility: eligibility
         });
       }
     } catch (error) {
@@ -1139,5 +1153,18 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
 
   get hasUnconfirmedRemuneration(): boolean {
     return this.dataSource.some(row => row.standardMonthlyRemuneration === null || row.standardMonthlyRemuneration === undefined);
+  }
+
+  // 介護保険の共通判定メソッドを画面用にラップ
+  isActuallyNursingInsuranceEligible(eligibility: any): boolean {
+    return this.insuranceEligibilityService.isActuallyNursingInsuranceEligible(eligibility);
+  }
+
+  async getOfficeEmployeeCount(): Promise<number> {
+    const officeDoc = await getDoc(doc(this.firestore, 'settings', 'office'));
+    if (officeDoc.exists()) {
+      return officeDoc.data()['actualEmployeeCount'] || 0;
+    }
+    return 0;
   }
 }

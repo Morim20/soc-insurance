@@ -19,6 +19,7 @@ import { Observable } from 'rxjs';
 import aichiGradesData from '../../services/23aichi_insurance_grades.json';
 import pensionGradesData from '../../services/pension_grades.json';
 import { AuthService } from '../../services/auth.service';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-employee-detail',
@@ -47,6 +48,8 @@ export class EmployeeDetailComponent implements OnInit {
   standardMonthlyWage: number | null = null;
   public aichiGrades: { [key: string]: { standardMonthlyWage: number } } = aichiGradesData;
   public pensionGrades: { [key: string]: { standardMonthlyWage: number } } = pensionGradesData;
+  public todayYear: number = new Date().getFullYear();
+  public todayMonth: number = new Date().getMonth() + 1;
 
   editingSection: Record<string, boolean> = {
     basicInfo: false,
@@ -88,6 +91,25 @@ export class EmployeeDetailComponent implements OnInit {
     return null;
   }
 
+  // 退職予定日が勤務開始日より前ならエラー
+  endDateAfterStartDateValidator: ValidatorFn = (group: AbstractControl) => {
+    const start = group.get('startDate')?.value;
+    const end = group.get('endDate')?.value;
+    if (start && end) {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      if (endDate < startDate) {
+        group.get('endDate')?.setErrors({ endBeforeStart: true });
+        return { endBeforeStart: true };
+      } else {
+        if (group.get('endDate')?.hasError('endBeforeStart')) {
+          group.get('endDate')?.setErrors(null);
+        }
+      }
+    }
+    return null;
+  };
+
   constructor(
     private route: ActivatedRoute,
     private employeeService: EmployeeService,
@@ -95,7 +117,8 @@ export class EmployeeDetailComponent implements OnInit {
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
     private insuranceEligibilityService: InsuranceEligibilityService,
-    private authService: AuthService
+    private authService: AuthService,
+    private firestore: Firestore
   ) {}
 
   async loadDepartments() {
@@ -112,6 +135,26 @@ export class EmployeeDetailComponent implements OnInit {
         duration: 3000
       });
     }
+  }
+
+  // どんな型でもDate型に変換する安全な関数
+  private toDateSafe(val: any): Date | null {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    if (typeof val.toDate === 'function') return val.toDate();
+    if (typeof val === 'string') {
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  }
+
+  async getOfficeEmployeeCount(): Promise<number> {
+    const officeDoc = await getDoc(doc(this.firestore, 'settings', 'office'));
+    if (officeDoc.exists()) {
+      return officeDoc.data()['actualEmployeeCount'] || 0;
+    }
+    return 0;
   }
 
   async ngOnInit() {
@@ -144,6 +187,7 @@ export class EmployeeDetailComponent implements OnInit {
       employmentType: ['', Validators.required],
       department: ['', Validators.required],
       startDate: ['', Validators.required],
+      endDate: [null],
       weeklyHours: ['', [Validators.required, Validators.min(1), Validators.max(168)]],
       monthlyWorkDays: ['', [Validators.required, Validators.min(1), Validators.max(31)]],
       expectedEmploymentMonths: ['', [Validators.min(1)]],
@@ -161,7 +205,7 @@ export class EmployeeDetailComponent implements OnInit {
       commutePassCost: [0],
       oneWayFare: [0],
       standardMonthlyRevisionDate: [null]
-    });
+    }, { validators: this.endDateAfterStartDateValidator });
 
     this.insuranceStatusForm = this.fb.group({
       healthInsurance: [''],
@@ -228,7 +272,11 @@ export class EmployeeDetailComponent implements OnInit {
           }));
         }
         this.basicInfoForm.patchValue(this.employee.employeeBasicInfo);
-        this.employmentInfoForm.patchValue(this.employee.employmentInfo);
+        this.employmentInfoForm.patchValue({
+          ...this.employee.employmentInfo,
+          startDate: this.toDateSafe(this.employee.employmentInfo.startDate),
+          endDate: this.toDateSafe(this.employee.employmentInfo.endDate)
+        });
         this.insuranceStatusForm.patchValue({
           ...this.employee.insuranceStatus,
           grade: this.employee.insuranceStatus.grade ?? null,
@@ -241,7 +289,8 @@ export class EmployeeDetailComponent implements OnInit {
         const today = new Date();
         const year = today.getFullYear();
         const month = today.getMonth() + 1;
-        this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee, year, month);
+        const officeEmployeeCount = await this.getOfficeEmployeeCount();
+        this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee, year, month, officeEmployeeCount);
         if (this.employee.dependents) {
           const dependentsArray = this.dependentsForm.get('dependents') as FormArray;
           this.employee.dependents.forEach(dep => {
@@ -321,7 +370,8 @@ export class EmployeeDetailComponent implements OnInit {
     if (section === 'employmentInfo' && this.employee) {
       this.employmentInfoForm.patchValue({
         ...this.employee.employmentInfo,
-        startDate: this.employee.employmentInfo.startDate ? this.formatDateInput(this.employee.employmentInfo.startDate) : '',
+        startDate: this.toDateSafe(this.employee.employmentInfo.startDate),
+        endDate: this.toDateSafe(this.employee.employmentInfo.endDate),
         monthlyWorkDays: this.employee.employmentInfo.monthlyWorkDays || '',
         grade: this.employee.employmentInfo.grade || null
       });
@@ -456,7 +506,8 @@ export class EmployeeDetailComponent implements OnInit {
           const today = new Date();
           const year = today.getFullYear();
           const month = today.getMonth() + 1;
-          this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee, year, month);
+          const officeEmployeeCount = await this.getOfficeEmployeeCount();
+          this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee, year, month, officeEmployeeCount);
         }
       } catch (error) {
         console.error('保存エラー:', error);
@@ -542,10 +593,22 @@ export class EmployeeDetailComponent implements OnInit {
       try {
         const formValue = this.insuranceStatusForm.value;
         
+        // 現在の年月を取得
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+
+        // 介護保険の加入判定を厳密に行う
+        const isNursingEligible = this.isNursingInsuranceEligibleAt(
+          this.employee.employeeBasicInfo.birthDate,
+          year,
+          month
+        );
+        
         // 等級情報を厳密に保存
         const insuranceStatus: InsuranceStatus = {
           healthInsurance: formValue.healthInsurance,
-          nursingInsurance: formValue.nursingInsurance,
+          nursingInsurance: isNursingEligible, // 厳密な判定結果を使用
           pensionInsurance: formValue.pensionInsurance,
           qualificationAcquisitionDate: formValue.qualificationAcquisitionDate ? new Date(formValue.qualificationAcquisitionDate) : null,
           insuranceType: formValue.insuranceType,
@@ -569,11 +632,11 @@ export class EmployeeDetailComponent implements OnInit {
         if (this.employee) {
           this.insuranceStatusForm.patchValue({
             ...this.employee.insuranceStatus,
-            qualificationAcquisitionDate: this.employee.insuranceStatus.qualificationAcquisitionDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationAcquisitionDate) : '',
-            standardMonthlyRevisionDate: this.employee.insuranceStatus.standardMonthlyRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.standardMonthlyRevisionDate) : '',
-            insuranceQualificationDate: this.employee.insuranceStatus.insuranceQualificationDate ? this.formatDateInput(this.employee.insuranceStatus.insuranceQualificationDate) : '',
-            qualificationLossDate: this.employee.insuranceStatus.qualificationLossDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationLossDate) : '',
-            newRevisionDate: this.employee.insuranceStatus.newRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.newRevisionDate) : null
+            qualificationAcquisitionDate: this.employee.insuranceStatus?.qualificationAcquisitionDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationAcquisitionDate) : '',
+            standardMonthlyRevisionDate: this.employee.insuranceStatus?.standardMonthlyRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.standardMonthlyRevisionDate) : '',
+            insuranceQualificationDate: this.employee.insuranceStatus?.insuranceQualificationDate ? this.formatDateInput(this.employee.insuranceStatus.insuranceQualificationDate) : '',
+            qualificationLossDate: this.employee.insuranceStatus?.qualificationLossDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationLossDate) : '',
+            newRevisionDate: this.employee.insuranceStatus?.newRevisionDate ? this.formatDateInput(this.employee.insuranceStatus.newRevisionDate) : null
           });
         }
         
@@ -584,5 +647,14 @@ export class EmployeeDetailComponent implements OnInit {
         this.snackBar.open('保険情報の保存に失敗しました', '閉じる', { duration: 5000 });
       }
     }
+  }
+
+  // 介護保険の加入判定をテンプレートや他メソッドからも使えるようにpublicでラップ
+  public isNursingInsuranceEligibleAt(birthDate: Date | string | null, year: number, month: number): boolean {
+    return this.insuranceEligibilityService.isNursingInsuranceEligibleAt(birthDate, year, month);
+  }
+
+  public isActuallyNursingInsuranceEligible(eligibility: any): boolean {
+    return this.insuranceEligibilityService.isActuallyNursingInsuranceEligible(eligibility);
   }
 }

@@ -96,6 +96,18 @@ mat-checkbox {
   margin-bottom: 12px;
 }
 
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-column mat-form-field {
+  width: 100%;
+  min-width: 200px;
+  max-width: 400px;
+}
+
 // レスポンシブ対応
 @media (max-width: 900px) {
   .employee-form-container {
@@ -116,4 +128,16 @@ mat-checkbox {
   .form-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.employee-form-container {
+  padding: 16px;
+}
+
+.form-section {
+  padding: 16px;
+}
+
+.form-grid {
+  grid-template-columns: 1fr;
 } 

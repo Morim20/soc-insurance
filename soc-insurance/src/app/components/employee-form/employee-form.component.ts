@@ -107,6 +107,7 @@ export class EmployeeFormComponent implements OnInit {
         employmentType: ['', Validators.required],
         department: ['', Validators.required],
         startDate: [null, Validators.required],
+        endDate: [null],
         weeklyHours: ['', [Validators.required, Validators.min(1), Validators.max(168)]],
         monthlyWorkDays: ['', [Validators.required, Validators.min(1), Validators.max(31)]],
         expectedEmploymentMonths: ['', [Validators.min(1)]],
@@ -123,7 +124,7 @@ export class EmployeeFormComponent implements OnInit {
         commuteRoute: [''],
         commutePassCost: [0],
         oneWayFare: [0],
-      }),
+      }, { validators: this.endDateAfterStartDateValidator }),
       insuranceStatus: this.fb.group({
         healthInsurance: [''],
         nursingInsurance: [''],
@@ -221,6 +222,18 @@ export class EmployeeFormComponent implements OnInit {
     }
   }
 
+  // どんな型でもDate型に変換する安全な関数
+  private toDateSafe(val: any): Date | null {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    if (typeof val.toDate === 'function') return val.toDate();
+    if (typeof val === 'string') {
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  }
+
   async loadEmployee() {
     if (!this.employeeId) return;
 
@@ -234,28 +247,28 @@ export class EmployeeFormComponent implements OnInit {
         this.employeeForm.patchValue({
           employeeBasicInfo: {
             ...employee.employeeBasicInfo,
-            birthDate: employee.employeeBasicInfo.birthDate instanceof Timestamp ? employee.employeeBasicInfo.birthDate.toDate() : employee.employeeBasicInfo.birthDate,
-            hireDate: employee.employeeBasicInfo.hireDate instanceof Timestamp ? employee.employeeBasicInfo.hireDate.toDate() : employee.employeeBasicInfo.hireDate,
+            birthDate: this.toDateSafe(employee.employeeBasicInfo.birthDate),
+            hireDate: this.toDateSafe(employee.employeeBasicInfo.hireDate),
             department: employee.employmentInfo.department || ''
           },
           employmentInfo: {
             ...employee.employmentInfo,
             department: employee.employmentInfo.department || '',
-            startDate: employee.employmentInfo.startDate instanceof Timestamp ? employee.employmentInfo.startDate.toDate() : employee.employmentInfo.startDate,
-            endDate: employee.employmentInfo.endDate instanceof Timestamp ? employee.employmentInfo.endDate.toDate() : employee.employmentInfo.endDate
+            startDate: this.toDateSafe(employee.employmentInfo.startDate),
+            endDate: this.toDateSafe(employee.employmentInfo.endDate)
           },
           insuranceStatus: {
             ...employee.insuranceStatus,
-            qualificationAcquisitionDate: employee.insuranceStatus.qualificationAcquisitionDate instanceof Timestamp ? employee.insuranceStatus.qualificationAcquisitionDate.toDate() : employee.insuranceStatus.qualificationAcquisitionDate,
-            qualificationLossDate: employee.insuranceStatus.qualificationLossDate instanceof Timestamp ? employee.insuranceStatus.qualificationLossDate.toDate() : employee.insuranceStatus.qualificationLossDate,
-            standardMonthlyRevisionDate: employee.insuranceStatus.standardMonthlyRevisionDate instanceof Timestamp ? employee.insuranceStatus.standardMonthlyRevisionDate.toDate() : employee.insuranceStatus.standardMonthlyRevisionDate,
-            insuranceQualificationDate: employee.insuranceStatus.insuranceQualificationDate instanceof Timestamp ? employee.insuranceStatus.insuranceQualificationDate.toDate() : employee.insuranceStatus.insuranceQualificationDate
+            qualificationAcquisitionDate: this.toDateSafe(employee.insuranceStatus.qualificationAcquisitionDate),
+            qualificationLossDate: this.toDateSafe(employee.insuranceStatus.qualificationLossDate),
+            standardMonthlyRevisionDate: this.toDateSafe(employee.insuranceStatus.standardMonthlyRevisionDate),
+            insuranceQualificationDate: this.toDateSafe(employee.insuranceStatus.insuranceQualificationDate)
           },
           specialAttributes: {
             ...employee.specialAttributes,
-            leaveStartDate: employee.specialAttributes.leaveStartDate instanceof Timestamp ? employee.specialAttributes.leaveStartDate.toDate() : employee.specialAttributes.leaveStartDate,
-            leaveEndDate: employee.specialAttributes.leaveEndDate instanceof Timestamp ? employee.specialAttributes.leaveEndDate.toDate() : employee.specialAttributes.leaveEndDate,
-            reached70Date: employee.specialAttributes.reached70Date instanceof Timestamp ? employee.specialAttributes.reached70Date.toDate() : employee.specialAttributes.reached70Date
+            leaveStartDate: this.toDateSafe(employee.specialAttributes.leaveStartDate),
+            leaveEndDate: this.toDateSafe(employee.specialAttributes.leaveEndDate),
+            reached70Date: this.toDateSafe(employee.specialAttributes.reached70Date)
           }
         });
 
@@ -475,4 +488,24 @@ export class EmployeeFormComponent implements OnInit {
       }
     }
   }
+
+  // 退職予定日が勤務開始日より前ならエラー
+  endDateAfterStartDateValidator: ValidatorFn = (group: AbstractControl) => {
+    const start = group.get('startDate')?.value;
+    const end = group.get('endDate')?.value;
+    if (start && end) {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      if (endDate < startDate) {
+        group.get('endDate')?.setErrors({ endBeforeStart: true });
+        return { endBeforeStart: true };
+      } else {
+        // 他のバリデーションエラーがなければクリア
+        if (group.get('endDate')?.hasError('endBeforeStart')) {
+          group.get('endDate')?.setErrors(null);
+        }
+      }
+    }
+    return null;
+  };
 } 

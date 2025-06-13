@@ -94,6 +94,7 @@
         <p>雇用形態: {{ employee.employmentInfo.employmentType }}</p>
         <p>部署: {{ employee.employmentInfo.department }}</p>
         <p>勤務開始日: {{ employee.employmentInfo.startDate | date:'yyyy/MM/dd' }}</p>
+        <p>退職予定日: {{ employee.employmentInfo.endDate | date:'yyyy/MM/dd' }}</p>
         <p>週の所定労働時間: {{ employee.employmentInfo.weeklyHours }}</p>
         <p>月の所定労働日数: {{ employee.employmentInfo.monthlyWorkDays }}</p>
         <p>雇用見込み期間: {{ employee.employmentInfo.expectedEmploymentMonths ? employee.employmentInfo.expectedEmploymentMonths + 'ヶ月' : '未設定' }}</p>
@@ -127,6 +128,15 @@
           <input matInput [matDatepicker]="empStartPicker" formControlName="startDate">
           <mat-datepicker-toggle matSuffix [for]="empStartPicker"></mat-datepicker-toggle>
           <mat-datepicker #empStartPicker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="large-form-field">
+          <mat-label>退職予定日</mat-label>
+          <input matInput [matDatepicker]="empEndPicker" formControlName="endDate">
+          <mat-datepicker-toggle matSuffix [for]="empEndPicker"></mat-datepicker-toggle>
+          <mat-datepicker #empEndPicker></mat-datepicker>
+          <mat-error *ngIf="employmentInfoForm.get('endDate')?.hasError('endBeforeStart')">
+            退職予定日は勤務開始日以降の日付を入力してください
+          </mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline" class="large-form-field">
           <mat-label>週の所定労働時間</mat-label>
@@ -194,7 +204,12 @@
       <div *ngIf="!editingSection['insuranceStatus']">
         <p>加入判定: {{ (insuranceEligibility$ | async)?.reason }}</p>
         <p>健康保険: {{ (insuranceEligibility$ | async)?.healthInsurance ? '加入' : '未加入' }}</p>
-        <p>介護保険: {{ (insuranceEligibility$ | async)?.nursingInsurance ? '加入' : '未加入' }}</p>
+        <p>介護保険: 
+          <span *ngIf="insuranceEligibility$ | async as eligibility">
+            <span *ngIf="isActuallyNursingInsuranceEligible(eligibility)">加入</span>
+            <span *ngIf="!isActuallyNursingInsuranceEligible(eligibility)">未加入</span>
+          </span>
+        </p>
         <p>厚生年金: {{ (insuranceEligibility$ | async)?.pensionInsurance ? '加入' : '未加入' }}</p>
         <p>資格取得日: {{ employee.insuranceStatus.qualificationAcquisitionDate | date:'yyyy/MM/dd' }}</p>
         <p>保険種別: {{ employee.insuranceStatus.insuranceType }}</p>

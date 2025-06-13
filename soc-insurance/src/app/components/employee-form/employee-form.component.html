@@ -95,7 +95,7 @@
         <!-- 雇用情報 -->
         <div class="form-section">
           <h3>雇用情報</h3>
-          <div formGroupName="employmentInfo" class="form-grid">
+          <div formGroupName="employmentInfo" class="form-column">
             <mat-form-field>
               <mat-label>雇用形態 *</mat-label>
               <mat-select formControlName="employmentType" required>
@@ -126,6 +126,16 @@
               <mat-datepicker #startDatePicker></mat-datepicker>
               <mat-error *ngIf="employeeForm.get('employmentInfo.startDate')?.hasError('required')">
                 勤務開始日は必須です
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>退職予定日</mat-label>
+              <input matInput [matDatepicker]="endDatePicker" formControlName="endDate">
+              <mat-datepicker-toggle matSuffix [for]="endDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #endDatePicker></mat-datepicker>
+              <mat-error *ngIf="employeeForm.get('employmentInfo.endDate')?.hasError('endBeforeStart')">
+                退職予定日は勤務開始日以降の日付を入力してください
               </mat-error>
             </mat-form-field>
 

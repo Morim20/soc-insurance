@@ -256,12 +256,13 @@ interface Address {
                   <div *ngFor="let month of bonusMonthsFormArray.controls; let i = index" class="bonus-month-row">
                     <mat-form-field appearance="outline" class="full-width">
                       <mat-label>賞与支給月（{{i + 1}}回目）</mat-label>
-                      <input matInput type="number" [formControlName]="i" min="1" max="12" (change)="onBonusMonthChange()">
+                      <mat-select [formControlName]="i" (selectionChange)="onBonusMonthChange()">
+                        <mat-option *ngFor="let month of months" [value]="month.value">
+                          {{month.label}}
+                        </mat-option>
+                      </mat-select>
                       <mat-error *ngIf="month.hasError('required')">
                         支給月は必須です
-                      </mat-error>
-                      <mat-error *ngIf="month.hasError('min') || month.hasError('max')">
-                        1から12の間で入力してください
                       </mat-error>
                     </mat-form-field>
                   </div>
@@ -394,6 +395,20 @@ export class SettingsComponent implements OnInit {
   hasSettings = false;
   employeeCount = 0;
   private originalFormValues: any;
+  months = [
+    { value: 1, label: '1月' },
+    { value: 2, label: '2月' },
+    { value: 3, label: '3月' },
+    { value: 4, label: '4月' },
+    { value: 5, label: '5月' },
+    { value: 6, label: '6月' },
+    { value: 7, label: '7月' },
+    { value: 8, label: '8月' },
+    { value: 9, label: '9月' },
+    { value: 10, label: '10月' },
+    { value: 11, label: '11月' },
+    { value: 12, label: '12月' }
+  ];
 
   get departmentsFormArray() {
     return this.settingsForm.get('departments') as FormArray;
@@ -603,22 +618,39 @@ export class SettingsComponent implements OnInit {
       return true;
     }
     
-    const sortedMonths = [...months].sort((a, b) => a - b);
-    
     // 重複チェック
-    const uniqueMonths = [...new Set(sortedMonths)];
-    if (uniqueMonths.length !== sortedMonths.length) {
+    const uniqueMonths = [...new Set(months)];
+    if (uniqueMonths.length !== months.length) {
       this.snackBar.open('同じ月を重複して設定することはできません', '閉じる', {
         duration: 5000
       });
       return false;
     }
+
+    // 年度順（4月→3月）チェック
+    // 4月を起点にした年度順配列を作成
+    const fiscalOrder = [4,5,6,7,8,9,10,11,12,1,2,3];
+    let lastIndex = -1;
+    for (let i = 0; i < months.length; i++) {
+      const idx = fiscalOrder.indexOf(months[i]);
+      if (idx === -1) {
+        this.snackBar.open('賞与支給月は1～12の範囲で入力してください', '閉じる', { duration: 5000 });
+        return false;
+      }
+      if (idx <= lastIndex) {
+        this.snackBar.open('賞与支給月は年度順（4月→…→3月）で並べてください', '閉じる', { duration: 5000 });
+        return false;
+      }
+      lastIndex = idx;
+    }
     
-    // 3ヶ月以上の間隔チェック
-    for (let i = 1; i < sortedMonths.length; i++) {
-      const diff = sortedMonths[i] - sortedMonths[i - 1];
-      if (diff < 3) {
-        this.snackBar.open('賞与支給月は3ヶ月以上間隔を空けて設定してください', '閉じる', {
+    // 3か月超の間隔チェック
+    for (let i = 1; i < months.length; i++) {
+      const prevIdx = fiscalOrder.indexOf(months[i-1]);
+      const currIdx = fiscalOrder.indexOf(months[i]);
+      const diff = currIdx - prevIdx;
+      if (diff <= 3) {
+        this.snackBar.open('賞与支給月は3か月超の間隔を空けて設定してください', '閉じる', {
           duration: 5000
         });
         return false;

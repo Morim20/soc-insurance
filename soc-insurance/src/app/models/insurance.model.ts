@@ -33,4 +33,5 @@ export interface InsuranceData {
   bonusChildContribution?: number | null;
   notes?: string;
   variableWage?: number | null;
+  insuranceEligibility?: any; // 共通判定用（InsuranceEligibilityResult型にしてもOK）
 } 

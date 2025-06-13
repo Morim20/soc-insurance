@@ -7,6 +7,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { InsuranceEligibilityService } from '../../services/insurance-eligibility.service';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 
 interface EmployeeListItem {
   id?: string;
@@ -17,6 +18,7 @@ interface EmployeeListItem {
   employmentType?: string; // 雇用形態を追加
   insuranceEligible?: boolean; // 社会保険加入判定
   gradeSetCount?: number; // 等級が何個設定されているか
+  endDate?: Date | null; // 退職予定日
 }
 
 @Component({
@@ -38,20 +40,39 @@ export class EmployeesListComponent implements OnInit {
   employmentTypeOptions: string[] = [];
   departmentOptions: string[] = [];
 
-  constructor(private employeeService: EmployeeService, public router: Router, private insuranceEligibilityService: InsuranceEligibilityService) {}
+  constructor(
+    private employeeService: EmployeeService,
+    public router: Router,
+    private insuranceEligibilityService: InsuranceEligibilityService,
+    private firestore: Firestore
+  ) {}
+
+  // どんな型でもDate型に変換する安全な関数
+  toDateSafe(val: any): Date | null {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    if (typeof val.toDate === 'function') return val.toDate();
+    if (typeof val === 'string') {
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  }
 
   async ngOnInit() {
     try {
       const employees = await this.employeeService.getAllEmployees();
       // 社会保険判定を並列で取得
       const eligibilityResults = await Promise.all(
-        employees.map(emp => {
+        employees.map(async emp => {
           const today = new Date();
           const year = today.getFullYear();
           const month = today.getMonth() + 1;
-          return this.insuranceEligibilityService.getInsuranceEligibility(emp, year, month).toPromise();
+          const officeEmployeeCount = await this.getOfficeEmployeeCount();
+          return this.insuranceEligibilityService.getInsuranceEligibility(emp, year, month, officeEmployeeCount).toPromise();
         })
       );
+
       this.employees = employees
         .map((emp, idx) => {
           const grade = emp.insuranceStatus && emp.insuranceStatus.grade;
@@ -61,6 +82,21 @@ export class EmployeesListComponent implements OnInit {
           if (typeof grade === 'string' && grade !== '' && grade !== '未設定') count++;
           if (typeof newGrade === 'number' && newGrade > 0) count++;
           if (typeof newGrade === 'string' && newGrade !== '' && newGrade !== '未設定') count++;
+          // 退職日の型を必ずDate型に
+          const endDate = this.toDateSafe(emp.employmentInfo.endDate);
+          const today = new Date();
+
+          let insuranceEligible = eligibilityResults[idx]?.healthInsurance || eligibilityResults[idx]?.pensionInsurance || false;
+
+          // 退職日が今月の場合は在籍月として保険料発生
+          if (endDate && endDate.getFullYear() === today.getFullYear() && endDate.getMonth() === today.getMonth()) {
+            insuranceEligible = true;
+          }
+          // 退職日が過去なら未加入
+          if (endDate && endDate < today) {
+            insuranceEligible = false;
+          }
+
           return {
             id: emp.id,
             employeeId: emp.employeeBasicInfo.employeeId,
@@ -68,8 +104,9 @@ export class EmployeesListComponent implements OnInit {
             department: emp.employmentInfo.department,
             startDate: emp.employmentInfo.startDate || undefined,
             employmentType: emp.employmentInfo.employmentType,
-            insuranceEligible: eligibilityResults[idx]?.healthInsurance || eligibilityResults[idx]?.pensionInsurance || false,
-            gradeSetCount: count
+            insuranceEligible: insuranceEligible,
+            gradeSetCount: count,
+            endDate: endDate
           };
         })
         .sort((a, b) => {
@@ -101,5 +138,53 @@ export class EmployeesListComponent implements OnInit {
 
   onAddEmployee() {
     this.router.navigate(['/admin/employees/new']);
+  }
+
+  getInsuranceStatus(emp: EmployeeListItem): string {
+    if (!emp.insuranceEligible) {
+      return '×';
+    }
+
+    const today = new Date();
+    if (emp.endDate) {
+      const endDate = new Date(emp.endDate);
+      if (endDate < today) {
+        return '退職済み';
+      }
+      if (endDate.getFullYear() === today.getFullYear() && 
+          endDate.getMonth() === today.getMonth()) {
+        return `今月${endDate.getDate()}日退職予定`;
+      }
+    }
+
+    return '○';
+  }
+
+  getInsuranceStatusColor(emp: EmployeeListItem): string {
+    if (!emp.insuranceEligible) {
+      return 'red';
+    }
+
+    const today = new Date();
+    if (emp.endDate) {
+      const endDate = new Date(emp.endDate);
+      if (endDate < today) {
+        return 'gray';
+      }
+      if (endDate.getFullYear() === today.getFullYear() && 
+          endDate.getMonth() === today.getMonth()) {
+        return 'orange';
+      }
+    }
+
+    return 'green';
+  }
+
+  async getOfficeEmployeeCount(): Promise<number> {
+    const officeDoc = await getDoc(doc(this.firestore, 'settings', 'office'));
+    if (officeDoc.exists()) {
+      return officeDoc.data()['actualEmployeeCount'] || 0;
+    }
+    return 0;
   }
 }

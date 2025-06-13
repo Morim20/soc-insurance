@@ -43,8 +43,8 @@
         <td>{{ emp.department || '-' }}</td>
         <td>{{ emp.startDate ? (emp.startDate | date:'yyyy/MM/dd') : '-' }}</td>
         <td>
-          <span [ngStyle]="{color: emp.insuranceEligible ? 'green' : 'red', 'font-weight': 'bold'}">
-            {{ emp.insuranceEligible ? '○' : '×' }}
+          <span [ngStyle]="{color: getInsuranceStatusColor(emp), 'font-weight': 'bold'}">
+            {{ getInsuranceStatus(emp) }}
           </span>
           <span *ngIf="emp.insuranceEligible && emp.gradeSetCount !== 2" style="color: green; font-size: 0.95em; margin-left: 8px;">
             等級を設定してください
