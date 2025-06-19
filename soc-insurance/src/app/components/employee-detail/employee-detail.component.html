@@ -17,7 +17,10 @@
         <p>社員番号: {{ employee.employeeBasicInfo.employeeId }}</p>
         <p>氏名（漢字）: {{ employee.employeeBasicInfo.lastNameKanji }} {{ employee.employeeBasicInfo.firstNameKanji }}</p>
         <p>氏名（カナ）: {{ employee.employeeBasicInfo.lastNameKana }} {{ employee.employeeBasicInfo.firstNameKana }}</p>
-        <p>生年月日: {{ employee.employeeBasicInfo.birthDate | date:'yyyy/MM/dd' }}</p>
+        <p>生年月日: {{ employee.employeeBasicInfo.birthDate | date:'yyyy/MM/dd' }} 
+          <span *ngIf="!employee.employeeBasicInfo.birthDate" style="color: red;">（未設定）</span>
+          <span *ngIf="employee.employeeBasicInfo.birthDate && !isBirthDateValid(employee.employeeBasicInfo.birthDate)" style="color: orange;">（形式エラー）</span>
+        </p>
         <p>性別: {{ employee.employeeBasicInfo.gender }}</p>
         <p>住所: {{ employee.employeeBasicInfo.address }}</p>
         <p>マイナンバー: {{ employee.employeeBasicInfo.myNumber }}</p>
@@ -27,25 +30,40 @@
         <mat-form-field appearance="outline" class="large-form-field">
           <mat-label>社員番号</mat-label>
           <input matInput formControlName="employeeId">
+          <mat-error *ngIf="basicInfoForm.get('employeeId')?.hasError('required')">
+            社員番号は必須です
+          </mat-error>
         </mat-form-field>
         <div style="display: flex; gap: 16px;">
           <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
             <mat-label>姓（漢字）</mat-label>
             <input matInput formControlName="lastNameKanji">
+            <mat-error *ngIf="basicInfoForm.get('lastNameKanji')?.hasError('required')">
+              姓（漢字）は必須です
+            </mat-error>
           </mat-form-field>
           <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
             <mat-label>名（漢字）</mat-label>
             <input matInput formControlName="firstNameKanji">
+            <mat-error *ngIf="basicInfoForm.get('firstNameKanji')?.hasError('required')">
+              名（漢字）は必須です
+            </mat-error>
           </mat-form-field>
         </div>
         <div style="display: flex; gap: 16px;">
           <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
             <mat-label>姓（カナ）</mat-label>
             <input matInput formControlName="lastNameKana">
+            <mat-error *ngIf="basicInfoForm.get('lastNameKana')?.hasError('required')">
+              姓（カナ）は必須です
+            </mat-error>
           </mat-form-field>
           <mat-form-field appearance="outline" class="large-form-field" style="flex:1;">
             <mat-label>名（カナ）</mat-label>
             <input matInput formControlName="firstNameKana">
+            <mat-error *ngIf="basicInfoForm.get('firstNameKana')?.hasError('required')">
+              名（カナ）は必須です
+            </mat-error>
           </mat-form-field>
         </div>
         <mat-form-field appearance="outline" class="large-form-field">
@@ -53,6 +71,9 @@
           <input matInput [matDatepicker]="picker" formControlName="birthDate">
           <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
+          <mat-error *ngIf="basicInfoForm.get('birthDate')?.hasError('required')">
+            生年月日は必須です
+          </mat-error>
           <mat-error *ngIf="basicInfoForm.get('birthDate')?.hasError('futureDate')">
             未来の日付は入力できません
           </mat-error>
@@ -78,7 +99,7 @@
           <input matInput formControlName="phoneNumber">
         </mat-form-field>
         <div style="margin-top: 16px;">
-          <button mat-raised-button color="primary" (click)="saveSection('basicInfo')" type="button">保存</button>
+          <button mat-raised-button color="primary" (click)="saveSection('basicInfo')" type="button" [disabled]="basicInfoForm.invalid">保存</button>
           <button mat-button (click)="cancelEdit('basicInfo')" type="button">キャンセル</button>
         </div>
       </form>
@@ -155,6 +176,9 @@
           <mat-error *ngIf="employmentInfoForm.get('expectedEmploymentMonths')?.hasError('min')">
             1以上の月数を入力してください
           </mat-error>
+          <mat-error *ngIf="employmentInfoForm.get('expectedEmploymentMonths')?.hasError('periodMismatch')">
+            雇用見込み期間が勤務期間を超えています
+          </mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline" class="large-form-field">
           <mat-label>基本給／所定内賃金</mat-label>
@@ -203,9 +227,34 @@
       </h3>
       <div *ngIf="!editingSection['insuranceStatus']">
         <p>加入判定: {{ (insuranceEligibility$ | async)?.reason }}</p>
-        <p>健康保険料: {{ isExemptedMonth() ? '支払い対象外' : '支払い対象' }}</p>
-        <p>介護保険料: {{ isExemptedMonth() ? '支払い対象外' : '支払い対象' }}</p>
-        <p>厚生年金料: {{ isExemptedMonth() ? '支払い対象外' : '支払い対象' }}</p>
+        
+        <!-- 保険料の詳細判定 -->
+        <div *ngIf="insuranceEligibility$ | async as eligibility">
+          <p>健康保険料: {{ 
+            isExemptedMonth() ? '支払い対象外（休業中）' : 
+            (eligibility.healthInsurance ? '支払い対象' : '支払い対象外') 
+          }}</p>
+          <p>介護保険料: {{ 
+            isExemptedMonth() ? '支払い対象外（休業中）' : 
+            (eligibility.nursingInsurance ? '支払い対象' : '支払い対象外（年齢による）') 
+          }}</p>
+          <p>厚生年金料: {{ 
+            isExemptedMonth() ? '支払い対象外（休業中）' : 
+            (eligibility.pensionInsurance ? '支払い対象' : '支払い対象外') 
+          }}</p>
+          
+
+        </div>
+        
+        <!-- 保険料の簡易判定（保険判定サービスが利用できない場合のフォールバック） -->
+        <div *ngIf="!(insuranceEligibility$ | async)">
+          <p>健康保険料: {{ isExemptedMonth() ? '支払い対象外（休業中）' : '支払い対象' }}</p>
+          <p>介護保険料: {{ 
+            isExemptedMonth() ? '支払い対象外（休業中）' : 
+            (isNursingInsuranceEligibleAt(employee.employeeBasicInfo.birthDate, todayYear, todayMonth) ? '支払い対象' : '支払い対象外（年齢による）') 
+          }}</p>
+          <p>厚生年金料: {{ isExemptedMonth() ? '支払い対象外（休業中）' : '支払い対象' }}</p>
+        </div>
         <p>資格取得日: {{ employee.insuranceStatus.qualificationAcquisitionDate | date:'yyyy/MM/dd' }}</p>
         <p>保険種別: {{ employee.insuranceStatus.insuranceType }}</p>
         <ng-container *ngIf="employee.insuranceStatus.insuranceType === '協会けんぽ'">

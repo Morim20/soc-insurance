@@ -17,10 +17,34 @@ export class EmployeeService {
 
   // TimestampをDateに変換するヘルパー関数
   private convertTimestampToDate(timestamp: any): Date | null {
-    if (!timestamp) return null;
-    if (timestamp instanceof Date) return timestamp;
-    if (timestamp instanceof Timestamp) return timestamp.toDate();
-    if (typeof timestamp === 'object' && 'seconds' in timestamp) return new Date(timestamp.seconds * 1000);
+    console.log('convertTimestampToDate 呼び出し:', {
+      timestamp,
+      type: typeof timestamp,
+      isDate: timestamp instanceof Date,
+      isTimestamp: timestamp instanceof Timestamp,
+      hasToDate: timestamp && typeof timestamp.toDate === 'function',
+      hasSeconds: timestamp && typeof timestamp === 'object' && 'seconds' in timestamp
+    });
+    
+    if (!timestamp) {
+      console.log('timestampがnullまたはundefined');
+      return null;
+    }
+    if (timestamp instanceof Date) {
+      console.log('既にDate型です');
+      return timestamp;
+    }
+    if (timestamp instanceof Timestamp) {
+      const converted = timestamp.toDate();
+      console.log('TimestampからDateに変換:', converted);
+      return converted;
+    }
+    if (typeof timestamp === 'object' && 'seconds' in timestamp) {
+      const converted = new Date(timestamp.seconds * 1000);
+      console.log('secondsプロパティからDateに変換:', converted);
+      return converted;
+    }
+    console.log('変換できない形式です');
     return null;
   }
 
@@ -32,29 +56,29 @@ export class EmployeeService {
     // 基本情報を保存
     await setDoc(doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/basicInfo/info`), {
       ...employeeData.employeeBasicInfo
-    });
+    }, { merge: true });
 
     // 雇用情報を保存
     await setDoc(doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/employmentInfo/info`), {
       ...employeeData.employmentInfo
-    });
+    }, { merge: true });
 
     // 社会保険情報を保存
     await setDoc(doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/insuranceStatus/info`), {
       ...employeeData.insuranceStatus
-    });
+    }, { merge: true });
 
     // 扶養者情報を保存
     if (employeeData.dependents.length > 0) {
       await setDoc(doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/dependents/info`), {
         dependents: employeeData.dependents
-      });
+      }, { merge: true });
     }
 
     // 特別属性を保存
     await setDoc(doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/specialAttributes/info`), {
       ...employeeData.specialAttributes
-    });
+    }, { merge: true });
 
     // 従業員の基本情報を保存
     await setDoc(employeeRef, {
@@ -62,17 +86,27 @@ export class EmployeeService {
       companyId: employeeData.companyId,
       createdAt: employeeData.createdAt,
       updatedAt: employeeData.updatedAt
-    });
+    }, { merge: true });
   }
 
   // サブコレクションの作成
   async setBasicInfo(employeeId: string, basicInfo: EmployeeBasicInfo): Promise<void> {
+    console.log('setBasicInfo呼び出し:', {
+      employeeId,
+      basicInfo,
+      birthDate: basicInfo.birthDate,
+      birthDateType: typeof basicInfo.birthDate,
+      birthDateIsDate: basicInfo.birthDate instanceof Date
+    });
+    
     const subRef = doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/basicInfo/info`);
-    await setDoc(subRef, basicInfo);
+    await setDoc(subRef, basicInfo, { merge: true });
+    
+    console.log('setBasicInfo保存完了');
   }
   async setEmploymentInfo(employeeId: string, employmentInfo: EmploymentInfo): Promise<void> {
     const subRef = doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/employmentInfo/info`);
-    await setDoc(subRef, employmentInfo);
+    await setDoc(subRef, employmentInfo, { merge: true });
   }
   async setInsuranceStatus(employeeId: string, insuranceStatus: InsuranceStatus): Promise<void> {
     try {
@@ -100,11 +134,11 @@ export class EmployeeService {
   }
   async setSpecialAttributes(employeeId: string, specialAttributes: SpecialAttributes): Promise<void> {
     const subRef = doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/specialAttributes/info`);
-    await setDoc(subRef, specialAttributes);
+    await setDoc(subRef, specialAttributes, { merge: true });
   }
   async setDependents(employeeId: string, dependents: Dependent[]): Promise<void> {
     const subRef = doc(this.firestore, `${this.COLLECTION_NAME}/${employeeId}/dependents/info`);
-    await setDoc(subRef, { dependents });
+    await setDoc(subRef, { dependents }, { merge: true });
   }
 
   // サブコレクションの取得
@@ -113,7 +147,22 @@ export class EmployeeService {
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) return null;
     const data = docSnap.data() as EmployeeBasicInfo;
+    
+    console.log('getBasicInfo取得:', {
+      employeeId,
+      rawData: data,
+      birthDate: data.birthDate,
+      birthDateType: typeof data.birthDate
+    });
+    
     const birthDate = this.convertTimestampToDate(data.birthDate);
+    
+    console.log('getBasicInfo変換後:', {
+      birthDate,
+      birthDateType: typeof birthDate,
+      birthDateIsDate: birthDate instanceof Date
+    });
+    
     return { ...data, birthDate };
   }
 

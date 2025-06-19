@@ -79,7 +79,7 @@ export class EmployeeDetailComponent implements OnInit {
   };
 
   // 生年月日が未来日ならエラー
-  futureDateValidator(control: AbstractControl) {
+  futureDateValidator: ValidatorFn = (control: AbstractControl) => {
     const value = control.value;
     if (!value) return null;
     const inputDate = new Date(value);
@@ -89,7 +89,7 @@ export class EmployeeDetailComponent implements OnInit {
       return { futureDate: true };
     }
     return null;
-  }
+  };
 
   // 退職予定日が勤務開始日より前ならエラー
   endDateAfterStartDateValidator: ValidatorFn = (group: AbstractControl) => {
@@ -104,6 +104,39 @@ export class EmployeeDetailComponent implements OnInit {
       } else {
         if (group.get('endDate')?.hasError('endBeforeStart')) {
           group.get('endDate')?.setErrors(null);
+        }
+      }
+    }
+    return null;
+  };
+
+  // 勤務開始日～退職予定日と雇用見込み期間に矛盾があれば雇用見込み期間にエラー
+  employmentPeriodValidator: ValidatorFn = (group: AbstractControl) => {
+    const start = group.get('startDate')?.value;
+    const end = group.get('endDate')?.value;
+    const months = group.get('expectedEmploymentMonths')?.value;
+    
+    // 退職予定日が入力されていない場合はバリデーションをスキップ
+    if (!end) {
+      // 既存のエラーがあればクリア
+      if (group.get('expectedEmploymentMonths')?.hasError('periodMismatch')) {
+        group.get('expectedEmploymentMonths')?.setErrors(null);
+      }
+      return null;
+    }
+    
+    if (start && end && months) {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      // 月数計算
+      let diffMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth()) + 1;
+      if (diffMonths > 0 && months > diffMonths) {
+        group.get('expectedEmploymentMonths')?.setErrors({ periodMismatch: true });
+        return { periodMismatch: true };
+      } else {
+        // 他のエラーがなければクリア
+        if (group.get('expectedEmploymentMonths')?.hasError('periodMismatch')) {
+          group.get('expectedEmploymentMonths')?.setErrors(null);
         }
       }
     }
@@ -170,12 +203,12 @@ export class EmployeeDetailComponent implements OnInit {
 
     // フォームの初期化
     this.basicInfoForm = this.fb.group({
-      employeeId: [''],
-      lastNameKanji: [''],
-      firstNameKanji: [''],
-      lastNameKana: [''],
-      firstNameKana: [''],
-      birthDate: ['', [this.futureDateValidator]],
+      employeeId: ['', Validators.required],
+      lastNameKanji: ['', Validators.required],
+      firstNameKanji: ['', Validators.required],
+      lastNameKana: ['', Validators.required],
+      firstNameKana: ['', Validators.required],
+      birthDate: ['', [Validators.required, this.futureDateValidator]],
       gender: [''],
       address: [''],
       myNumber: [''],
@@ -205,7 +238,7 @@ export class EmployeeDetailComponent implements OnInit {
       commutePassCost: [0],
       oneWayFare: [0],
       standardMonthlyRevisionDate: [null]
-    }, { validators: this.endDateAfterStartDateValidator });
+    }, { validators: [this.endDateAfterStartDateValidator, this.employmentPeriodValidator] });
 
     this.insuranceStatusForm = this.fb.group({
       healthInsurance: [''],
@@ -237,10 +270,33 @@ export class EmployeeDetailComponent implements OnInit {
     try {
       this.employee = await this.employeeService.getEmployee(id);
       if (this.employee) {
-        // birthDate
-        if (this.employee.employeeBasicInfo.birthDate && typeof (this.employee.employeeBasicInfo.birthDate as any).toDate === 'function') {
-          this.employee.employeeBasicInfo.birthDate = (this.employee.employeeBasicInfo.birthDate as any).toDate();
+        // 生年月日の変換処理を改善
+        console.log('生年月日変換前:', {
+          original: this.employee.employeeBasicInfo.birthDate,
+          type: typeof this.employee.employeeBasicInfo.birthDate,
+          isDate: this.employee.employeeBasicInfo.birthDate instanceof Date,
+          isTimestamp: this.employee.employeeBasicInfo.birthDate && typeof (this.employee.employeeBasicInfo.birthDate as any).toDate === 'function'
+        });
+        
+        // employee serviceで既に変換済みの場合は再変換しない
+        if (this.employee.employeeBasicInfo.birthDate && !(this.employee.employeeBasicInfo.birthDate instanceof Date)) {
+          if (typeof (this.employee.employeeBasicInfo.birthDate as any).toDate === 'function') {
+            this.employee.employeeBasicInfo.birthDate = (this.employee.employeeBasicInfo.birthDate as any).toDate();
+          } else if (typeof this.employee.employeeBasicInfo.birthDate === 'string') {
+            // 文字列の場合はDate型に変換
+            this.employee.employeeBasicInfo.birthDate = new Date(this.employee.employeeBasicInfo.birthDate);
+          }
         }
+        
+        // 生年月日の変換結果をデバッグログで確認
+        console.log('生年月日変換後:', {
+          converted: this.employee.employeeBasicInfo.birthDate,
+          type: typeof this.employee.employeeBasicInfo.birthDate,
+          isDate: this.employee.employeeBasicInfo.birthDate instanceof Date,
+          isValid: this.employee.employeeBasicInfo.birthDate instanceof Date && !isNaN(this.employee.employeeBasicInfo.birthDate.getTime()),
+          getTime: this.employee.employeeBasicInfo.birthDate instanceof Date ? this.employee.employeeBasicInfo.birthDate.getTime() : null
+        });
+        
         // hireDate
         if (this.employee.employeeBasicInfo.hireDate && typeof (this.employee.employeeBasicInfo.hireDate as any).toDate === 'function') {
           this.employee.employeeBasicInfo.hireDate = (this.employee.employeeBasicInfo.hireDate as any).toDate();
@@ -291,7 +347,35 @@ export class EmployeeDetailComponent implements OnInit {
         const year = today.getFullYear();
         const month = today.getMonth() + 1;
         const officeEmployeeCount = await this.getOfficeEmployeeCount();
+        
+        // デバッグログを追加
+        console.log('employee detail 保険判定初期化:', {
+          employeeId: this.employee.id,
+          birthDate: this.employee.employeeBasicInfo.birthDate,
+          birthDateType: typeof this.employee.employeeBasicInfo.birthDate,
+          birthDateIsValid: this.employee.employeeBasicInfo.birthDate instanceof Date && !isNaN(this.employee.employeeBasicInfo.birthDate.getTime()),
+          year,
+          month,
+          officeEmployeeCount,
+          leaveType: this.employee.specialAttributes?.leaveType,
+          leaveStartDate: this.employee.specialAttributes?.leaveStartDate,
+          leaveEndDate: this.employee.specialAttributes?.leaveEndDate
+        });
+        
         this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee, year, month, officeEmployeeCount);
+        
+        // 保険判定結果のデバッグログを追加
+        this.insuranceEligibility$.subscribe(result => {
+          console.log('employee detail 保険判定結果:', {
+            employeeId: this.employee?.id,
+            healthInsurance: result.healthInsurance,
+            nursingInsurance: result.nursingInsurance,
+            pensionInsurance: result.pensionInsurance,
+            reason: result.reason,
+            nursingInsuranceStartMonth: result.nursingInsuranceStartMonth,
+            nursingInsuranceEndMonth: result.nursingInsuranceEndMonth
+          });
+        });
         if (this.employee.dependents) {
           const dependentsArray = this.dependentsForm.get('dependents') as FormArray;
           this.employee.dependents.forEach(dep => {
@@ -305,6 +389,37 @@ export class EmployeeDetailComponent implements OnInit {
             this.standardMonthlyWage = this.aichiGrades[key].standardMonthlyWage;
           } else {
             this.standardMonthlyWage = null;
+          }
+        });
+        // 生年月日の変更を監視して社会保険情報をリアルタイム更新
+        this.basicInfoForm.get('birthDate')?.valueChanges.subscribe(async (newBirthDate) => {
+          if (this.employee && newBirthDate) {
+            console.log('生年月日変更検知:', {
+              newBirthDate,
+              newBirthDateType: typeof newBirthDate,
+              employeeId: this.employee.id
+            });
+            
+            // 一時的にemployeeの生年月日を更新して保険判定を再計算
+            const originalBirthDate = this.employee.employeeBasicInfo.birthDate;
+            this.employee.employeeBasicInfo.birthDate = new Date(newBirthDate);
+            
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth() + 1;
+            const officeEmployeeCount = await this.getOfficeEmployeeCount();
+            
+            console.log('生年月日変更による保険判定再計算:', {
+              newBirthDate: this.employee.employeeBasicInfo.birthDate,
+              year,
+              month,
+              officeEmployeeCount
+            });
+            
+            this.insuranceEligibility$ = this.insuranceEligibilityService.getInsuranceEligibility(this.employee, year, month, officeEmployeeCount);
+            
+            // 元の生年月日に戻す（実際の保存は保存ボタンで行う）
+            this.employee.employeeBasicInfo.birthDate = originalBirthDate;
           }
         });
         // 初期値セット時も反映
@@ -461,13 +576,49 @@ export class EmployeeDetailComponent implements OnInit {
           // 他のセクションの保存処理
           switch (section) {
             case 'basicInfo':
+              console.log('basicInfo保存前:', {
+                formValue: formValue,
+                birthDate: formValue.birthDate,
+                birthDateType: typeof formValue.birthDate
+              });
+              
               const updatedBasicInfo: EmployeeBasicInfo = {
                 ...formValue,
                 birthDate: formValue.birthDate ? new Date(formValue.birthDate) : null,
                 hireDate: formValue.hireDate ? new Date(formValue.hireDate) : null
               };
+              
+              console.log('basicInfo保存後:', {
+                updatedBasicInfo: updatedBasicInfo,
+                birthDate: updatedBasicInfo.birthDate,
+                birthDateType: typeof updatedBasicInfo.birthDate,
+                birthDateIsDate: updatedBasicInfo.birthDate instanceof Date
+              });
+              
               await this.employeeService.setBasicInfo(this.employee.id, updatedBasicInfo);
-              this.employee.employeeBasicInfo = updatedBasicInfo;
+              
+              // 保存後に最新データを再取得
+              const updatedEmployee = await this.employeeService.getEmployee(this.employee.id);
+              if (updatedEmployee) {
+                this.employee = updatedEmployee;
+                console.log('employee再取得後:', {
+                  birthDate: this.employee.employeeBasicInfo.birthDate,
+                  birthDateType: typeof this.employee.employeeBasicInfo.birthDate,
+                  birthDateIsDate: this.employee.employeeBasicInfo.birthDate instanceof Date
+                });
+                
+                // 画面表示用のデータも更新
+                this.basicInfoForm.patchValue({
+                  ...this.employee.employeeBasicInfo,
+                  birthDate: this.employee.employeeBasicInfo.birthDate ? this.formatDateInput(this.employee.employeeBasicInfo.birthDate) : ''
+                });
+                
+                console.log('画面表示更新後:', {
+                  formBirthDate: this.basicInfoForm.get('birthDate')?.value,
+                  employeeBirthDate: this.employee.employeeBasicInfo.birthDate
+                });
+              }
+              
               this.employeeService.notifyEmployeeUpdated();
               break;
             case 'employmentInfo':
@@ -504,10 +655,20 @@ export class EmployeeDetailComponent implements OnInit {
         this.snackBar.open('保存しました', '閉じる', {
           duration: 3000
         });
+        
+        // 保存完了後の状態確認
+        console.log('保存完了後の状態:', {
+          section,
+          employeeBirthDate: this.employee?.employeeBasicInfo?.birthDate,
+          employeeBirthDateType: typeof this.employee?.employeeBasicInfo?.birthDate,
+          employeeBirthDateIsDate: this.employee?.employeeBasicInfo?.birthDate instanceof Date,
+          formBirthDate: this.basicInfoForm.get('birthDate')?.value
+        });
+        
         this.editingSection[section] = false;
 
         // 雇用情報または休暇情報が更新された場合、社会保険の加入判定を再計算
-        if (section === 'employmentInfo' || section === 'specialAttributes') {
+        if (section === 'employmentInfo' || section === 'specialAttributes' || section === 'basicInfo') {
           const today = new Date();
           const year = today.getFullYear();
           const month = today.getMonth() + 1;
@@ -633,8 +794,9 @@ export class EmployeeDetailComponent implements OnInit {
         await this.employeeService.setInsuranceStatus(this.employee.id, insuranceStatus);
         
         // 保存後に最新データを再取得
-        this.employee = await this.employeeService.getEmployee(this.employee.id);
-        if (this.employee) {
+        const updatedEmployee = await this.employeeService.getEmployee(this.employee.id);
+        if (updatedEmployee) {
+          this.employee = updatedEmployee;
           this.insuranceStatusForm.patchValue({
             ...this.employee.insuranceStatus,
             qualificationAcquisitionDate: this.employee.insuranceStatus?.qualificationAcquisitionDate ? this.formatDateInput(this.employee.insuranceStatus.qualificationAcquisitionDate) : '',
@@ -661,6 +823,26 @@ export class EmployeeDetailComponent implements OnInit {
 
   public isActuallyNursingInsuranceEligible(eligibility: any): boolean {
     return this.insuranceEligibilityService.isActuallyNursingInsuranceEligible(eligibility);
+  }
+
+  // 指定年月時点の年齢を計算するメソッドを追加
+  public calculateAgeAt(birthDate: Date | string | null, year: number, month: number): number {
+    if (!birthDate) return 0;
+    const birth = new Date(birthDate);
+    if (isNaN(birth.getTime())) return 0;
+    
+    const baseDate = new Date(year, month - 1, 1); // その月の1日
+    let age = baseDate.getFullYear() - birth.getFullYear();
+    const m = baseDate.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && baseDate.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  // 生年月日がDate型かどうかを判定するメソッドを追加
+  public isBirthDateValid(birthDate: any): boolean {
+    return birthDate instanceof Date && !isNaN(birthDate.getTime());
   }
 
   getInsuranceStatusMessage(): string {

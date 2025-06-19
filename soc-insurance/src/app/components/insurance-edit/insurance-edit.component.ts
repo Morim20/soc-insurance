@@ -346,7 +346,31 @@ export class InsuranceEditComponent implements OnInit {
         if (birthDate && periodYear && periodMonth) {
           isNursingInsuranceEligible = this.insuranceEligibilityService.isNursingInsuranceEligibleAt(birthDate, periodYear, periodMonth);
           isPensionInsuranceEligible = this.isPensionInsuranceEligible(birthDate, periodYear, periodMonth);
+          
+          // デバッグログを追加
+          console.log('賞与保険料計算時の厚生年金判定:', {
+            birthDate,
+            periodYear,
+            periodMonth,
+            isPensionInsuranceEligible,
+            calculatedAge: this.calculateAgeAt(birthDate, periodYear, periodMonth)
+          });
+        } else {
+          // 生年月日未設定の場合は厚生年金保険料を計算する（年齢による除外判定なし）
+          isPensionInsuranceEligible = true;
+          console.log('賞与保険料計算時: 生年月日未設定のため厚生年金保険料を計算します');
         }
+
+        // calculateBonusInsuranceの呼び出し前のデバッグログ
+        console.log('calculateBonusInsurance呼び出しパラメータ:', {
+          bonusAmount: val,
+          prefecture: companySettings.prefecture,
+          age: isNursingInsuranceEligible ? 40 : this.data?.age,
+          year: '2025',
+          bonusCount,
+          isMaternityLeave: false,
+          annualBonusTotal: this.data?.annualBonusTotal || 0
+        });
 
         this.bonusInsuranceResult = this.insuranceCalculationService.calculateBonusInsurance({
           bonusAmount: val,
@@ -356,6 +380,21 @@ export class InsuranceEditComponent implements OnInit {
           bonusCount,
           isMaternityLeave: false,
           annualBonusTotal: this.data?.annualBonusTotal || 0
+        });
+
+        // 賞与保険料計算結果の詳細ログ
+        console.log('賞与保険料計算結果詳細:', {
+          bonusAmount: val,
+          standardBonusAmount: this.bonusInsuranceResult?.standardBonusAmount,
+          healthInsuranceEmployee: this.bonusInsuranceResult?.healthInsuranceEmployee,
+          healthInsuranceEmployer: this.bonusInsuranceResult?.healthInsuranceEmployer,
+          nursingInsuranceEmployee: this.bonusInsuranceResult?.nursingInsuranceEmployee,
+          nursingInsuranceEmployer: this.bonusInsuranceResult?.nursingInsuranceEmployer,
+          pensionInsuranceEmployee: this.bonusInsuranceResult?.pensionInsuranceEmployee,
+          pensionInsuranceEmployer: this.bonusInsuranceResult?.pensionInsuranceEmployer,
+          childContribution: this.bonusInsuranceResult?.childContribution,
+          isPensionInsuranceEligible,
+          eligibilityResultPensionInsurance: this.insuranceEligibilityResult?.pensionInsurance
         });
 
         // 賞与の保険料計算結果をeligibilityResultに基づいて調整
@@ -400,10 +439,34 @@ export class InsuranceEditComponent implements OnInit {
             }
             
             // 厚生年金
+            // 厚生年金の年齢による除外判定を有効にする
+            console.log('厚生年金除外判定開始:', {
+              isPensionInsuranceEligible,
+              beforePensionEmployee: this.bonusInsuranceResult.pensionInsuranceEmployee,
+              beforePensionEmployer: this.bonusInsuranceResult.pensionInsuranceEmployer
+            });
+            
             if (!isPensionInsuranceEligible) {
+              console.log('厚生年金除外判定: 除外対象のため0円に設定');
               this.bonusInsuranceResult.pensionInsuranceEmployee = 0;
               this.bonusInsuranceResult.pensionInsuranceEmployer = 0;
+            } else {
+              console.log('厚生年金除外判定: 除外対象外のため計算値を維持');
             }
+            
+            // 厚生年金の追加デバッグログ
+            console.log('賞与厚生年金判定詳細:', {
+              isPensionInsuranceEligible,
+              eligibilityResultPensionInsurance: eligibilityResult.pensionInsurance,
+              bonusPensionInsuranceEmployee: this.bonusInsuranceResult.pensionInsuranceEmployee,
+              bonusPensionInsuranceEmployer: this.bonusInsuranceResult.pensionInsuranceEmployer,
+              standardBonusAmount: this.bonusInsuranceResult.standardBonusAmount,
+              pensionInsuranceRate: 0.183,
+              birthDate,
+              periodYear,
+              periodMonth,
+              calculatedAge: this.calculateAgeAt(birthDate, periodYear, periodMonth)
+            });
             
             // 子ども・子育て拠出金
             if (!eligibilityResult.healthInsurance) {
@@ -513,11 +576,24 @@ export class InsuranceEditComponent implements OnInit {
         this.data.pensionInsuranceEmployee = isPensionInsuranceEligible ? insuranceResult.pensionInsurance.employee : 0;
         this.data.pensionInsuranceEmployer = isPensionInsuranceEligible ? insuranceResult.pensionInsurance.employer : 0;
         this.data.childContribution = eligibilityResult.healthInsurance ? insuranceResult.childContribution : 0;
-        this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsurance(
-          this.data.healthInsuranceEmployee,
-          this.data.nursingInsuranceEmployee,
-          this.data.pensionInsuranceEmployee
-        );
+        
+        // 介護保険がある場合の従業員負担分の合計計算
+        if (eligibilityResult.nursingInsurance) {
+          // 介護保険がある場合はnursingInsuranceEmployeeRealを使用
+          this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsuranceWithNursingReal(
+            this.data.healthInsuranceEmployee,
+            insuranceResult.nursingInsuranceEmployeeReal,
+            this.data.pensionInsuranceEmployee
+          );
+        } else {
+          // 介護保険がない場合は従来の計算方法
+          this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsurance(
+            this.data.healthInsuranceEmployee,
+            this.data.nursingInsuranceEmployee,
+            this.data.pensionInsuranceEmployee
+          );
+        }
+        
         this.data.employerTotalDeduction = this.calculateEmployerTotalInsurance(
           this.data.healthInsuranceEmployer,
           this.data.nursingInsuranceEmployer,
@@ -720,8 +796,8 @@ export class InsuranceEditComponent implements OnInit {
         bonusHealthInsuranceEmployer: this.isBonusExempted ? 0 : (typeof this.bonusInsuranceResult?.healthInsuranceEmployer === 'number' ? this.bonusInsuranceResult.healthInsuranceEmployer : 0),
         bonusNursingInsuranceEmployee: this.isBonusExempted ? 0 : (typeof this.bonusInsuranceResult?.nursingInsuranceEmployee === 'number' && this.insuranceEligibilityResult?.nursingInsurance ? this.bonusInsuranceResult.nursingInsuranceEmployee : 0),
         bonusNursingInsuranceEmployer: this.isBonusExempted ? 0 : (typeof this.bonusInsuranceResult?.nursingInsuranceEmployer === 'number' && this.insuranceEligibilityResult?.nursingInsurance ? this.bonusInsuranceResult.nursingInsuranceEmployer : 0),
-        bonusPensionInsuranceEmployee: this.isBonusExempted ? 0 : ((this.insuranceEligibilityResult && this.insuranceEligibilityResult.pensionInsurance === false) ? 0 : (typeof this.bonusInsuranceResult?.pensionInsuranceEmployee === 'number' ? this.bonusInsuranceResult.pensionInsuranceEmployee : 0)),
-        bonusPensionInsuranceEmployer: this.isBonusExempted ? 0 : ((this.insuranceEligibilityResult && this.insuranceEligibilityResult.pensionInsurance === false) ? 0 : (typeof this.bonusInsuranceResult?.pensionInsuranceEmployer === 'number' ? this.bonusInsuranceResult.pensionInsuranceEmployer : 0)),
+        bonusPensionInsuranceEmployee: this.isBonusExempted ? 0 : (typeof this.bonusInsuranceResult?.pensionInsuranceEmployee === 'number' ? this.bonusInsuranceResult.pensionInsuranceEmployee : 0),
+        bonusPensionInsuranceEmployer: this.isBonusExempted ? 0 : (typeof this.bonusInsuranceResult?.pensionInsuranceEmployer === 'number' ? this.bonusInsuranceResult.pensionInsuranceEmployer : 0),
         bonusChildContribution: this.isBonusExempted ? 0 : (typeof this.bonusInsuranceResult?.childContribution === 'number' ? this.bonusInsuranceResult.childContribution : 0),
         notes: noteText,
         healthInsuranceEmployee: 0,
@@ -759,8 +835,8 @@ export class InsuranceEditComponent implements OnInit {
         bonusHealthInsuranceEmployer: this.isBonusExempted ? 0 : (typeof bonusRaw.healthInsuranceEmployer === 'number' ? bonusRaw.healthInsuranceEmployer : 0),
         bonusNursingInsuranceEmployee: this.isBonusExempted ? 0 : (typeof bonusRaw.nursingInsuranceEmployee === 'number' && this.insuranceEligibilityResult?.nursingInsurance ? bonusRaw.nursingInsuranceEmployee : 0),
         bonusNursingInsuranceEmployer: this.isBonusExempted ? 0 : (typeof bonusRaw.nursingInsuranceEmployer === 'number' && this.insuranceEligibilityResult?.nursingInsurance ? bonusRaw.nursingInsuranceEmployer : 0),
-        bonusPensionInsuranceEmployee: this.isBonusExempted ? 0 : ((this.insuranceEligibilityResult && this.insuranceEligibilityResult.pensionInsurance === false) ? 0 : (typeof bonusRaw.pensionInsuranceEmployee === 'number' ? bonusRaw.pensionInsuranceEmployee : 0)),
-        bonusPensionInsuranceEmployer: this.isBonusExempted ? 0 : ((this.insuranceEligibilityResult && this.insuranceEligibilityResult.pensionInsurance === false) ? 0 : (typeof bonusRaw.pensionInsuranceEmployer === 'number' ? bonusRaw.pensionInsuranceEmployer : 0)),
+        bonusPensionInsuranceEmployee: this.isBonusExempted ? 0 : (typeof bonusRaw.pensionInsuranceEmployee === 'number' ? bonusRaw.pensionInsuranceEmployee : 0),
+        bonusPensionInsuranceEmployer: this.isBonusExempted ? 0 : (typeof bonusRaw.pensionInsuranceEmployer === 'number' ? bonusRaw.pensionInsuranceEmployer : 0),
         bonusChildContribution: this.isBonusExempted ? 0 : (typeof bonusRaw.childContribution === 'number' ? bonusRaw.childContribution : 0),
         notes: noteText,
         healthInsuranceEmployee: result.healthInsurance.employee,
@@ -770,11 +846,18 @@ export class InsuranceEditComponent implements OnInit {
         pensionInsuranceEmployee: this.insuranceEligibilityResult?.pensionInsurance ? result.pensionInsurance.employee : 0,
         pensionInsuranceEmployer: this.insuranceEligibilityResult?.pensionInsurance ? result.pensionInsurance.employer : 0,
         childContribution: result.childContribution,
-        employeeTotalDeduction: this.calculateEmployeeTotalInsurance(
-          this.insuranceEligibilityResult?.healthInsurance ? result.healthInsurance.employee : 0,
-          this.insuranceEligibilityResult?.nursingInsurance ? result.nursingInsurance.employee : 0,
-          this.insuranceEligibilityResult?.pensionInsurance ? result.pensionInsurance.employee : 0
-        ),
+        // 介護保険がある場合の従業員負担分の合計計算
+        employeeTotalDeduction: this.insuranceEligibilityResult?.nursingInsurance 
+          ? this.calculateEmployeeTotalInsuranceWithNursingReal(
+              this.insuranceEligibilityResult?.healthInsurance ? result.healthInsurance.employee : 0,
+              result.nursingInsuranceEmployeeReal,
+              this.insuranceEligibilityResult?.pensionInsurance ? result.pensionInsurance.employee : 0
+            )
+          : this.calculateEmployeeTotalInsurance(
+              this.insuranceEligibilityResult?.healthInsurance ? result.healthInsurance.employee : 0,
+              this.insuranceEligibilityResult?.nursingInsurance ? result.nursingInsurance.employee : 0,
+              this.insuranceEligibilityResult?.pensionInsurance ? result.pensionInsurance.employee : 0
+            ),
         employerTotalDeduction: this.calculateEmployerTotalInsurance(
           this.insuranceEligibilityResult?.healthInsurance ? result.healthInsurance.employer : 0,
           this.insuranceEligibilityResult?.nursingInsurance ? result.nursingInsurance.employer : 0,
@@ -976,6 +1059,12 @@ export class InsuranceEditComponent implements OnInit {
     return this.roundAmount(total);
   }
 
+  // 介護保険がある場合の従業員負担分の合計を計算する関数（nursingInsuranceEmployeeReal使用）
+  calculateEmployeeTotalInsuranceWithNursingReal(employee: number, nursingReal: number, pension: number): number {
+    const total = employee + nursingReal + pension;
+    return this.roundAmount(total);
+  }
+
   // 会社負担分の合計を計算する関数（個人分の端数処理に応じて端数処理）
   calculateEmployerTotalInsurance(employee: number, nursing: number, pension: number): number {
     const total = employee + nursing + pension;
@@ -1060,6 +1149,23 @@ export class InsuranceEditComponent implements OnInit {
     const targetYear = birthYear + 70;
     const targetMonth = birthMonth;
 
+    // デバッグログを追加
+    console.log('isPensionInsuranceEligible判定詳細:', {
+      birthDate,
+      birthYear,
+      birthMonth,
+      birthDay,
+      targetYear,
+      targetMonth,
+      currentYear: year,
+      currentMonth: month,
+      isBeforeTarget: year < targetYear,
+      isSameYear: year === targetYear,
+      isBeforeTargetMonth: month < targetMonth,
+      isSameMonth: month === targetMonth,
+      isFirstDay: birthDay === 1
+    });
+
     // 年月を比較
     if (year < targetYear) return true;
     if (year > targetYear) return false;
@@ -1143,11 +1249,24 @@ export class InsuranceEditComponent implements OnInit {
       this.data.pensionInsuranceEmployee = eligibilityResult.pensionInsurance ? insuranceResult.pensionInsurance.employee : 0;
       this.data.pensionInsuranceEmployer = eligibilityResult.pensionInsurance ? insuranceResult.pensionInsurance.employer : 0;
       this.data.childContribution = eligibilityResult.healthInsurance ? insuranceResult.childContribution : 0;
-      this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsurance(
-        this.data.healthInsuranceEmployee,
-        this.data.nursingInsuranceEmployee,
-        this.data.pensionInsuranceEmployee
-      );
+      
+      // 介護保険がある場合の従業員負担分の合計計算
+      if (eligibilityResult.nursingInsurance) {
+        // 介護保険がある場合はnursingInsuranceEmployeeRealを使用
+        this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsuranceWithNursingReal(
+          this.data.healthInsuranceEmployee,
+          insuranceResult.nursingInsuranceEmployeeReal,
+          this.data.pensionInsuranceEmployee
+        );
+      } else {
+        // 介護保険がない場合は従来の計算方法
+        this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsurance(
+          this.data.healthInsuranceEmployee,
+          this.data.nursingInsuranceEmployee,
+          this.data.pensionInsuranceEmployee
+        );
+      }
+      
       this.data.employerTotalDeduction = this.calculateEmployerTotalInsurance(
         this.data.healthInsuranceEmployer,
         this.data.nursingInsuranceEmployer,

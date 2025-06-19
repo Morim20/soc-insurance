@@ -154,6 +154,7 @@ interface InsuranceCalculationResult {
     employer: number;
   };
   childContribution: number;
+  nursingInsuranceEmployeeReal: number;
   total: {
     employee: number;
     employer: number;
@@ -427,6 +428,7 @@ export class InsuranceCalculationService {
         employer: pensionInsuranceEmployerRaw
       },
       childContribution: childContributionRaw,
+      nursingInsuranceEmployeeReal: gradeData.nursingInsuranceEmployeeReal,
       total: {
         employee: employeeTotalRaw,
         employer: employerBurdenRaw
