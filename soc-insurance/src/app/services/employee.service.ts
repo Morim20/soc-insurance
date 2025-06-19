@@ -136,12 +136,14 @@ export class EmployeeService {
     const qualificationLossDate = this.convertTimestampToDate(data.qualificationLossDate);
     const standardMonthlyRevisionDate = this.convertTimestampToDate(data.standardMonthlyRevisionDate);
     const insuranceQualificationDate = this.convertTimestampToDate(data.insuranceQualificationDate);
+    const newRevisionDate = this.convertTimestampToDate(data.newRevisionDate);
     return {
       ...data,
       qualificationAcquisitionDate,
       qualificationLossDate,
       standardMonthlyRevisionDate,
-      insuranceQualificationDate
+      insuranceQualificationDate,
+      newRevisionDate
     };
   }
 

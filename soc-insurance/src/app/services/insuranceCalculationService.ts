@@ -316,11 +316,30 @@ export class InsuranceCalculationService {
 
   // 厚生年金保険料を計算
   private calculatePensionInsurance(standardMonthlyWage: number): { employee: number; employer: number } {
-    const pensionRate = 0.183; // 18.3%
-    const totalPension = Math.round(standardMonthlyWage * pensionRate);
+    // pension_insurance_master.jsonから該当する等級のデータを取得
+    const pensionRates = (pensionRatesMaster as PensionRatesMaster)['厚生年金保険'];
+    
+    // 等級を昇順でソートしてから検索
+    const sortedGrades = Object.keys(pensionRates).sort((a, b) => Number(a) - Number(b));
+    
+    // 標準報酬月額に基づいて等級を決定
+    let targetGrade: string | null = null;
+    for (const grade of sortedGrades) {
+      if (pensionRates[grade].standardMonthlyWage >= standardMonthlyWage) {
+        targetGrade = grade;
+        break;
+      }
+    }
+    
+    if (!targetGrade) {
+      // 該当する等級が見つからない場合は最高等級を使用
+      targetGrade = sortedGrades[sortedGrades.length - 1];
+    }
+    
+    const pensionData = pensionRates[targetGrade];
     return {
-      employee: Math.round(totalPension / 2),
-      employer: Math.round(totalPension / 2)
+      employee: pensionData.pensionInsuranceEmployee,
+      employer: pensionData.pensionInsurance - pensionData.pensionInsuranceEmployee
     };
   }
 
@@ -461,19 +480,7 @@ export class InsuranceCalculationService {
   }): BonusInsuranceResult | null {
     if (bonusCount > 3) return null; // 4回以上は通常の報酬扱い
     if (!bonusAmount || !prefecture) return null;
-    if (isMaternityLeave) {
-      // 育休・産休中は全て0円
-      return {
-        standardBonusAmount: 0,
-        healthInsuranceEmployee: 0,
-        healthInsuranceEmployer: 0,
-        nursingInsuranceEmployee: 0,
-        nursingInsuranceEmployer: 0,
-        pensionInsuranceEmployee: 0,
-        pensionInsuranceEmployer: 0,
-        childContribution: 0
-      };
-    }
+    
     // 標準賞与額: 1,000円未満切り捨て
     const standardBonusAmount = Math.floor(bonusAmount / 1000) * 1000;
     // 厚生年金の1回上限: 150万円

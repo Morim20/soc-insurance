@@ -108,20 +108,20 @@
           <tbody>
             <tr>
               <td style="border: 1px solid #888; padding: 6px;">健康保険料</td>
-              <td style="border: 1px solid #888; padding: 6px;">{{ isExemptedByFourteenDayRule ? 0 : (bonusInsuranceResult?.healthInsuranceEmployee?.toLocaleString() || '0') }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ isBonusExempted ? 0 : (bonusInsuranceResult?.healthInsuranceEmployee?.toLocaleString() || '0') }}</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 6px;">介護保険料</td>
-              <td style="border: 1px solid #888; padding: 6px;">{{ isExemptedByFourteenDayRule ? 0 : (bonusInsuranceResult?.nursingInsuranceEmployee?.toLocaleString() || '0') }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ isBonusExempted ? 0 : (bonusInsuranceResult?.nursingInsuranceEmployee?.toLocaleString() || '0') }}</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 6px;">厚生年金保険料</td>
-              <td style="border: 1px solid #888; padding: 6px;">{{ isExemptedByFourteenDayRule ? 0 : (bonusInsuranceResult?.pensionInsuranceEmployee?.toLocaleString() || '0') }}</td>
+              <td style="border: 1px solid #888; padding: 6px;">{{ isBonusExempted ? 0 : (bonusInsuranceResult?.pensionInsuranceEmployee?.toLocaleString() || '0') }}</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">合計</td>
               <td style="border: 1px solid #888; padding: 6px; font-weight: bold; background: #f5f5f5;">
-                {{ isExemptedByFourteenDayRule ? 0 : (
+                {{ isBonusExempted ? 0 : (
                   roundAmount(bonusInsuranceResult?.healthInsuranceEmployee || 0)
                   + roundAmount(bonusInsuranceResult?.nursingInsuranceEmployee || 0)
                   + roundAmount(bonusInsuranceResult?.pensionInsuranceEmployee || 0)

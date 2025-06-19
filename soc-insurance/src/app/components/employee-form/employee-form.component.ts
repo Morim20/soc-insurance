@@ -120,10 +120,10 @@ export class EmployeeFormComponent implements OnInit {
         isStudent: [false],
         studentType: [''],
         allowances: [0],
-        commutingAllowance: [0],
+        commutingAllowance: [0, [Validators.min(0)]],
         commuteRoute: [''],
         commutePassCost: [0],
-        oneWayFare: [0],
+        oneWayFare: [0, [Validators.min(0)]],
       }, { validators: this.endDateAfterStartDateValidator }),
       insuranceStatus: this.fb.group({
         healthInsurance: [''],
@@ -312,18 +312,18 @@ export class EmployeeFormComponent implements OnInit {
 
   addDependent(): void {
     const dependent = this.fb.group({
-      lastName: [''],
-      firstName: [''],
-      lastNameKana: [''],
-      firstNameKana: [''],
+      lastName: ['', Validators.required],
+      firstName: ['', Validators.required],
+      lastNameKana: ['', Validators.required],
+      firstNameKana: ['', Validators.required],
       myNumber: [''],
       birthDate: [null, [Validators.required, this.futureDateValidator]],
-      relationship: [''],
+      relationship: ['', Validators.required],
       relationshipOther: [''],
       income: [0],
-      residency: ['国内'],
-      cohabitation: ['同居'],
-      occupation: [''],
+      residency: ['国内', Validators.required],
+      cohabitation: ['同居', Validators.required],
+      occupation: ['', Validators.required],
       schoolGrade: [''],
       occupationOther: ['']
     });

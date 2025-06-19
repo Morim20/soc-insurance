@@ -257,12 +257,15 @@ export class InsuranceEligibilityService {
   /**
    * 賞与支給月の末日を含む1か月超の連続した休業期間が存在する場合のみ、その月の賞与も社会保険料免除対象
    * @param bonusPaymentDates 賞与支給日（複数月対応）
+   * @param leaveType 休業種別
    * @param leaveStart 休業開始日
    * @param leaveEnd 休業終了日
    * @returns 免除対象となる賞与支給月リスト
    */
-  getBonusExemptionMonths(bonusPaymentDates: Date[], leaveStart: Date, leaveEnd: Date): string[] {
+  getBonusExemptionMonths(bonusPaymentDates: Date[], leaveType: string, leaveStart: Date, leaveEnd: Date): string[] {
     const result: string[] = [];
+    // 休業種別が免除対象か
+    if (!['育児休業', '産前産後休業'].includes(leaveType)) return result;
     // 休業開始日から31日以上の休業か
     const diffDays = (leaveEnd.getTime() - leaveStart.getTime()) / (1000 * 60 * 60 * 24) + 1;
     if (diffDays <= 30) return result;
@@ -633,14 +636,13 @@ export class InsuranceEligibilityService {
           const bonusPaymentDates: Date[] = (employee.specialAttributes?.bonusPaymentDates || []).map((d: string) => new Date(d));
           let bonusExemptionMonths: string[] = [];
           if (bonusPaymentDates.length > 0 && leaveStart && leaveEnd) {
-            bonusExemptionMonths = this.getBonusExemptionMonths(bonusPaymentDates, leaveStart, leaveEnd);
+            bonusExemptionMonths = this.getBonusExemptionMonths(bonusPaymentDates, employee.specialAttributes?.leaveType || '', leaveStart, leaveEnd);
           }
           result.reason += (bonusExemptionMonths.length > 0
             ? `賞与支給月（${bonusExemptionMonths.join(', ')}）の末日が1か月を超える連続した休業期間に含まれているため、当月の賞与も社会保険料免除対象です。\n`
             : '賞与支給月の末日が休業期間外、または休業期間が1か月以内のため、当月の賞与は社会保険料免除対象外です。\n');
-          if (bonusExemptionMonths.length > 0) {
-            (result as any).insuranceExemptionBonusMonths = bonusExemptionMonths;
-          }
+          // 賞与免除対象外の場合でも空配列を設定
+          (result as any).insuranceExemptionBonusMonths = bonusExemptionMonths;
           observer.next(result);
           observer.complete();
           return;

@@ -356,7 +356,7 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
     try {
       const settingsDoc = await getDoc(doc(this.firestore, 'settings', 'office'));
       if (settingsDoc.exists()) {
-        this.companyName = settingsDoc.data()['name'] || '';
+        this.companyName = settingsDoc.data()['name'] || settingsDoc.data()['officeName'] || '';
       }
     } catch (e) {
       this.companyName = '';

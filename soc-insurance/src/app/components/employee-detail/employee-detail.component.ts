@@ -259,6 +259,7 @@ export class EmployeeDetailComponent implements OnInit {
         if (ins.qualificationLossDate && typeof (ins.qualificationLossDate as any).toDate === 'function') ins.qualificationLossDate = (ins.qualificationLossDate as any).toDate();
         if (ins.standardMonthlyRevisionDate && typeof (ins.standardMonthlyRevisionDate as any).toDate === 'function') ins.standardMonthlyRevisionDate = (ins.standardMonthlyRevisionDate as any).toDate();
         if (ins.insuranceQualificationDate && typeof (ins.insuranceQualificationDate as any).toDate === 'function') ins.insuranceQualificationDate = (ins.insuranceQualificationDate as any).toDate();
+        if (ins.newRevisionDate && typeof (ins.newRevisionDate as any).toDate === 'function') ins.newRevisionDate = (ins.newRevisionDate as any).toDate();
         // specialAttributes
         const sp = this.employee.specialAttributes;
         if (sp.leaveStartDate && typeof (sp.leaveStartDate as any).toDate === 'function') sp.leaveStartDate = (sp.leaveStartDate as any).toDate();
@@ -690,5 +691,20 @@ export class EmployeeDetailComponent implements OnInit {
 
     // 退職日以外は空文字を返す
     return '';
+  }
+
+  /**
+   * 今月が休業期間中かつ免除対象の休業種別ならtrueを返す
+   */
+  isExemptedMonth(targetDate: Date = new Date()): boolean {
+    const leaveType = this.employee?.specialAttributes?.leaveType;
+    const start = this.employee?.specialAttributes?.leaveStartDate ? new Date(this.employee.specialAttributes.leaveStartDate) : null;
+    const end = this.employee?.specialAttributes?.leaveEndDate ? new Date(this.employee.specialAttributes.leaveEndDate) : null;
+    if (!leaveType || !start || !end) return false;
+    // 免除対象の休業種別
+    const isExemptType = ['育児休業', '産前産後休業'].includes(leaveType);
+    if (!isExemptType) return false;
+    // 日付範囲判定（同日も含む）
+    return targetDate >= start && targetDate <= end;
   }
 }

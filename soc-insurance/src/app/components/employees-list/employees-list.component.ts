@@ -60,6 +60,11 @@ export class EmployeesListComponent implements OnInit {
   }
 
   async ngOnInit() {
+    const settingsDoc = await getDoc(doc(this.firestore, 'settings', 'office'));
+    if (!settingsDoc.exists()) {
+      this.router.navigate(['/admin/settings']);
+      return;
+    }
     try {
       const employees = await this.employeeService.getAllEmployees();
       // 社会保険判定を並列で取得
