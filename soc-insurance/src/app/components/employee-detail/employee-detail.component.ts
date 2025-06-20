@@ -46,6 +46,7 @@ export class EmployeeDetailComponent implements OnInit {
   error: string | null = null;
   insuranceEligibility$: Observable<any> | null = null;
   standardMonthlyWage: number | null = null;
+  pensionStandardMonthlyWage: number | null = null;
   public aichiGrades: { [key: string]: { standardMonthlyWage: number } } = aichiGradesData;
   public pensionGrades: { [key: string]: { standardMonthlyWage: number } } = pensionGradesData;
   public todayYear: number = new Date().getFullYear();
@@ -257,6 +258,9 @@ export class EmployeeDetailComponent implements OnInit {
       newRevisionDate: [null]
     });
 
+    // 厚生年金の標準月額報酬フィールドを無効化
+    this.insuranceStatusForm.get('newStandardMonthlyWage')?.disable();
+
     this.specialAttributesForm = this.fb.group({
       leaveType: [''],
       leaveStartDate: [''],
@@ -427,12 +431,18 @@ export class EmployeeDetailComponent implements OnInit {
         if (initialGrade && this.aichiGrades[String(initialGrade)]) {
           this.standardMonthlyWage = this.aichiGrades[String(initialGrade)].standardMonthlyWage;
         }
+        const initialPensionGrade = this.insuranceStatusForm.get('newGrade')?.value;
+        if (initialPensionGrade && this.pensionGrades[String(initialPensionGrade)]) {
+          this.pensionStandardMonthlyWage = this.pensionGrades[String(initialPensionGrade)].standardMonthlyWage;
+        }
         this.insuranceStatusForm.get('newGrade')?.valueChanges.subscribe((grade) => {
           const key = String(grade);
           if (grade && this.pensionGrades[key]) {
-            this.insuranceStatusForm.get('newStandardMonthlyWage')?.setValue(this.pensionGrades[key].standardMonthlyWage);
+            this.pensionStandardMonthlyWage = this.pensionGrades[key].standardMonthlyWage;
+            this.insuranceStatusForm.get('newStandardMonthlyWage')?.setValue(this.pensionGrades[key].standardMonthlyWage, { emitEvent: false });
           } else {
-            this.insuranceStatusForm.get('newStandardMonthlyWage')?.setValue(null);
+            this.pensionStandardMonthlyWage = null;
+            this.insuranceStatusForm.get('newStandardMonthlyWage')?.setValue(null, { emitEvent: false });
           }
         });
       }
@@ -509,6 +519,10 @@ export class EmployeeDetailComponent implements OnInit {
       // 標準報酬月額を設定
       if (insuranceStatus.grade && this.aichiGrades[String(insuranceStatus.grade)]) {
         this.standardMonthlyWage = this.aichiGrades[String(insuranceStatus.grade)].standardMonthlyWage;
+      }
+      // 厚生年金の標準報酬月額を設定
+      if (insuranceStatus.newGrade && this.pensionGrades[String(insuranceStatus.newGrade)]) {
+        this.pensionStandardMonthlyWage = this.pensionGrades[String(insuranceStatus.newGrade)].standardMonthlyWage;
       }
     }
     if (section === 'specialAttributes' && this.employee) {
@@ -757,7 +771,7 @@ export class EmployeeDetailComponent implements OnInit {
   async saveInsuranceStatus() {
     if (this.insuranceStatusForm.valid && this.employee) {
       try {
-        const formValue = this.insuranceStatusForm.value;
+        const formValue = this.insuranceStatusForm.getRawValue();
         
         // 現在の年月を取得
         const today = new Date();

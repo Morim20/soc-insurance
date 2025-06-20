@@ -201,6 +201,8 @@ export class InsuranceEditComponent implements OnInit {
         this.insuranceEligibilityResult = eligibilityResult;
         if (this.data) {
           this.data.eligibilityResult = eligibilityResult;
+          // isActuallyNursingInsuranceEligible を使って判定
+          this.data.isNursingInsuranceEligible = this.isActuallyNursingInsuranceEligible(eligibilityResult);
         }
         
         // 保険判定結果を取得後にFirestoreから保険料データを取得
@@ -238,7 +240,7 @@ export class InsuranceEditComponent implements OnInit {
       if (birthDate && periodYear && periodMonth) {
         const age = this.calculateAgeAt(birthDate, periodYear, periodMonth);
         this.data.age = age;
-        this.data.isNursingInsuranceEligible = (age >= 40 && age < 65);
+        // isNursingInsuranceEligibleはeligibilityResultから設定するのでここでは何もしない
       }
 
       // フォーム初期値セット
@@ -345,7 +347,7 @@ export class InsuranceEditComponent implements OnInit {
         const periodMonth = this.data?.period?.month;
         if (birthDate && periodYear && periodMonth) {
           isNursingInsuranceEligible = this.insuranceEligibilityService.isNursingInsuranceEligibleAt(birthDate, periodYear, periodMonth);
-          isPensionInsuranceEligible = this.isPensionInsuranceEligible(birthDate, periodYear, periodMonth);
+          isPensionInsuranceEligible = this.insuranceEligibilityService.isPensionInsuranceEligibleAt(birthDate, periodYear, periodMonth);
           
           // デバッグログを追加
           console.log('賞与保険料計算時の厚生年金判定:', {
@@ -511,17 +513,11 @@ export class InsuranceEditComponent implements OnInit {
 
   // Firestoreから保険料データを取得するメソッドを分離
   private async loadInsuranceDataFromFirestore() {
-    if (!this.employeeFullInfo) return;
-    
-    // その月の介護保険判定
-    let isNursingInsuranceEligible = false;
-    if (this.data?.period?.year && this.data?.period?.month && this.basicInfo?.birthDate) {
-      isNursingInsuranceEligible = this.insuranceEligibilityService.isNursingInsuranceEligibleAt(
-        this.basicInfo.birthDate, this.data.period.year, this.data.period.month
-      );
-    }
-    
-    if (this.insuranceEligibilityResult.healthInsurance || this.insuranceEligibilityResult.pensionInsurance) {
+    if (!this.employeeFullInfo || !this.insuranceEligibilityResult) return;
+
+    const eligibilityResult = this.insuranceEligibilityResult;
+
+    if (eligibilityResult.healthInsurance || eligibilityResult.pensionInsurance) {
       // 保険料計算を実行
       if (!this.companyPrefecture) {
         this.snackBar.open('会社の所在地（都道府県）が設定されていません。会社設定画面で確認してください。', '閉じる', { duration: 5000 });
@@ -531,19 +527,11 @@ export class InsuranceEditComponent implements OnInit {
       const periodYear = this.data?.period?.year;
       const periodMonth = this.data?.period?.month;
       const birthDate = this.employeeFullInfo.employeeBasicInfo.birthDate;
-      let ageForInsurance = 30;
-      let isNursingInsuranceEligible = false;
-      let isPensionInsuranceEligible = false;
       
+      let ageForInsurance = 30; // デフォルト
       if (birthDate && periodYear && periodMonth) {
-        // 介護保険控除開始月ロジック
-        const { year: startYear, month: startMonth } = this.getNursingInsuranceStartMonth(birthDate);
-        const ym = periodYear * 100 + periodMonth;
-        const startYm = startYear * 100 + startMonth;
-        isNursingInsuranceEligible = ym >= startYm;
-        ageForInsurance = isNursingInsuranceEligible ? 40 : this.calculateAgeAt(birthDate, periodYear, periodMonth);
-        // 厚生年金終了判定
-        isPensionInsuranceEligible = this.isPensionInsuranceEligible(birthDate, periodYear, periodMonth);
+        // 介護保険料計算のために、対象なら年齢を40に、対象外なら実年齢を使う
+        ageForInsurance = eligibilityResult.nursingInsurance ? 40 : this.calculateAgeAt(birthDate, periodYear, periodMonth);
       }
 
       const insuranceResult = this.insuranceCalculationService.calculateInsurance({
@@ -565,52 +553,39 @@ export class InsuranceEditComponent implements OnInit {
         return;
       }
 
-      const eligibilityResult = this.insuranceEligibilityResult;
-      if (eligibilityResult && (eligibilityResult.healthInsurance || eligibilityResult.pensionInsurance)) {
-        this.data.healthInsuranceEmployee = eligibilityResult.healthInsurance ? insuranceResult.healthInsurance.employee : 0;
-        this.data.healthInsuranceEmployer = eligibilityResult.healthInsurance ? insuranceResult.healthInsurance.employer : 0;
-        // 介護保険はeligibilityResultの判定結果に基づいて計算
-        this.data.nursingInsuranceEmployee = isNursingInsuranceEligible ? insuranceResult.nursingInsurance.employee : 0;
-        this.data.nursingInsuranceEmployer = isNursingInsuranceEligible ? insuranceResult.nursingInsurance.employer : 0;
-        // 厚生年金は終了判定で加算
-        this.data.pensionInsuranceEmployee = isPensionInsuranceEligible ? insuranceResult.pensionInsurance.employee : 0;
-        this.data.pensionInsuranceEmployer = isPensionInsuranceEligible ? insuranceResult.pensionInsurance.employer : 0;
-        this.data.childContribution = eligibilityResult.healthInsurance ? insuranceResult.childContribution : 0;
-        
-        // 介護保険がある場合の従業員負担分の合計計算
-        if (eligibilityResult.nursingInsurance) {
-          // 介護保険がある場合はnursingInsuranceEmployeeRealを使用
-          this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsuranceWithNursingReal(
-            this.data.healthInsuranceEmployee,
-            insuranceResult.nursingInsuranceEmployeeReal,
-            this.data.pensionInsuranceEmployee
-          );
-        } else {
-          // 介護保険がない場合は従来の計算方法
-          this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsurance(
-            this.data.healthInsuranceEmployee,
-            this.data.nursingInsuranceEmployee,
-            this.data.pensionInsuranceEmployee
-          );
-        }
-        
-        this.data.employerTotalDeduction = this.calculateEmployerTotalInsurance(
-          this.data.healthInsuranceEmployer,
-          this.data.nursingInsuranceEmployer,
-          this.data.pensionInsuranceEmployer
+      // eligibilityResultに基づいて保険料をデータにセット
+      this.data.healthInsuranceEmployee = eligibilityResult.healthInsurance ? insuranceResult.healthInsurance.employee : 0;
+      this.data.healthInsuranceEmployer = eligibilityResult.healthInsurance ? insuranceResult.healthInsurance.employer : 0;
+      this.data.nursingInsuranceEmployee = eligibilityResult.nursingInsurance ? insuranceResult.nursingInsurance.employee : 0;
+      this.data.nursingInsuranceEmployer = eligibilityResult.nursingInsurance ? insuranceResult.nursingInsurance.employer : 0;
+      this.data.pensionInsuranceEmployee = eligibilityResult.pensionInsurance ? insuranceResult.pensionInsurance.employee : 0;
+      this.data.pensionInsuranceEmployer = eligibilityResult.pensionInsurance ? insuranceResult.pensionInsurance.employer : 0;
+      this.data.childContribution = eligibilityResult.healthInsurance ? insuranceResult.childContribution : 0;
+      
+      // 介護保険がある場合の従業員負担分の合計計算
+      if (eligibilityResult.nursingInsurance) {
+        // 介護保険がある場合はnursingInsuranceEmployeeRealを使用
+        this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsuranceWithNursingReal(
+          this.data.healthInsuranceEmployee,
+          insuranceResult.nursingInsuranceEmployeeReal,
+          this.data.pensionInsuranceEmployee
         );
       } else {
-        this.data.healthInsuranceEmployee = 0;
-        this.data.healthInsuranceEmployer = 0;
-        this.data.nursingInsuranceEmployee = 0;
-        this.data.nursingInsuranceEmployer = 0;
-        this.data.pensionInsuranceEmployee = 0;
-        this.data.pensionInsuranceEmployer = 0;
-        this.data.childContribution = 0;
-        this.data.employeeTotalDeduction = 0;
-        this.data.employerTotalDeduction = 0;
+        // 介護保険がない場合は従来の計算方法
+        this.data.employeeTotalDeduction = this.calculateEmployeeTotalInsurance(
+          this.data.healthInsuranceEmployee,
+          this.data.nursingInsuranceEmployee,
+          this.data.pensionInsuranceEmployee
+        );
       }
+      
+      this.data.employerTotalDeduction = this.calculateEmployerTotalInsurance(
+        this.data.healthInsuranceEmployer,
+        this.data.nursingInsuranceEmployer,
+        this.data.pensionInsuranceEmployer
+      );
     } else {
+      // どの保険の対象でもない場合
       this.data.healthInsuranceEmployee = 0;
       this.data.healthInsuranceEmployer = 0;
       this.data.nursingInsuranceEmployee = 0;
@@ -675,28 +650,60 @@ export class InsuranceEditComponent implements OnInit {
     const hasHealth = healthGrade !== null && healthGrade !== undefined && healthGrade !== '' && healthGrade !== 0 && healthGrade !== '未設定';
     const hasPension = pensionGrade !== null && pensionGrade !== undefined && pensionGrade !== '' && pensionGrade !== 0 && pensionGrade !== '未設定';
     
-    // 等級が設定されていても、組み合わせが正しくない場合はfalse
+    // デバッグログを追加
+    console.log('canSave判定:', {
+      healthGrade,
+      pensionGrade,
+      hasHealth,
+      hasPension,
+      insuranceStatus: this.insuranceStatus
+    });
+    
+    // 両方の等級が設定されている場合のみ組み合わせチェックを行う
     if (hasHealth && hasPension) {
-      return this.checkGradeCombination(Number(healthGrade), Number(pensionGrade));
+      const combinationValid = this.checkGradeCombination(Number(healthGrade), Number(pensionGrade));
+      console.log('等級組み合わせチェック:', {
+        healthGrade: Number(healthGrade),
+        pensionGrade: Number(pensionGrade),
+        combinationValid
+      });
+      return combinationValid;
     }
     
-    return hasHealth && hasPension;
+    const result = hasHealth && hasPension;
+    console.log('canSave結果:', result);
+    return result;
   }
 
   // 健康保険と厚生年金の等級の組み合わせをチェックする関数
-  private checkGradeCombination(healthGrade: number | string, pensionGrade: number | string): boolean {
+  public checkGradeCombination(healthGrade: number | string, pensionGrade: number | string): boolean {
     const hGrade = Number(healthGrade);
     const pGrade = Number(pensionGrade);
-    // 厚生年金等級が1の場合、健康保険等級は1～4のみOK
-    if (pGrade === 1) {
-      return hGrade >= 1 && hGrade <= 4;
+    
+    // 健康保険等級1～4の時は厚生年金等級1
+    if (hGrade >= 1 && hGrade <= 4) {
+      const result = pGrade === 1;
+      console.log('健康保険等級1～4の場合:', { hGrade, pGrade, result });
+      return result;
     }
-    // 厚生年金等級が32の場合、健康保険等級は35～50のみOK
-    if (pGrade === 32) {
-      return hGrade >= 35 && hGrade <= 50;
+    
+    // 健康保険等級35～50の時は厚生年金等級32
+    if (hGrade >= 35 && hGrade <= 50) {
+      const result = pGrade === 32;
+      console.log('健康保険等級35～50の場合:', { hGrade, pGrade, result });
+      return result;
     }
-    // それ以外は従来通りtrue
-    return true;
+    
+    // 許可されるペアリスト（健康保険等級5～34の場合）
+    const validPairs: [number, number][] = [
+      [5, 2], [6, 3], [7, 4], [8, 5], [9, 6], [10, 7], [11, 8], [12, 9], [13, 10],
+      [14, 11], [15, 12], [16, 13], [17, 14], [18, 15], [19, 16], [20, 17], [21, 18], [22, 19], [23, 20],
+      [24, 21], [25, 22], [26, 23], [27, 24], [28, 25], [29, 26], [30, 27], [31, 28], [32, 29], [33, 30],
+      [34, 31]
+    ];
+    const isValid = validPairs.some(([h, p]) => h === hGrade && p === pGrade);
+    console.log('checkGradeCombination（厳密ペア）:', { hGrade, pGrade, isValid });
+    return isValid;
   }
 
   async onSave() {
@@ -1373,5 +1380,10 @@ export class InsuranceEditComponent implements OnInit {
     });
     
     return result;
+  }
+
+  // HTMLテンプレート用のヘルパーメソッド
+  public toNumber(value: any): number {
+    return Number(value);
   }
 } 

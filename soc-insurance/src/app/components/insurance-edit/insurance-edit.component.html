@@ -32,6 +32,52 @@
           </ng-template>
         </div>
       </div>
+      <!-- 等級組み合わせエラーメッセージ -->
+      <div *ngIf="insuranceStatus?.grade && insuranceStatus?.newGrade && !checkGradeCombination(toNumber(insuranceStatus.grade), toNumber(insuranceStatus.newGrade))" 
+           style="background-color: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px 0; border-radius: 4px;">
+        <div style="color: #d32f2f; font-weight: bold;">等級組み合わせエラー</div>
+        <div style="color: #d32f2f; margin-top: 5px;">
+          下記の組み合わせルールに従ってください：<br>
+          <div style="margin-top: 8px;">
+            <strong>健康保険等級1～4の場合：</strong>厚生年金等級は1のみ<br>
+            <strong>健康保険等級35～50の場合：</strong>厚生年金等級は32のみ<br>
+            <strong>健康保険等級5～34の場合：</strong>下記の組み合わせのみ有効
+          </div>
+          <table style='margin-top:8px; font-size:13px; background:#fff8e1; border:1px solid #fbc02d;'>
+            <tr><th>健康保険等級</th><th>厚生年金等級</th></tr>
+            <tr><td>5</td><td>2</td></tr>
+            <tr><td>6</td><td>3</td></tr>
+            <tr><td>7</td><td>4</td></tr>
+            <tr><td>8</td><td>5</td></tr>
+            <tr><td>9</td><td>6</td></tr>
+            <tr><td>10</td><td>7</td></tr>
+            <tr><td>11</td><td>8</td></tr>
+            <tr><td>12</td><td>9</td></tr>
+            <tr><td>13</td><td>10</td></tr>
+            <tr><td>14</td><td>11</td></tr>
+            <tr><td>15</td><td>12</td></tr>
+            <tr><td>16</td><td>13</td></tr>
+            <tr><td>17</td><td>14</td></tr>
+            <tr><td>18</td><td>15</td></tr>
+            <tr><td>19</td><td>16</td></tr>
+            <tr><td>20</td><td>17</td></tr>
+            <tr><td>21</td><td>18</td></tr>
+            <tr><td>22</td><td>19</td></tr>
+            <tr><td>23</td><td>20</td></tr>
+            <tr><td>24</td><td>21</td></tr>
+            <tr><td>25</td><td>22</td></tr>
+            <tr><td>26</td><td>23</td></tr>
+            <tr><td>27</td><td>24</td></tr>
+            <tr><td>28</td><td>25</td></tr>
+            <tr><td>29</td><td>26</td></tr>
+            <tr><td>30</td><td>27</td></tr>
+            <tr><td>31</td><td>28</td></tr>
+            <tr><td>32</td><td>29</td></tr>
+            <tr><td>33</td><td>30</td></tr>
+            <tr><td>34</td><td>31</td></tr>
+          </table>
+        </div>
+      </div>
       <div class="row">
         <mat-form-field appearance="outline">
           <mat-label>基本給</mat-label>

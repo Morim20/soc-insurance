@@ -313,7 +313,7 @@
           </mat-form-field>
           <mat-form-field appearance="outline" class="large-form-field" *ngIf="insuranceStatusForm.get('insuranceType')?.value === '協会けんぽ'">
             <mat-label>厚生年金の報酬月額</mat-label>
-            <input matInput type="number" formControlName="newStandardMonthlyWage">
+            <input matInput [value]="pensionStandardMonthlyWage ? pensionStandardMonthlyWage : ''" readonly>
           </mat-form-field>
           <mat-form-field appearance="outline" class="large-form-field" *ngIf="insuranceStatusForm.get('insuranceType')?.value === '協会けんぽ'">
             <mat-label>厚生年金の標準報酬月額の改定年月日</mat-label>
