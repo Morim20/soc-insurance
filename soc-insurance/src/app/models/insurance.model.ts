@@ -35,4 +35,12 @@ export interface InsuranceData {
   variableWage?: number | null;
   insuranceEligibility?: any; // 共通判定用（InsuranceEligibilityResult型にしてもOK）
   hasInsuranceDetail?: boolean;
+  // 賞与保険料（端数処理前）
+  bonusHealthInsuranceEmployeeRaw?: number | null;
+  bonusHealthInsuranceEmployerRaw?: number | null;
+  bonusNursingInsuranceEmployeeRaw?: number | null;
+  bonusNursingInsuranceEmployerRaw?: number | null;
+  bonusPensionInsuranceEmployeeRaw?: number | null;
+  bonusPensionInsuranceEmployerRaw?: number | null;
+  bonusChildContributionRaw?: number | null;
 } 

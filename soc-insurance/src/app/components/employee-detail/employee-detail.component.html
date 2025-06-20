@@ -235,21 +235,21 @@
           <p>健康保険料: {{ 
             (eligibility.insuranceExemptionFourteenDayRuleMonths && 
              eligibility.insuranceExemptionFourteenDayRuleMonths.includes(getCurrentYearMonth())) ? 
-             '支払い対象外（14日ルール免除）' : 
+             '支払い対象外（14日ルール）' : 
             (isExemptedMonth() ? '支払い対象外（休業のため）' : 
             (eligibility.healthInsurance ? '支払い対象' : '支払い対象外')) 
           }}</p>
           <p>介護保険料: {{ 
             (eligibility.insuranceExemptionFourteenDayRuleMonths && 
              eligibility.insuranceExemptionFourteenDayRuleMonths.includes(getCurrentYearMonth())) ? 
-             '支払い対象外（14日ルール免除）' : 
+             '支払い対象外（14日ルール）' : 
             (isExemptedMonth() ? '支払い対象外（休業のため）' : 
             (eligibility.nursingInsurance ? '支払い対象' : '支払い対象外（年齢による）')) 
           }}</p>
           <p>厚生年金料: {{ 
             (eligibility.insuranceExemptionFourteenDayRuleMonths && 
              eligibility.insuranceExemptionFourteenDayRuleMonths.includes(getCurrentYearMonth())) ? 
-             '支払い対象外（14日ルール免除）' : 
+             '支払い対象外（14日ルール）' : 
             (isExemptedMonth() ? '支払い対象外（休業のため）' :  
             (eligibility.pensionInsurance ? '支払い対象' : '支払い対象外')) 
           }}</p>

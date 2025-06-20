@@ -190,6 +190,13 @@ interface BonusInsuranceResult {
   pensionInsuranceEmployee: number;
   pensionInsuranceEmployer: number;
   childContribution: number;
+  healthInsuranceEmployeeRaw?: number;
+  healthInsuranceEmployerRaw?: number;
+  nursingInsuranceEmployeeRaw?: number;
+  nursingInsuranceEmployerRaw?: number;
+  pensionInsuranceEmployeeRaw?: number;
+  pensionInsuranceEmployerRaw?: number;
+  childContributionRaw?: number;
 }
 
 @Injectable({
@@ -503,21 +510,33 @@ export class InsuranceCalculationService {
     const pensionInsuranceRate = 0.183; // 全国一律
     // 健康保険・介護保険・厚生年金は折半（2分の1）
     const healthInsuranceTotal = cappedBonusHealth * healthInsuranceRate;
-    const healthInsuranceEmployee = healthInsuranceTotal / 2;
-    const healthInsuranceEmployer = healthInsuranceTotal / 2;
+    const healthInsuranceEmployeeRaw = healthInsuranceTotal / 2;
+    const healthInsuranceEmployerRaw = healthInsuranceTotal / 2;
     const pensionInsuranceTotal = cappedBonusPension * pensionInsuranceRate;
-    const pensionInsuranceEmployee = pensionInsuranceTotal / 2;
-    const pensionInsuranceEmployer = pensionInsuranceTotal / 2;
-    let nursingInsuranceEmployee = 0;
-    let nursingInsuranceEmployer = 0;
+    const pensionInsuranceEmployeeRaw = pensionInsuranceTotal / 2;
+    const pensionInsuranceEmployerRaw = pensionInsuranceTotal / 2;
+
+    let nursingInsuranceEmployeeRaw = 0;
+    let nursingInsuranceEmployerRaw = 0;
     if (age >= 40 && age < 65) {
       // 介護保険も健康保険と同様に573万円が上限
       const nursingInsuranceTotal = cappedBonusHealth * nursingInsuranceRate;
-      nursingInsuranceEmployee = Math.floor(nursingInsuranceTotal / 2);  // 端数切り捨て
-      nursingInsuranceEmployer = nursingInsuranceTotal - nursingInsuranceEmployee;  // 残りを事業主負担
+      nursingInsuranceEmployeeRaw = nursingInsuranceTotal / 2;
+      nursingInsuranceEmployerRaw = nursingInsuranceTotal - nursingInsuranceEmployeeRaw;
     }
+
     // 子ども・子育て拠出金（会社分のみ、健康保険の上限と同じ賞与額を使う）
-    const childContribution = Math.floor(cappedBonusHealth * 0.0036);
+    const childContributionRaw = cappedBonusHealth * 0.0036;
+
+    // 端数処理
+    const healthInsuranceEmployee = this.roundAmount(healthInsuranceEmployeeRaw);
+    const healthInsuranceEmployer = this.roundAmount(healthInsuranceEmployerRaw);
+    const pensionInsuranceEmployee = this.roundAmount(pensionInsuranceEmployeeRaw);
+    const pensionInsuranceEmployer = this.roundAmount(pensionInsuranceEmployerRaw);
+    const nursingInsuranceEmployee = this.roundAmount(nursingInsuranceEmployeeRaw);
+    const nursingInsuranceEmployer = this.roundAmount(nursingInsuranceEmployerRaw);
+    const childContribution = this.roundAmount(childContributionRaw);
+
     return {
       standardBonusAmount,
       healthInsuranceEmployee,
@@ -526,7 +545,14 @@ export class InsuranceCalculationService {
       nursingInsuranceEmployer,
       pensionInsuranceEmployee,
       pensionInsuranceEmployer,
-      childContribution
+      childContribution,
+      healthInsuranceEmployeeRaw,
+      healthInsuranceEmployerRaw,
+      nursingInsuranceEmployeeRaw,
+      nursingInsuranceEmployerRaw,
+      pensionInsuranceEmployeeRaw,
+      pensionInsuranceEmployerRaw,
+      childContributionRaw
     };
   }
 } 

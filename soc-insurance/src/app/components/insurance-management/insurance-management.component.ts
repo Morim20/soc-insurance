@@ -465,16 +465,30 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         const newGradeForCalc = Number(insuranceDetail.newGrade) || 0;
         const newGradeForDisplay = (Number.isFinite(newGradeForCalc) && newGradeForCalc > 0) ? newGradeForCalc : '未設定';
 
-        // 育休・産休中判定
+        // 育休・産休中判定（選択された年月で判定）
         const leaveType = employee.specialAttributes?.leaveType;
         const leaveStart = employee.specialAttributes?.leaveStartDate;
         const leaveEnd = employee.specialAttributes?.leaveEndDate;
         let isOnLeave = false;
+        let notes = insuranceDetail?.notes ?? '';
+        
         if (leaveType && (leaveType === '育児休業' || leaveType === '産前産後休業') && leaveStart) {
-          const today = new Date();
+          // 選択された年月の開始日と終了日を計算
+          const targetYear = this.selectedYear;
+          const targetMonth = this.selectedMonth;
+          const monthStart = new Date(targetYear, targetMonth - 1, 1);
+          const monthEnd = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999);
+          
           const start = new Date(leaveStart);
           const end = leaveEnd ? new Date(leaveEnd) : null;
-          isOnLeave = today >= start && (!end || today <= end);
+          
+          // その月に休業期間が重複しているかをチェック
+          isOnLeave = start <= monthEnd && (!end || end >= monthStart);
+          
+          // その月で休業中でない場合は備考を空にする
+          if (!isOnLeave) {
+            notes = '';
+          }
         }
 
         // 免除フラグ（insuranceDetailにexemptionがtrueなら免除）
@@ -489,7 +503,6 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         const bonusAmount = insuranceDetail?.bonusAmount ?? null;
         const standardBonusAmount = insuranceDetail?.standardBonusAmount ?? null;
         const variableWage = insuranceDetail?.variableWage ?? null;
-        const notes = insuranceDetail?.notes ?? '';
         // 賞与保険料プロパティを取得
         const bonusHealthInsuranceEmployee = insuranceDetail?.bonusHealthInsuranceEmployee ?? 0;
         const bonusHealthInsuranceEmployer = insuranceDetail?.bonusHealthInsuranceEmployer ?? 0;
@@ -721,8 +734,14 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
     document.body.removeChild(link);
   }
 
-  // 端数処理の関数（従業員負担分のみに使用）
-  roundAmount(amount: number): number {
+  /**
+   * 端数処理を行う
+   * 50銭以下は切り捨て、50銭超は切り上げ
+   */
+  private roundAmount(amount: number): number {
+    if (isNaN(amount) || amount === null) {
+      return 0;
+    }
     const decimal = amount - Math.floor(amount);
     if (decimal <= 0.5) {
       return Math.floor(amount);
@@ -779,9 +798,9 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
       const standardMonthlyRemuneration = insuranceDetail?.standardMonthlyRemuneration ?? element.standardMonthlyRemuneration ?? 0;
       const bonusAmount = insuranceDetail?.bonusAmount ?? element.bonusAmount ?? 0;
       const standardBonusAmount = insuranceDetail?.standardBonusAmount ?? element.standardBonusAmount ?? 0;
-      const healthEmployee = (insuranceDetail?.healthInsuranceEmployee ?? element.healthInsuranceEmployee) || 0;
-      const nursingEmployee = (insuranceDetail?.nursingInsuranceEmployee ?? element.nursingInsuranceEmployee) || 0;
-      const pensionEmployee = (insuranceDetail?.pensionInsuranceEmployee ?? element.pensionInsuranceEmployee) || 0;
+      const healthEmployee = this.roundAmount((insuranceDetail?.healthInsuranceEmployee ?? element.healthInsuranceEmployee) || 0);
+      const nursingEmployee = this.roundAmount((insuranceDetail?.nursingInsuranceEmployee ?? element.nursingInsuranceEmployee) || 0);
+      const pensionEmployee = this.roundAmount((insuranceDetail?.pensionInsuranceEmployee ?? element.pensionInsuranceEmployee) || 0);
       const notes = insuranceDetail?.notes ?? element.notes ?? '';
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'fixed';
@@ -835,15 +854,15 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px;">健康保険料</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${healthEmployee}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${healthEmployee.toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px;">介護保険料</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(nursingEmployee).toLocaleString()}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${nursingEmployee.toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px;">厚生年金保険料</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${this.roundAmount(pensionEmployee).toLocaleString()}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${pensionEmployee.toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5;">合計</td>
@@ -899,14 +918,14 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
       const variableWage = insuranceDetail?.variableWage ?? '';
       const standardMonthlyRemuneration = insuranceDetail?.standardMonthlyRemuneration ?? '';
       // 保険料本体もFirestore優先で取得
-      const healthEmployee = (insuranceDetail?.healthInsuranceEmployee ?? element.healthInsuranceEmployee) || 0;
-      const nursingEmployee = (insuranceDetail?.nursingInsuranceEmployee ?? element.nursingInsuranceEmployee) || 0;
-      const pensionEmployee = (insuranceDetail?.pensionInsuranceEmployee ?? element.pensionInsuranceEmployee) || 0;
+      const healthEmployee = this.roundAmount((insuranceDetail?.healthInsuranceEmployee ?? element.healthInsuranceEmployee) || 0);
+      const nursingEmployee = this.roundAmount((insuranceDetail?.nursingInsuranceEmployee ?? element.nursingInsuranceEmployee) || 0);
+      const pensionEmployee = this.roundAmount((insuranceDetail?.pensionInsuranceEmployee ?? element.pensionInsuranceEmployee) || 0);
       const employeeTotal = healthEmployee + nursingEmployee + pensionEmployee;
       // 賞与分もFirestore優先で取得
-      const bonusHealthEmployee = (insuranceDetail?.bonusHealthInsuranceEmployee ?? element.bonusHealthInsuranceEmployee) || 0;
-      const bonusNursingEmployee = (insuranceDetail?.bonusNursingInsuranceEmployee ?? element.bonusNursingInsuranceEmployee) || 0;
-      const bonusPensionEmployee = (insuranceDetail?.bonusPensionInsuranceEmployee ?? element.bonusPensionInsuranceEmployee) || 0;
+      const bonusHealthEmployee = this.roundAmount((insuranceDetail?.bonusHealthInsuranceEmployee ?? element.bonusHealthInsuranceEmployee) || 0);
+      const bonusNursingEmployee = this.roundAmount((insuranceDetail?.bonusNursingInsuranceEmployee ?? element.bonusNursingInsuranceEmployee) || 0);
+      const bonusPensionEmployee = this.roundAmount((insuranceDetail?.bonusPensionInsuranceEmployee ?? element.bonusPensionInsuranceEmployee) || 0);
       const bonusEmployeeTotal = bonusHealthEmployee + bonusNursingEmployee + bonusPensionEmployee;
 
       // ヘッダー（タブ区切り、指定順）
@@ -983,10 +1002,15 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
         alert('この月は賞与がありません');
         return;
       }
-      const bonusHealthEmployee = this.roundAmount(element.bonusHealthInsuranceEmployee || 0);
-      const bonusNursingEmployee = this.roundAmount(element.bonusNursingInsuranceEmployee || 0);
-      const bonusPensionEmployee = this.roundAmount(element.bonusPensionInsuranceEmployee || 0);
-      const totalEmployee = bonusHealthEmployee + bonusNursingEmployee + bonusPensionEmployee;
+      // Firestoreから最新のinsuranceDetailを取得して賞与保険料を取得
+      const period = { year: this.selectedYear, month: this.selectedMonth };
+      const insuranceDetail = await this.employeeService.getInsuranceDetail(element.id, period);
+      
+      // 育休中などの免除判定に関係なく、Firestoreに保存されている値を端数処理して使用
+      const bonusHealthEmployee = this.roundAmount((insuranceDetail?.bonusHealthInsuranceEmployee ?? element.bonusHealthInsuranceEmployee) || 0);
+      const bonusNursingEmployee = this.roundAmount((insuranceDetail?.bonusNursingInsuranceEmployee ?? element.bonusNursingInsuranceEmployee) || 0);
+      const bonusPensionEmployee = this.roundAmount((insuranceDetail?.bonusPensionInsuranceEmployee ?? element.bonusPensionInsuranceEmployee) || 0);
+      const totalEmployee = this.roundAmount(bonusHealthEmployee + bonusNursingEmployee + bonusPensionEmployee);
       const tempDiv = document.createElement('div');
       tempDiv.style.position = 'fixed';
       tempDiv.style.left = '-9999px';
@@ -1025,19 +1049,19 @@ export class InsuranceManagementComponent implements OnInit, AfterViewInit {
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px;">健康保険料</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${bonusHealthEmployee.toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${bonusHealthEmployee.toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px;">介護保険料</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${bonusNursingEmployee.toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${bonusNursingEmployee.toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px;">厚生年金保険料</td>
-              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${bonusPensionEmployee.toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}円</td>
+              <td style="border: 1px solid #888; padding: 8px; text-align: right;">${bonusPensionEmployee.toLocaleString()}円</td>
             </tr>
             <tr>
               <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5;">合計</td>
-              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5; text-align: right;">${totalEmployee.toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}円</td>
+              <td style="border: 1px solid #888; padding: 8px; font-weight: bold; background: #f5f5f5; text-align: right;">${totalEmployee.toLocaleString()}円</td>
             </tr>
           </table>
           <div style="margin-bottom: 20px; font-size: 14px;">
