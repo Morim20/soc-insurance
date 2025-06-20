@@ -764,9 +764,7 @@ export class InsuranceEligibilityService {
           result.reason = '育児・産前産後休業中は被保険者資格継続（事業主申請により本人・会社負担分とも全額免除）。\n' +
             '休業開始月から終了日の翌月前月まで社会保険料（健康・年金・介護）が免除されます。\n' +
             '育休は各月ごとに14日以上取得すればその月全体が免除対象です（令和4年10月〜）。\n' +
-            (fourteenDayRuleMonths.length > 0 ? `【14日ルール自動判定】${fourteenDayRuleMonths.join(', ')}は14日以上取得のため月全体が免除対象です。\n` : '') +
-            '賞与支払月が休業期間に該当すれば賞与も免除されます。\n' +
-            '給与天引きの免除反映は制度上1か月遅れます。';
+            (fourteenDayRuleMonths.length > 0 ? `【14日ルール自動判定】${fourteenDayRuleMonths.join(', ')}は14日以上取得のため月全体が免除対象です。\n` : '');
           if (isOver65) {
             result.reason += '（介護保険は65歳で終了）';
           }
@@ -786,7 +784,7 @@ export class InsuranceEligibilityService {
           }
           result.reason += (bonusExemptionMonths.length > 0
             ? `賞与支給月（${bonusExemptionMonths.join(', ')}）の末日が1か月を超える連続した休業期間に含まれているため、当月の賞与も社会保険料免除対象です。\n`
-            : '賞与支給月の末日が休業期間外、または休業期間が1か月以内のため、当月の賞与は社会保険料免除対象外です。\n');
+            : '');
           // 賞与免除対象外の場合でも空配列を設定
           (result as any).insuranceExemptionBonusMonths = bonusExemptionMonths;
           observer.next(result);

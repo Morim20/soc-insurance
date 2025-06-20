@@ -92,6 +92,7 @@ export class InsuranceEditComponent implements OnInit {
       oneWayFare: [0, [Validators.required, Validators.min(0)]],
       bonusAmount: [{ value: 0, disabled: true }],
       standardBonusAmount: [0],
+      standardMonthlyRemuneration: [0],
       variableWage: [0],
       notes: ['']
     });
@@ -147,6 +148,9 @@ export class InsuranceEditComponent implements OnInit {
       const bonusAmount = this.form.get('bonusAmount')?.value || 0;
       total += bonusAmount;
     }
+
+    // フォームの標準報酬月額を即座に更新
+    this.form.get('standardMonthlyRemuneration')?.setValue(total, { emitEvent: false });
 
     this.data = {
       ...this.data,
@@ -250,9 +254,13 @@ export class InsuranceEditComponent implements OnInit {
         commutingAllowance: Number(this.data?.commutingAllowance ?? this.employmentInfo?.commutingAllowance ?? 0),
         bonusAmount: Number(this.data?.bonusAmount ?? 0),
         standardBonusAmount: Number(this.data?.standardBonusAmount ?? 0),
+        standardMonthlyRemuneration: Number(this.data?.standardMonthlyRemuneration ?? 0),
         variableWage: Number(this.data?.variableWage ?? 0),
         notes: this.data?.notes ?? ''
       }, { emitEvent: false });
+
+      // 初期表示時に報酬月額を計算
+      this.calculateStandardMonthlyRemuneration();
 
       // 休暇情報を即時反映
       if (this.specialAttributes?.leaveType) {

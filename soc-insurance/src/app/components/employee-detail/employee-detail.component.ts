@@ -212,7 +212,7 @@ export class EmployeeDetailComponent implements OnInit {
       birthDate: ['', [Validators.required, this.futureDateValidator]],
       gender: [''],
       address: [''],
-      myNumber: [''],
+      myNumber: ['', [Validators.pattern(/^[0-9]{12}$/)]],
       email: [''],
       phoneNumber: ['']
     });
@@ -750,17 +750,17 @@ export class EmployeeDetailComponent implements OnInit {
       firstName: [dependent?.firstName || '', Validators.required],
       lastNameKana: [dependent?.lastNameKana || '', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
       firstNameKana: [dependent?.firstNameKana || '', [Validators.required, Validators.pattern(/^[ァ-ヶー]+$/)]],
+      birthDate: [this.toDateSafe(dependent?.birthDate), [Validators.required, this.futureDateValidator]],
       relationship: [dependent?.relationship || '', Validators.required],
       relationshipOther: [dependent?.relationshipOther || ''],
-      birthDate: [dependent?.birthDate || null, [Validators.required, this.futureDateValidator]],
+      myNumber: [dependent?.myNumber || '', [Validators.pattern(/^[0-9]{12}$/)]],
       income: [dependent?.income || 0, [Validators.required, Validators.min(0)]],
       residency: [dependent?.residency || '', Validators.required],
       cohabitation: [dependent?.cohabitation || '', Validators.required],
       occupation: [dependent?.occupation || ''],
       schoolGrade: [dependent?.schoolGrade || ''],
-      occupationOther: [dependent?.occupationOther || ''],
-      myNumber: [dependent?.myNumber || '', [Validators.pattern(/^[0-9]{12}$/)]]
-    }, { validators: this.relationshipOtherRequiredValidator });
+      occupationOther: [dependent?.occupationOther || '']
+    }, { validators: [this.relationshipOtherRequiredValidator] });
   }
 
   onLogout() {
@@ -890,17 +890,56 @@ export class EmployeeDetailComponent implements OnInit {
   }
 
   /**
-   * 今月が休業期間中かつ免除対象の休業種別ならtrueを返す
+   * 指定された月が休業期間中かつ免除対象の休業種別ならtrueを返す
+   * その月の期間中に休業期間が重複しているかをチェック
+   * 14日ルールの判定も含む
    */
   isExemptedMonth(targetDate: Date = new Date()): boolean {
     const leaveType = this.employee?.specialAttributes?.leaveType;
     const start = this.employee?.specialAttributes?.leaveStartDate ? new Date(this.employee.specialAttributes.leaveStartDate) : null;
     const end = this.employee?.specialAttributes?.leaveEndDate ? new Date(this.employee.specialAttributes.leaveEndDate) : null;
+    
     if (!leaveType || !start || !end) return false;
+    
     // 免除対象の休業種別
     const isExemptType = ['育児休業', '産前産後休業'].includes(leaveType);
     if (!isExemptType) return false;
-    // 日付範囲判定（同日も含む）
-    return targetDate >= start && targetDate <= end;
+    
+    // 指定された月の開始日と終了日を計算
+    const targetYear = targetDate.getFullYear();
+    const targetMonth = targetDate.getMonth();
+    const monthStart = new Date(targetYear, targetMonth, 1);
+    const monthEnd = new Date(targetYear, targetMonth + 1, 0); // その月の最終日
+    
+    // 休業期間と指定月の期間が重複しているかをチェック
+    const isInLeavePeriod = start <= monthEnd && end >= monthStart;
+    
+    if (!isInLeavePeriod) return false;
+    
+    // その月の休業日数を計算
+    const intersectionStart = start > monthStart ? start : monthStart;
+    const intersectionEnd = end < monthEnd ? end : monthEnd;
+
+    // getTime()でミリ秒の差を取り、日数に変換。+1で該当日も含む
+    const leaveDaysInMonth = Math.floor((intersectionEnd.getTime() - intersectionStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    // 育児休業・産前産後休業中で、その月の休業日数が14日以上の場合に免除対象
+    return leaveDaysInMonth >= 14;
+  }
+
+  /**
+   * HTMLテンプレート用のヘルパーメソッド
+   * 月を2桁の文字列に変換する
+   */
+  formatMonth(month: number): string {
+    return String(month).padStart(2, '0');
+  }
+
+  /**
+   * HTMLテンプレート用のヘルパーメソッド
+   * 現在の年月をYYYY-MM形式で取得する
+   */
+  getCurrentYearMonth(): string {
+    return `${this.todayYear}-${this.formatMonth(this.todayMonth)}`;
   }
 }

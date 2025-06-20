@@ -106,7 +106,7 @@
       <div class="row">
         <mat-form-field appearance="outline">
           <mat-label>報酬月額</mat-label>
-          <input matInput [value]="data?.standardMonthlyRemuneration | number:'1.0-0'" readonly>
+          <input matInput [value]="form.get('standardMonthlyRemuneration')?.value !== null ? (form.get('standardMonthlyRemuneration')?.value | number:'1.0-0') : ''" readonly>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>標準賞与額</mat-label>
